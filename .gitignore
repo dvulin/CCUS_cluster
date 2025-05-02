@@ -6,6 +6,7 @@ __pycache__/
 # C extensions
 *.so
 desktop.ini
+results_preview.xlsx
 # Distribution / packaging
 .Python
 build/
