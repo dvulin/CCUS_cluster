@@ -3,6 +3,20 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+desktop.ini
+**/[Dd]esktop.ini
+*.png 
+*.jpg 
+*.jpeg
+*.gif 
+*.bmp 
+*.svg 
+*.webp
+*.ico 
+*.tiff
+*.tif 
+
+
 # C extensions
 *.so
 desktop.ini
@@ -51,6 +65,7 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 cover/
+
 
 # Translations
 *.mo
