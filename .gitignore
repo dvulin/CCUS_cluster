@@ -16,6 +16,7 @@ desktop.ini
 *.tiff
 *.tif 
 
+.gt_ccs_venv/
 
 # C extensions
 *.so

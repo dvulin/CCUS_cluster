@@ -9,7 +9,10 @@ from .metadata import ParamMetadata
 import numpy as np
 import pandas as pd
 from scipy.special import erf
-from scipy.integrate import cumtrapz
+try:
+    from scipy.integrate import cumtrapz
+except:
+    from scipy.integrate import cumulative_trapezoid as cumtrapz
 import CoolProp.CoolProp as CP
 
 class Geothermal(ParamMetadata):
