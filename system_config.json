@@ -1,0 +1,34 @@
+{
+  "engineering": {
+    "electricity_price_eur_per_kWh": 0.08
+  },
+
+  "emitters": [
+    {
+      "name": "NEXE",
+      "emissions": 716000,
+      "capture_technology": "PI",
+      "OPEX_per_ton": 20,
+      "CAPEX": 100000000
+    }
+  ],
+
+  "transport": {
+    "distance": 120000,
+    "CAPEX": 50000000,
+    "OPEX_per_ton": 5
+  },
+
+  "storage": {
+    "name": "Poljana",
+    "storage_type": "DSA",
+    "capacity": 1000000000,
+    "depth": 2000,
+    "CAPEX": 120000000
+  },
+
+  "economics": {
+    "start_year": 2025,
+    "end_year": 2050
+  }
+}
