@@ -1,0 +1,36 @@
+{
+  "engineering": {
+    "electricity_price_eur_per_kWh": 0.08
+  },
+
+  "emitters": [
+    {
+      "name": "viridas biomass",
+      "emissions": 1020000,
+      "CCS_start_year": 2033,
+      "capture_technology": "PI",
+      "OPEX_per_ton": 20,
+      "CAPEX": 33300000
+    }
+  ],
+
+  "transport": {
+    "distance": 88000,
+    "CAPEX": 7000000,
+    "OPEX_per_ton": 20
+  },
+
+  "storage": {
+    "name": "Poljana",
+    "storage_type": "DSA",
+    "capacity": 1000000000,
+    "depth": 2000,
+    "CAPEX": 12000000,
+    "OPEX_per_ton": 10
+  },
+
+  "economics": {
+    "start_year": 2025,
+    "end_year": 2050
+  }
+}

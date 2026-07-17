@@ -1,0 +1,36 @@
+{
+  "engineering": {
+    "electricity_price_eur_per_kWh": 0.08
+  },
+
+  "emitters": [
+    {
+      "name": "TE TO Zagreb",
+      "emissions": 909000,
+      "CCS_start_year": 2028,
+      "capture_technology": "NI",
+      "OPEX_per_ton": 40,
+      "CAPEX": 75000000
+    }
+  ],
+
+  "transport": {
+    "distance": 33000,
+    "CAPEX": 23100000,
+    "OPEX_per_ton": 15
+  },
+
+  "storage": {
+    "name": "Ivanic Grad",
+    "storage_type": "DHF",
+    "capacity": 5500000,
+    "depth": 1619,
+    "CAPEX": 20000000,
+    "OPEX_per_ton": 10
+  },
+
+  "economics": {
+    "start_year": 2025,
+    "end_year": 2050
+  }
+}
