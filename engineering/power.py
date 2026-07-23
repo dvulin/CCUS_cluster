@@ -6,8 +6,8 @@ Created on Sat Aug 23 18:54:20 2025
 """
 
 import numpy as np
-from .metadata import ParamMetadata
-from .fluid_properties import FluidProperties
+from inputs.metadata import ParamMetadata
+from engineering.fluid_properties import FluidProperties
 
 
 class Power(ParamMetadata):
@@ -154,6 +154,6 @@ class Power(ParamMetadata):
             # Pump from Pp to original P_zavrsni
             pump_power = self.calculate_pump_power(fluid, m_dot, Pp / 1e5, P_zavrsni_orig / 1e5, t_in_C, eta=eta_p)
 
-        total_power = W_s + pump_power
+        total_power = W_s + pump_power*1000
         if print_p_sat: print(f'Switched to pump at {psat/1e5} bar')
         return total_power/1e3 # in kW

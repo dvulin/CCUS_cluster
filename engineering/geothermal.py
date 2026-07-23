@@ -5,7 +5,7 @@ Created on Wed Jul  9 23:38:59 2025
 @author: domagoj
 """
 
-from .metadata import ParamMetadata
+from inputs.metadata import ParamMetadata
 import numpy as np
 import pandas as pd
 from scipy.special import erf
@@ -27,7 +27,6 @@ class Geothermal(ParamMetadata):
         'p_out': ('bar', 'ORC izlazni tlak'),
         'rw': ('bar', 'ORC izlazni tlak'),
         'poro': ('-', 'Poroznost akvifera (bezdimenzionalna)'),
-        'd_doublet': ('m', 'udaljenost proizvodne i utisne geotermalne bušotine'),
     }
 
     def __init__(self, inputs, fluid_props):
@@ -455,7 +454,7 @@ class Geothermal(ParamMetadata):
         rho_w = CP.PropsSI('D', 'P', p, 'T', T, fluid)   # kg/m3, geofluid density (reservoir condition)
         rho_f = rho_r*(1-poro)+rho_w*poro            # kg/m3, formation density (fluid in pores + matrix)
         c_w = CP.PropsSI('Cpmass', 'P', p, 'T', T, fluid)       # specific heat capacity, J/kg K
-        c_f = (rho_r*c_r*(1-poro)+rho_w*c_w*poro)/re  # J/kg, formation heat capacity (fluid + matrix)
+        c_f = (rho_r*c_r*(1-poro)+rho_w*c_w*poro)/rho_f  # J/kg K, formation heat capacity (fluid + matrix)
         t = 365.25*24*3600*t                # time, s
          
         try:

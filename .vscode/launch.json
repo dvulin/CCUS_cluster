@@ -1,0 +1,20 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Streamlit App",
+            "type": "debugpy",
+            "request": "launch",
+            "python": "C:/webdev/CCUS_cluster/CCUS_cluster/.gt_ccs_venv/Scripts/python.exe",
+            "module": "streamlit",
+            "args": [
+                "run",
+                "${file}",
+                "--server.headless",
+                "true"
+            ],
+            "jinja": true,
+            "justMyCode": true
+        }
+    ]
+}

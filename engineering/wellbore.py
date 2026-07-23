@@ -1,10 +1,10 @@
-# ccs_utilities/wellbore.py
+# engineering/wellbore.py
 
 import numpy as np
 import pandas as pd
 from scipy.optimize import fsolve
-from .metadata import ParamMetadata
-from .fluid_properties import FluidProperties  # Assuming it's in the package
+from inputs.metadata import ParamMetadata
+from engineering.fluid_properties import FluidProperties  # Assuming it's in the package
 
 class VFP(ParamMetadata):
     """

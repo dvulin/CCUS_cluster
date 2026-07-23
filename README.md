@@ -2,8 +2,8 @@
 
 **GT-CCS** is a modular Python toolkit for engineering and economic analysis of a complete CCS chain (emitter → transport → storage) with optional integration of a geothermal doublet system. The codebase is split into two loosely coupled wings:
 
-- **Engineering wing** – `ccs_utilities/` package + `GT_CCS_engineering.py`: reservoir material balance, wellbore hydraulics, geothermal IPR, fluid thermodynamics, power calculations, visualisation.
-- **Economics wing** – `economics.py` + `CCS_chain.py` + `test.py`: time-series CAPEX/OPEX cash flows, CO2 tax, CCS savings, NPV.
+- **Engineering wing** – `engineering/` package + `examples/engineering_demo.py`: reservoir material balance, wellbore hydraulics, geothermal IPR, fluid thermodynamics and power calculations; `inputs/` contains loading and metadata, while `outputs/` contains visualization.
+- **Economics wing** – `economics/economics.py` + `domain/ccs_chain.py` + `examples/economics_demo.py`: time-series CAPEX/OPEX cash flows, CO2 tax, CCS savings, NPV.
 
 ---
 
@@ -11,28 +11,54 @@
 
 ```
 CCUS_cluster/
-├── ccs_utilities/              # Core engineering library (Python package)
+├── ccs_utilities/              # Retained empty legacy directory
+│   └── .gitkeep
+├── domain/                     # Domain entities
+│   ├── __init__.py
+│   └── ccs_chain.py
+├── inputs/                     # Input loading and parameter metadata
 │   ├── __init__.py
 │   ├── metadata.py
-│   ├── fluid_properties.py
 │   ├── io_endpoints.py
-│   ├── pipeline.py
+│   └── examples/
+│       └── main_inputs.json
+├── engineering/                # Engineering calculations package
+│   ├── __init__.py
+│   ├── fluid_properties.py
+│   ├── power.py
 │   ├── wellbore.py
 │   ├── mbalance.py
 │   ├── geothermal.py
-│   ├── power.py
-│   └── visualization.py
-├── GT_CCS_engineering.py       # Main engineering run script
-├── economics.py                # Economic base class
-├── CCS_chain.py                # CCS domain objects (Emitter, Transport, Storage)
-├── test.py                     # Economic example: NEXE → Poljana
-├── reservoir_inputs.json       # Reservoir & system parameters (JSON)
-├── bhp.json                    # Intermediate BHP time-series output
-├── GT_CCS_yearly_df.xlsx       # Annual results spreadsheet
-├── results_preview.html        # HTML output of economic results
-├── pad_tlaka_u_busotini CO2.py # Standalone: CO2 wellbore pressure profile
-├── pad_tlaka H2O.py            # Standalone: H₂O wellbore pressure profile
-├── thermal_testing.py          # Standalone: thermal breakthrough test
+│   └── pipeline.py
+├── outputs/                    # Result visualization helpers
+│   ├── __init__.py
+│   ├── visualization.py
+│   └── legacy/                 # Historical generated results
+│       ├── bhp.json
+│       ├── GT_CCS_yearly_df.xlsx
+│       ├── results_preview.html
+│       ├── results_preview.xlsx
+│       └── s_eff_vs_co2_stored_kr_co2.png
+├── economics/                  # Economic calculations package
+│   ├── __init__.py
+│   └── economics.py            # Economic base class
+├── examples/                   # Runnable and legacy examples
+│   ├── __init__.py
+│   ├── engineering_demo.py
+│   ├── economics_demo.py
+│   └── legacy/
+│       ├── __init__.py
+│       ├── thermal_testing.py
+│       ├── water_well_pressure.py
+│       └── co2_well_pressure.py
+├── docs/                       # Reserved documentation package
+├── services/                   # Reserved orchestration package
+├── pages/                      # Reserved Streamlit pages
+├── tests/                      # Reserved automated tests
+├── README.md
+├── requirements.txt
+├── changelog.txt
+├── LICENSE
 └── .gitignore
 ```
 
@@ -40,13 +66,13 @@ CCUS_cluster/
 
 ## File descriptions
 
-### `ccs_utilities/__init__.py`
+### `ccs_utilities/.gitkeep`
 
-Package entry point. Exports all eight public classes so callers can write `from ccs_utilities import MaterialBalance` instead of specifying the submodule path.
+The former package directory is intentionally retained as an empty legacy directory. Active input, engineering and output classes are exported from their corresponding packages.
 
 ---
 
-### `ccs_utilities/metadata.py` – class `ParamMetadata`
+### `inputs/metadata.py` – class `ParamMetadata`
 
 Base class that provides a uniform parameter dictionary with metadata (unit, description) to all engineering classes. Inheriting classes declare a `PARAM_METADATA` class variable — a dict of `{param_name: (unit_string, description_string)}`.
 
@@ -60,7 +86,7 @@ Base class that provides a uniform parameter dictionary with metadata (unit, des
 
 ---
 
-### `ccs_utilities/fluid_properties.py` – class `FluidProperties`
+### `engineering/fluid_properties.py` – class `FluidProperties`
 
 Thin wrapper around **CoolProp**'s `PropsSI` function. All methods accept SI units (Pa, K) and return SI results.
 
@@ -78,9 +104,9 @@ Thin wrapper around **CoolProp**'s `PropsSI` function. All methods accept SI uni
 
 ---
 
-### `ccs_utilities/io_endpoints.py` – class `IOEndpoints(ParamMetadata)`
+### `inputs/io_endpoints.py` – class `IOEndpoints(ParamMetadata)`
 
-Reads `reservoir_inputs.json`, validates every parameter (type, unit, presence), and exposes them as attributes. Also computes several derived quantities on load.
+Reads `inputs/examples/main_inputs.json`, validates every parameter (type, unit, presence), and exposes them as attributes. Also computes several derived quantities on load.
 
 **Parameters loaded from JSON** (partial list):
 
@@ -117,13 +143,13 @@ Reads `reservoir_inputs.json`, validates every parameter (type, unit, presence),
 
 ---
 
-### `ccs_utilities/pipeline.py` – class `Pipeline(ParamMetadata)`
+### `engineering/pipeline.py` – class `Pipeline(ParamMetadata)`
 
 Stub for surface pipeline pressure drop calculation. Currently holds the `m_dot` parameter and a `calculate_pressure_drop` placeholder (not yet implemented).
 
 ---
 
-### `ccs_utilities/wellbore.py` – class `VFP(ParamMetadata)`
+### `engineering/wellbore.py` – class `VFP(ParamMetadata)`
 
 Vertical Flow Performance class. Calculates the pressure profile along a CO2 injection or geothermal production/injection well using a step-wise integration of gravitational and frictional pressure gradients.
 
@@ -136,7 +162,7 @@ Vertical Flow Performance class. Calculates the pressure profile along a CO2 inj
 
 ---
 
-### `ccs_utilities/mbalance.py` – class `MaterialBalance(ParamMetadata)`
+### `engineering/mbalance.py` – class `MaterialBalance(ParamMetadata)`
 
 Aquifer material balance engine for CO2 storage in a deep saline aquifer (DSA). Tracks pore volume, water volume, free pore volume, and CO2 mass over time as reservoir pressure evolves.
 
@@ -156,7 +182,7 @@ Aquifer material balance engine for CO2 storage in a deep saline aquifer (DSA). 
 
 ---
 
-### `ccs_utilities/geothermal.py` – class `Geothermal(ParamMetadata)`
+### `engineering/geothermal.py` – class `Geothermal(ParamMetadata)`
 
 Models the geothermal doublet system: production IPR (Inflow Performance Relationship), injection BHP, and thermal breakthrough.
 
@@ -174,7 +200,7 @@ Models the geothermal doublet system: production IPR (Inflow Performance Relatio
 
 ---
 
-### `ccs_utilities/power.py` – class `Power(ParamMetadata)`
+### `engineering/power.py` – class `Power(ParamMetadata)`
 
 Calculates mechanical power demand for ORC turbine output, pump, and multi-stage CO2 compressor.
 
@@ -188,7 +214,7 @@ Calculates mechanical power demand for ORC turbine output, pump, and multi-stage
 
 ---
 
-### `ccs_utilities/visualization.py` – class `Visualization`
+### `outputs/visualization.py` – class `Visualization`
 
 All matplotlib-based plotting methods. Each saves a high-resolution PNG (600 dpi) and calls `plt.show()`.
 
@@ -207,11 +233,11 @@ All matplotlib-based plotting methods. Each saves a high-resolution PNG (600 dpi
 
 ---
 
-### `GT_CCS_engineering.py`
+### `examples/engineering_demo.py`
 
 Main engineering run script. Executes the full simulation chain:
 
-1. Load parameters from `reservoir_inputs.json` via `IOEndpoints`.
+1. Load parameters from `inputs/examples/main_inputs.json` via `IOEndpoints`.
 2. Run material balance (`MaterialBalance.calculate_material_balance`) to get DSA pressure and CO2 mass time series.
 3. Calculate effective CO2 saturation and BHP (`calculate_effective_saturation`, `calculate_bhp_properties`).
 4. For each BHP step, compute CO2 wellhead pressure (`VFP.calculate_dp`) and compression power (`Power.calculate_compression_power`).
@@ -221,7 +247,7 @@ Main engineering run script. Executes the full simulation chain:
 
 ---
 
-### `economics.py` – class `Economics`
+### `economics/economics.py` – class `Economics`
 
 Base class for all CCS chain economic entities. All time-series arrays span `start_year … end_year` (inclusive, `nsteps` years total).
 
@@ -255,9 +281,9 @@ Base class for all CCS chain economic entities. All time-series arrays span `sta
 
 ---
 
-### `CCS_chain.py` – classes `Storage`, `Transport`, `Emitter`
+### `domain/ccs_chain.py` – classes `Storage`, `Transport`, `Emitter`
 
-Domain objects that inherit from `Economics` and add physical attributes.
+Domain objects that currently inherit from `Economics` and add physical attributes. This inheritance is retained unchanged during the organizational move; replacing it with composition is a separate architectural step.
 
 #### `Storage(Economics)`
 
@@ -298,37 +324,37 @@ Represents an industrial CO2 emitter.
 
 ---
 
-### `test.py`
+### `examples/economics_demo.py`
 
-Runnable economic example. Instantiates three objects — `Emitter` (NEXE, 716 kt CO2/yr), `Transport` (NEXE → Poljana), and `Storage` (Poljana DSA) — sets their CAPEX/OPEX, calls `set_cash_flow()` on each, then exports a results DataFrame to `results_preview.html` and `results_preview.xlsx`.
+Runnable economic example. Instantiates three objects — `Emitter` (NEXE, 716 kt CO2/yr), `Transport` (NEXE → Poljana), and `Storage` (Poljana DSA) — sets their CAPEX/OPEX, calls `set_cash_flow()` on each, then exports a results DataFrame to `outputs/legacy/results_preview.html` and `outputs/legacy/results_preview.xlsx`.
 
 ---
 
-### `reservoir_inputs.json`
+### `inputs/examples/main_inputs.json`
 
 Central input file for all engineering calculations. Each parameter is stored as `[value, unit, description]` and validated against `IOEndpoints.PARAM_METADATA` on load.
 
 ---
 
-### `bhp.json`
+### `outputs/legacy/bhp.json`
 
-Intermediate output: time series of `Time [yr]`, `BHP [bar]`, `dp [bar]`, CO2 density and viscosity at BHP, drainage radius `re`, `S_eff`, and `kr_co2`. Generated by `GT_CCS_engineering.py`.
-
----
-
-### `GT_CCS_yearly_df.xlsx`
-
-Annual aggregated results spreadsheet (pressures, flow rates, power, temperatures).
+Historical intermediate output: time series of `Time [yr]`, `BHP [bar]`, `dp [bar]`, CO2 density and viscosity at BHP, drainage radius `re`, `S_eff`, and `kr_co2`. The current engineering demo does not generate this file.
 
 ---
 
-### `pad_tlaka_u_busotini CO2.py` and `pad_tlaka H2O.py`
+### `outputs/legacy/GT_CCS_yearly_df.xlsx`
+
+Historical annual aggregated results spreadsheet (pressures, flow rates, power, temperatures). The current engineering demo does not generate this file.
+
+---
+
+### `examples/legacy/co2_well_pressure.py` and `examples/legacy/water_well_pressure.py`
 
 Standalone exploratory scripts that implement the Colebrook-White pressure-drop integration directly (without the `VFP` class). Useful for quick manual validation of wellbore hydraulics. Note: these duplicate logic now refactored into `VFP.calculate_dp`.
 
 ---
 
-### `thermal_testing.py`
+### `examples/legacy/thermal_testing.py`
 
 Standalone proof-of-concept for the Lauwerier thermal breakthrough model, later integrated into `Geothermal.calculate_production_temperature`. Includes an explicit loop and `scipy.special.erf` call.
 
@@ -346,10 +372,10 @@ python -m venv .venv
 pip install numpy pandas coolprop scipy matplotlib openpyxl
 
 # Run engineering simulation
-python GT_CCS_engineering.py
+python -m examples.engineering_demo
 
 # Run economic example
-python test.py
+python -m examples.economics_demo
 ```
 
 ---
@@ -363,7 +389,7 @@ The two wings currently run independently: the engineering wing produces physica
 The most direct connection. `Power.calculate_compression_power` and `Power.calculate_ORC_power` already return annual energy demand in kW. Convert to yearly EUR costs using electricity prices:
 
 ```python
-# In GT_CCS_engineering.py (or a new integration script)
+# In examples/engineering_demo.py (or a new integration service)
 energy_price_eur_per_kWh = 0.08
 annual_compression_cost = vfp_CO2_df['CO2 comp. P [kW]'] * 8760 * energy_price_eur_per_kWh
 annual_gt_revenue = vfp_gt_df['net power GT, kW'] * 8760 * energy_price_eur_per_kWh
@@ -373,18 +399,18 @@ Pass these arrays directly into `Economics.set_OPEX()` instead of a flat `OPEX_p
 
 ### Step 2 – Time-align engineering and economic arrays
 
-Engineering outputs are indexed in fractional years (from material balance time steps); economic arrays are indexed in integer calendar years. Write a helper that resamples or interpolates engineering DataFrames to annual resolution before passing them to `CCS_chain` objects.
+Engineering outputs are indexed in fractional years (from material balance time steps); economic arrays are indexed in integer calendar years. Write a helper that resamples or interpolates engineering DataFrames to annual resolution before passing them to `domain.ccs_chain` objects.
 
 ### Step 3 – Make `Storage` aware of injection rate from material balance
 
 `Storage.injection_rate` currently accepts a constant or a manually supplied list. Feed it directly from `mbal_df['m_CO2, Mt']` differentiated to annual increments, so economic calculations reflect actual injection ramp-up.
 
-### Step 4 – Introduce a `GTCCSSystem` orchestrator class
+### Step 4 – Introduce a `ScenarioRunner` orchestrator class
 
-Create a top-level class (e.g., `GTCCSSystem`) that owns both an `IOEndpoints` instance and the three `CCS_chain` objects, and exposes a single `run()` method:
+Create `services/ScenarioRunner`, which owns both an `IOEndpoints` instance and the three `domain.ccs_chain` objects, and exposes a single `run()` method:
 
 ```python
-class GTCCSSystem:
+class ScenarioRunner:
     def __init__(self, json_path, economic_params):
         self.inputs = IOEndpoints(json_path)
         self.emitter = Emitter(...)
@@ -399,7 +425,7 @@ class GTCCSSystem:
         # 5. Return combined results DataFrame
 ```
 
-This makes `test.py` a single call and enables parameter sweeps.
+This makes `examples/economics_demo.py` a single call and enables parameter sweeps.
 
 ### Step 5 – Add geothermal revenue to the NPV calculation
 

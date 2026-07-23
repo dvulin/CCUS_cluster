@@ -5,7 +5,7 @@ Created on Wed Jul  9 23:40:36 2025
 @author: domagoj
 """
 
-from .metadata import ParamMetadata
+from inputs.metadata import ParamMetadata
 
 class Pipeline(ParamMetadata):
     PARAM_METADATA = {

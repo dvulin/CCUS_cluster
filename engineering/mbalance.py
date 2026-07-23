@@ -9,7 +9,7 @@ import numpy as np
 import math
 import pdb
 from CoolProp.CoolProp import PropsSI
-from .metadata import ParamMetadata
+from inputs.metadata import ParamMetadata
 
 class MaterialBalance(ParamMetadata):
     PARAM_METADATA = {
@@ -48,7 +48,7 @@ class MaterialBalance(ParamMetadata):
     
     def c_w(self, p, T, S):
         """Calculate water compressibility."""
-        p = p / 14.503773773  # bar to psi
+        p = p * 14.503773773  # bar to psi
         T = T * 9/5 + 32  # °C to °F
         cw = 1 / (7.033 * p + 0.5415 * S - 537 * T + 403300)  # 1/psi
         cw = cw * 14.503773773  # 1/bar
@@ -98,7 +98,7 @@ class MaterialBalance(ParamMetadata):
         return drainage_radius
     
     def kr_Corey(self, s_co2, 
-                 s_wi=0.4, s_gr=0.0, 
+                 s_wi=None, s_gr=0.0, 
                  process='drainage'):
         """
         Calculate gas(CO2)-brine relative permeability using Corey-type correlation
@@ -146,6 +146,9 @@ class MaterialBalance(ParamMetadata):
             - krw, krg: float
                 Water and gas relative permeability (dimensionless)
         """
+        if s_wi is None:
+            s_wi = self.Sw_i
+
         krw_min = self.krw_min
         krg_min = self.krg_min
         krw_max = self.krw_max

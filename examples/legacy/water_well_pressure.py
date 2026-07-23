@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
-from ccs_utilities.fluid_properties import FluidProperties
+from engineering.fluid_properties import FluidProperties
 from CoolProp.CoolProp import PropsSI
-from ccs_utilities.metadata import ParamMetadata
+from inputs.metadata import ParamMetadata
 from numpy.ma.core import log10
 from scipy.optimize import fsolve
 
