@@ -44,6 +44,7 @@ def _zoomable_line_chart_spec(
     value_field="Vrijednost",
     value_format=",.2f",
     integer_x=False,
+    interpolate="linear",
     height=360,
 ):
     """Return a multi-series Vega-Lite line spec with optional separate y zoom."""
@@ -60,6 +61,7 @@ def _zoomable_line_chart_spec(
     spec = {
         "mark": {
             "type": "line",
+            "interpolate": interpolate,
             "clip": True,
             "point": {"filled": True, "size": 32},
         },
@@ -2266,25 +2268,18 @@ else:
         "Godina"
     ].astype(str)
     cumulative_cash_flow_chart = cumulative_cash_flow_chart.set_index("Godina")
-    electricity_cash_flow_chart = annual_cash_flow_df[
-        [
-            "year",
-            "electricity_revenue",
-            "inflation_adjusted_electricity_purchase",
-            "net_electricity_cash_flow",
-        ]
+    electricity_cash_flow_chart_long = annual_cash_flow_df[
+        ["year", "net_electricity_cash_flow"]
     ].rename(
         columns={
             "year": "Godina",
-            "electricity_revenue": "Prihod el.",
-            "inflation_adjusted_electricity_purchase": "Trošak el.",
-            "net_electricity_cash_flow": "Neto el.",
+            "net_electricity_cash_flow": "Vrijednost",
         }
     )
-    electricity_cash_flow_chart["Godina"] = electricity_cash_flow_chart[
-        "Godina"
-    ].astype(str)
-    electricity_cash_flow_chart = electricity_cash_flow_chart.set_index("Godina")
+    electricity_cash_flow_chart_long["Vrijednost"] /= 1_000_000.0
+    electricity_cash_flow_chart_long["Serija"] = (
+        "Trošak/prihod od el. energije"
+    )
 
     (
         overview_tab,
@@ -2648,14 +2643,26 @@ else:
             "Pomičite i zumirajte x-os uobičajenom interakcijom, a y-os uz "
             "pritisnutu tipku Shift."
         )
-        st.markdown("#### Komponente električne energije u godišnjem novčanom toku")
-        st.bar_chart(
-            electricity_cash_flow_chart,
-            x_label="Godina",
-            y_label="Novčani tok električne energije (EUR)",
-            stack=False,
+        st.markdown("#### Trošak/prihod od električne energije")
+        st.vega_lite_chart(
+            electricity_cash_flow_chart_long,
+            _zoomable_line_chart_spec(
+                x_title="Godina",
+                y_title="Trošak/prihod (mil. EUR)",
+                zoom_name="electricity_cash_flow_x_zoom",
+                y_zoom_name="electricity_cash_flow_y_zoom",
+                value_format=",.3f",
+                integer_x=True,
+                interpolate="step-after",
+            ),
+            width="stretch",
         )
-        st.caption("Prihod, trošak i neto vrijednost prikazani su usporedno.")
+        st.caption(
+            "Pozitivna vrijednost je prihod neto izvoza električne energije, a "
+            "negativna trošak neto uvoza. Energetska bilanca uključuje ORC, "
+            "CO₂ kompresor i geotermalnu pumpu. Kotačić zumira x-os, a "
+            "Shift + kotačić y-os."
+        )
         st.markdown("#### Godišnji novčani tok: s CCS-om i bez CCS-a")
         st.vega_lite_chart(
             annual_cash_flow_chart_long,

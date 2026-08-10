@@ -16,7 +16,11 @@ CCUS_cluster/
 │   └── .gitkeep
 ├── domain/                     # Domain entities
 │   ├── __init__.py
-│   └── ccs_chain.py
+│   ├── ccs_chain.py            # Naslijeđeni jednolančani objekti
+│   └── ccs_network/            # Izolirani višeemiterski mrežni model
+│       ├── models.py
+│       ├── flow.py
+│       └── costs.py
 ├── inputs/                     # Input loading and parameter metadata
 │   ├── __init__.py
 │   ├── metadata.py
@@ -63,6 +67,7 @@ CCUS_cluster/
 │   └── engineering_economics_adapter.py
 ├── pages/                      # Reserved Streamlit pages
 ├── tests/                      # Automatizirani testovi
+│   └── network/                # Izolirani testovi višeemiterskog modela
 ├── app.py                      # Streamlit sučelje
 ├── README.md
 ├── requirements.txt
@@ -357,6 +362,56 @@ Represents an industrial CO2 emitter.
 | Method | Description |
 |---|---|
 | `emissions_change(a, c)` | Applies a polynomial growth curve to baseline emissions: `E(t) = E₀ + a·E₀·t^c`. With default `a=0`, emissions stay flat. |
+
+---
+
+### `domain/ccs_network` – izolirani višeemiterski mrežni model
+
+Ovaj paket je nova, UI-neovisna domenska osnova i nije povezan s trenutačnim
+`IOEndpoints`, `ScenarioRunner` ni Streamlit aplikacijom. Klase primaju obične
+tipizirane Python vrijednosti i ne poznaju JSON, web ili Streamlit. Budući
+ulazni adapter može zato prevesti isti verzionirani mrežni dokument u domenske
+objekte neovisno o tome dolazi li s web API-ja, iz datoteke ili iz Streamlita.
+
+- `models.py` definira godišnje rasporede, emitere i njihova postrojenja za
+  hvatanje, čvorove, dionice, zasebne pipeline/truck/rail specifikacije,
+  komercijalno sudjelovanje emitera, utisne bušotine i skladišta.
+- `flow.py` sprema eksplicitne godišnje tokove s obveznim `emitter_id`, provjerava
+  bilancu mase za svaki `emitter × čvor × godina` te zajedničke kapacitete
+  dionica i bušotina.
+- `costs.py` vraća detaljan `emitter × dionica × godina` troškovni ledger.
+  Stvarni udio protoka, rezervirani kapacitet, vlasništvo i ugovoreni udio
+  fiksnog troška ostaju zasebni podaci. Interna tarifa ostaje vidljiva za
+  obračun između sudionika, ali se ne dodaje ponovno konsolidiranom fizičkom
+  trošku sustava.
+
+`TransportLeg.owner_id` bilježi vlasnika svake dionice, dok
+`LegParticipation` bilježi odnos konkretnog emitera prema toj dionici. Stvarna
+količina nikada se ne sprema na dionicu kao jedan agregirani ulaz, nego u
+emiterom označenom vremenskom ledgeru.
+
+Kamionska specifikacija iz nosivosti, vožnji po kamionu dnevno i radnih dana
+računa potreban broj punih vožnji dnevno i veličinu flote. Pipeline specifikacija
+zasad sprema duljinu, kapacitet i projektne podatke; ne uvodi novu jednadžbu
+horizontalnog pada tlaka.
+
+Novi `StorageSite.nominal_capacity_t` trenutačno je opisni nameplate podatak i
+sam ne prekida utiskivanje. Tlačni kriterij skladišta ostaje odgovornost budućeg
+fizikalnog adaptera/injekcijskog modela.
+
+Izolirani mrežni testovi pokreću se bez sadašnjeg scenarija i Streamlit testa:
+
+```powershell
+python -m unittest discover -s tests/network -p "test_*.py" -v
+```
+
+Referentni test ima emiter A od 400.000 t/god i emiter B od 300.000 t/god.
+B svojih 300.000 t/god najprije prevozi privatnom kamionskom dionicom od 25 km,
+a zatim istu masu zajedno s A kroz zajednički cjevovod od 40 km. Na cjevovodu
+su stvarni udjeli A = 4/7 i B = 3/7, a na kamionskoj dionici B = 100 %. Zbroj
+svih dioničkih protoka je 1.000.000 t/god, dok je jedinstvena masa utisnuta na
+granici skladišta 700.000 t/god; zato se protoci uzastopnih dionica ne smiju
+zbrajati i uspoređivati s utiskivanjem.
 
 ---
 
