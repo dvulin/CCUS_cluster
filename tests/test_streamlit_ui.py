@@ -71,9 +71,12 @@ class StreamlitInputRangeTests(unittest.TestCase):
             x_title="Godina",
             y_title="Vrijednost",
             zoom_name="test_x_zoom",
+            y_zoom_name="test_y_zoom",
             integer_x=True,
+            interpolate="step-after",
         )
         self.assertEqual(line_spec["mark"]["type"], "line")
+        self.assertEqual(line_spec["mark"]["interpolate"], "step-after")
         self.assertEqual(
             line_spec["encoding"]["x"]["type"],
             "quantitative",
@@ -83,6 +86,18 @@ class StreamlitInputRangeTests(unittest.TestCase):
         self.assertEqual(
             line_spec["params"][0]["select"]["encodings"],
             ["x"],
+        )
+        self.assertEqual(
+            line_spec["params"][0]["select"]["zoom"],
+            "wheel![!event.shiftKey]",
+        )
+        self.assertEqual(
+            line_spec["params"][1]["select"]["encodings"],
+            ["y"],
+        )
+        self.assertEqual(
+            line_spec["params"][1]["select"]["zoom"],
+            "wheel![event.shiftKey]",
         )
 
         compressor_spec = _source_function(

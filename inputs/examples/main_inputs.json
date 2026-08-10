@@ -1,5 +1,5 @@
 {
-  "m_dot_annual": [716.0,	"ktpa",     "Izvedena godišnja količina CO2 za utiskivanje"],
+  "m_dot_annual": [700.0,	"ktpa",     "Izvedena godišnja količina CO2 za utiskivanje"],
   "rw_co2": [0.15, 			"m",        "Radijus utisne CO2 bušotine"],
   "rw_geothermal_production": [0.15, "m",     "Radijus proizvodne geotermalne bušotine"],
   "rw_geothermal_injection": [0.15, 	"m",        "Radijus utisne geotermalne bušotine"],
@@ -12,7 +12,7 @@
   "h_top": [2000.0, 		"m",        "Minimalna dubina sloja (vrh akvifera)"],
   "t": [150.0, 				"°C",       "Temperatura sloja"],
   "p_ref": [200.0, 			"bar",      "Referentni početni tlak DSA"],
-  "dp": [5, 				"bar",      "Korak tlaka za niz tlakova"],
+  "dp": [0.5, 				"bar",      "Korak tlaka za niz tlakova"],
   "c_p": [0.00005, 			"1/bar",    "Stlačivost pora"],
   "sal": [0.913, 			"gNaCl/L",  "Salinitet"],
   "k": [50e-15,				"m^2",      "Prosječna propusnost"],
@@ -30,7 +30,7 @@
   "geothermal_injection_well_availability": [1.0, "-", "Raspoloživost utisne geotermalne bušotine"],
   "fracture_pressure_gradient": [0.18, "bar/m", "Gradijent tlaka frakturiranja pokrovnih naslaga"],
   "d_doublet":[1500,		"m",        "udaljenost proizvodne i utisne geotermalne bušotine"],
-  "bhp_dp": [10.0, 			"bar",      "Pad tlaka na dnu geotermalne proizvodne bušotine"],
+  "bhp_dp": [10.0, 			"bar",      "Tlačna depresija na dnu geotermalne proizvodne bušotine (drawdown)"],
   "p_comp_in": [25.0, 		"bar",      "Ulazni tlak u kompresiju CO2"],
   "t_comp_in": [20.0, 		"°C",       "Ulazna temperatura u kompresiju CO2"],
   "E_eff" : [0.02, 			"-",        "Učinkovitost skladištenja CO2 u akviferu"],
@@ -71,7 +71,7 @@
   "economics_custom_power_exponent": [1.5, "-", "Eksponent power-law porasta cijene CO2"],
 
   "emitter_name": ["NEXE", "-", "Naziv emitera"],
-  "emitter_emissions_annual": [716000.0, "tCO2/year", "Autoritativna godišnja količina uhvaćenog CO2"],
+  "emitter_emissions_annual": [700000.0, "tCO2/year", "Autoritativna godišnja količina uhvaćenog CO2"],
   "emitter_capture_technology": ["OXY", "-", "Tehnologija hvatanja CO2"],
   "emitter_capex": [447245393.63, "EUR", "CAPEX sustava hvatanja CO2"],
   "emitter_opex_per_ton": [25.0, "EUR/tCO2", "OPEX hvatanja po toni CO2"],
@@ -79,7 +79,7 @@
   "emitter_emissions_change_c": [1.0, "-", "Eksponent promjene emisija c"],
 
   "transport_section_name": ["NEXE to Poljana", "-", "Naziv transportne dionice"],
-  "transport_flow_rate": [716000.0, "tCO2/year", "Izvedena godišnja količina CO2 kroz transportnu dionicu"],
+  "transport_flow_rate": [700000.0, "tCO2/year", "Izvedena godišnja količina CO2 kroz transportnu dionicu"],
   "transport_mode": ["pipeline", "-", "Način transporta: cjevovod, cestovni ili željeznički transport"],
   "transport_distance_km": [50.0, "km", "Duljina transportne dionice"],
   "pipeline_inner_diameter_m": [0.30, "m", "Unutarnji promjer transportnog cjevovoda"],
