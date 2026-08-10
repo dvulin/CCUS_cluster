@@ -8,7 +8,7 @@ from engineering.fluid_properties import FluidProperties  # Assuming it's in the
 
 class VFP(ParamMetadata):
     """
-    Vertical Flow Performance (VFP) class for calculating pressure profiles in wells.
+    Vertical Flow Performance (VFP) class for calculating pressure profiles in wells 
     """
     PARAM_METADATA = {
         'rw': ('m', 'Radijus bušotine'),
@@ -43,7 +43,7 @@ class VFP(ParamMetadata):
     
 
     def calculate_dp(self, fluid, m_dot=None, bhp = None, whp = None, T_C=None, depth_total=None, nsteps=10,
-           pipe_diameter=None, epsilon=0.0005):
+           pipe_diameter=None, epsilon=0.0005, return_diagnostics=False):
         """
         Compute pressure profile from BHP to WHP by integrating upward.
         Works for both production and injection (friction always adds loss when moving up).
@@ -58,9 +58,14 @@ class VFP(ParamMetadata):
             nsteps (int): Number of steps
             pipe_diameter (float): Inner diameter (m)
             epsilon (float): Pipe roughness (m)
+            return_diagnostics (bool): When True, also return length-averaged
+                and maximum axial fluid velocity across the VFP segments.
     
         Returns:
-            float: Wellhead or bottomhole pressure (WHP / BHP) in bar
+            float: Wellhead or bottomhole pressure (WHP / BHP) in bar.
+            tuple: When ``return_diagnostics`` is True, the pressure and a
+                dictionary containing average, maximum, and segment axial
+                velocity magnitudes in m/s.
         """
         if depth_total is None:
             depth_total = self.h_ref
@@ -87,6 +92,7 @@ class VFP(ParamMetadata):
         p = p_start * 1e5  # Pa
         T_K = T_C + 273.15
     
+        segment_velocities = []
         for i in range(nsteps):
             z_current = z_vals[i]
             z_next = z_vals[i + 1]
@@ -95,14 +101,26 @@ class VFP(ParamMetadata):
                 rho = self.fluid_props.get_density(fluid, p, T_K)
                 mu = self.fluid_props.get_viscosity(fluid, p, T_K)
                 v = m_dot / (rho * A)
-                Re = (rho * v * pipe_diameter) / mu
-                f = self.colebrook(pipe_diameter, Re, epsilon)
+                segment_velocities.append(abs(float(v)))
                 dp_grav = rho * g * delta_z
-                dp_fric = f * (delta_z / pipe_diameter) * 0.5 * rho * v**2
+                if abs(m_dot) <= 0.0:
+                    dp_fric = 0.0
+                else:
+                    Re = (rho * abs(v) * pipe_diameter) / mu
+                    f = self.colebrook(pipe_diameter, Re, epsilon)
+                    dp_fric = f * (delta_z / pipe_diameter) * 0.5 * rho * v**2
                 dp_total = dp_grav + dp_fric
                 p = p + dp_total*direction
             else:
                 p = 0
+                segment_velocities.append(0.0)
         p_end = p / 1e5
         if p_end<0: p_end = 1.01325
+        if return_diagnostics:
+            velocities = np.asarray(segment_velocities, dtype=float)
+            return p_end, {
+                "average_velocity_m_s": float(np.mean(velocities)),
+                "maximum_velocity_m_s": float(np.max(velocities)),
+                "segment_velocity_m_s": velocities,
+            }
         return p_end

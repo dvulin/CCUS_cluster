@@ -1,5 +1,7 @@
 CoolProp
 matplotlib
 numpy
+openpyxl
 pandas
 scipy
+streamlit

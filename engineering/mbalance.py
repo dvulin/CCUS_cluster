@@ -28,7 +28,7 @@ class MaterialBalance(ParamMetadata):
         'V_p_ref': ('m^3', 'Početni volumen pora'),
         'V_w_ref': ('m^3', 'Početni volumen vode'),
         'p_max': ('bar', 'Maksimalni tlak'),
-        'E_eff' : ('-', 'Efikasnost skladištenja CO2 u akviferu'),
+        'E_eff' : ('-', 'Učinkovitost skladištenja CO2 u akviferu'),
         'S_plume_core' : ('-','Osnovno zasićenje s CO2 u zoni bušotine'),
         'Sw_i': ('-', 'Minimalno zasićenje vodom'),
         'krw_max': ('-', 'Maksimalna relativna propusnost za vodu'),
@@ -218,6 +218,11 @@ class MaterialBalance(ParamMetadata):
     
     def calculate_material_balance(self):
         pressures = np.arange(self.p_ref, self.p_max + self.dp, self.dp)
+        # ``np.arange(..., p_max + dp, dp)`` can create one point above the
+        # existing geomechanical limit when the interval is not divisible by
+        # ``dp``. Keep only admissible pressure steps; the pressure-limit
+        # equation itself is unchanged.
+        pressures = pressures[pressures <= self.p_max + 1e-12]
         self.pressures = pressures
         
         # area and radius of deep saline aquifer, DSA

@@ -1,20 +1,29 @@
 import json
+import math
 from collections.abc import Mapping
 from copy import deepcopy
 
-import numpy as np
 from .metadata import ParamMetadata
 
 class IOEndpoints(ParamMetadata):
     ENGINEERING_PARAM_METADATA = {
-        'm_dot_annual': ('ktpa', 'Godišnji maseni protok utiskivanja CO2'),
+        'm_dot_annual': ('ktpa', 'Izvedena godišnja količina CO2 za utiskivanje'),
         'rw_co2': ('m', 'Radijus utisne CO2 bušotine'),
         'rw_geothermal_production': ('m', 'Radijus proizvodne geotermalne bušotine'),
         'rw_geothermal_injection': ('m', 'Radijus utisne geotermalne bušotine'),
         'A': ('m^2', 'Površina akvifera'),
         'h_ef': ('m', 'Efektivna debljina akvifera'),
         'poro': ('-', 'Poroznost akvifera (bezdimenzionalna)'),
-        'h_ref': ('m', 'Referentna dubina bušotine za VFP proračun'),
+        'h_ref': ('m', 'Kompatibilni naziv za dubinu CO2 bušotine'),
+        'h_ref_co2': ('m', 'Referentna dubina utisne CO2 bušotine za VFP proračun'),
+        'h_ref_geothermal_production': (
+            'm',
+            'Referentna dubina proizvodne geotermalne bušotine za VFP proračun',
+        ),
+        'h_ref_geothermal_injection': (
+            'm',
+            'Referentna dubina utisne geotermalne bušotine za VFP proračun',
+        ),
         'h_top': ('m', 'Minimalna dubina sloja (vrh akvifera)'),
         't': ('°C', 'Temperatura sloja'),
         'p_ref': ('bar', 'Referentni početni tlak DSA'),
@@ -24,16 +33,35 @@ class IOEndpoints(ParamMetadata):
         'k': ('m^2', 'Prosječna propusnost'),
         't_out': ('°C', 'ORC izlazna temperatura'),
         'p_out': ('bar', 'ORC izlazni tlak'),
-        'eta': ('-', 'ORC učinkovitost (bezdimenzionalna)'),
+        'eta': ('-', 'ORC učinkovitost (kompatibilni naziv za eta_orc)'),
+        'eta_orc': ('-', 'ORC učinkovitost (bezdimenzionalna)'),
+        'eta_gt_injection_pump': ('-', 'Učinkovitost geotermalne utisne pumpe'),
+        'eta_co2_compressor_isentropic': ('-', 'Izentropska učinkovitost kompresora CO2'),
+        'eta_co2_dense_phase_pump': ('-', 'Učinkovitost pumpe CO2 u gustoj fazi'),
+        'co2_compressor_availability': ('-', 'Raspoloživost kompresora CO2'),
+        'co2_injection_well_availability': ('-', 'Raspoloživost utisne CO2 bušotine'),
+        'orc_availability': ('-', 'Raspoloživost ORC postrojenja'),
+        'geothermal_production_well_availability': (
+            '-',
+            'Raspoloživost proizvodne geotermalne bušotine',
+        ),
+        'geothermal_injection_well_availability': (
+            '-',
+            'Raspoloživost utisne geotermalne bušotine',
+        ),
+        'fracture_pressure_gradient': (
+            'bar/m',
+            'Gradijent tlaka frakturiranja pokrovnih naslaga',
+        ),
         'd_doublet': ('m', 'udaljenost proizvodne i utisne geotermalne bušotine'),
         'bhp_dp': ('bar', 'Pad tlaka na dnu geotermalne proizvodne bušotine'),
         'p_comp_in': ('bar', 'Ulazni tlak u kompresiju CO2'),
         't_comp_in': ('°C', 'Ulazna temperatura u kompresiju CO2'),
-        'E_eff' : ('-', 'Efikasnost skladištenja CO2 u akviferu'),
+        'E_eff' : ('-', 'Učinkovitost skladištenja CO2 u akviferu'),
         'S_plume_core' : ('-','Osnovno zasićenje s CO2 u zoni bušotine'),
         'Sw_i': ('-', 'Minimalno zasićenje vodom'),
         'krw_max': ('-', 'Maksimalna relativna propusnost za vodu'),
-        'krg_max': ('-', 'Maksimalno zasićenje za plin (CO2, zakrivljenost kr_CO2 krivulje)'),
+        'krg_max': ('-', 'Maksimalna relativna propusnost za CO2'),
         'nw': ('-', 'Corey-ev koeficijent za vodu (zakrivljenost krw krivulje)'),
         'ng': ('-', 'Corey-ev koeficijent za plin (CO2, zakrivljenost kr_CO2 krivulje)'),
         'krw_min': ('-', 'Minimalna relativna propusnost za vodu (da se izbjegne problem kr = 0)'),
@@ -43,21 +71,71 @@ class IOEndpoints(ParamMetadata):
     ECONOMICS_PARAM_METADATA = {
         'economics_start_year': ('year', 'Početna godina ekonomskog razdoblja'),
         'economics_end_year': ('year', 'Završna godina ekonomskog razdoblja'),
-        'economics_ccs_start_year': ('year', 'Početna godina rada CCS lanca'),
-        'economics_interest_rate': ('-', 'Kamatna stopa kao decimalni broj'),
-        'economics_inflation_rate': ('-', 'Stopa inflacije kao decimalni broj'),
+        'economics_ccs_start_year': ('year', 'Početna godina ulaganja u CCS lanac'),
+        'ccs_injection_start_year': ('year', 'Godina početka utiskivanja CO2'),
+        'ccs_injection_end_year': ('year', 'Planirana godina prestanka utiskivanja CO2'),
+        'geothermal_operation_end_year': (
+            'year',
+            'Godina prestanka rada geotermalnog sustava',
+        ),
+        'ccs_monitoring_end_year': (
+            'year',
+            'Godina prestanka monitoringa skladišta CO2',
+        ),
+        'monitoring_annual_cost_during_injection': (
+            'EUR/year',
+            'Godišnji trošak monitoringa tijekom utiskivanja CO2',
+        ),
+        'monitoring_annual_cost_after_injection': (
+            'EUR/year',
+            'Godišnji trošak monitoringa nakon prestanka utiskivanja CO2',
+        ),
+        'compressor_capex': ('EUR', 'CAPEX kompresora CO2'),
+        'compressor_annual_opex': ('EUR/year', 'Godišnji OPEX kompresora CO2'),
+        'geothermal_capex': ('EUR', 'CAPEX geotermalnog sustava'),
+        'geothermal_annual_opex': ('EUR/year', 'Godišnji OPEX geotermalnog sustava'),
+        'electricity_buy_price': ('EUR/MWh', 'Cijena kupnje električne energije'),
+        'electricity_sell_price': ('EUR/MWh', 'Cijena prodaje električne energije'),
+        'economics_interest_rate': (
+            '-',
+            'Nominalna godišnja diskontna stopa kao decimalni broj',
+        ),
+        'economics_inflation_rate': (
+            '-',
+            'Godišnja stopa inflacije troškova kao decimalni broj',
+        ),
         'economics_co2_price_scenario': ('-', 'CO2 cjenovni scenarij: -1, 0 ili 1'),
         'emitter_name': ('-', 'Naziv emitera'),
-        'emitter_emissions_annual': ('tCO2/year', 'Godišnje emisije emitera'),
+        'emitter_emissions_annual': (
+            'tCO2/year',
+            'Autoritativna godišnja količina uhvaćenog CO2',
+        ),
         'emitter_capture_technology': ('-', 'Tehnologija hvatanja: PI, NI ili OXY'),
         'emitter_capex': ('EUR', 'CAPEX sustava hvatanja CO2'),
         'emitter_opex_per_ton': ('EUR/tCO2', 'OPEX hvatanja po toni CO2'),
         'emitter_emissions_change_a': ('-', 'Faktor promjene emisija a'),
         'emitter_emissions_change_c': ('-', 'Eksponent promjene emisija c'),
         'transport_section_name': ('-', 'Naziv transportne dionice'),
-        'transport_flow_rate': ('tCO2/year', 'Godišnji protok CO2 kroz transportnu dionicu'),
+        'transport_flow_rate': (
+            'tCO2/year',
+            'Izvedena godišnja količina CO2 kroz transportnu dionicu',
+        ),
+        'transport_mode': (
+            '-',
+            'Način transporta: cjevovod, cestovni ili željeznički transport',
+        ),
+        'transport_distance_km': ('km', 'Duljina transportne dionice'),
+        'pipeline_inner_diameter_m': ('m', 'Unutarnji promjer transportnog cjevovoda'),
+        'pipeline_roughness_m': ('m', 'Apsolutna hrapavost transportnog cjevovoda'),
+        'pipeline_elbows_90_count': ('-', 'Broj koljena transportnog cjevovoda od 90 stupnjeva'),
+        'pipeline_elbows_45_count': ('-', 'Broj koljena transportnog cjevovoda od 45 stupnjeva'),
+        'pipeline_elbows_30_count': ('-', 'Broj koljena transportnog cjevovoda od 30 stupnjeva'),
         'transport_capex': ('EUR', 'CAPEX transportne dionice'),
         'transport_opex_per_ton': ('EUR/tCO2', 'OPEX transporta po toni CO2'),
+        'transport_opex_eur_per_tkm': (
+            'EUR/tCO2/km',
+            'OPEX transporta po toni CO2 i kilometru',
+        ),
         'storage_name': ('-', 'Naziv skladišta'),
         'storage_type': ('-', 'Tip skladišta: DSA ili DHF'),
         'storage_capacity': ('tCO2', 'Nazivni kapacitet skladišta CO2'),
@@ -82,14 +160,51 @@ class IOEndpoints(ParamMetadata):
         **ECONOMICS_PARAM_METADATA,
     }
     REQUIRED_PARAMETERS = tuple(ENGINEERING_PARAM_METADATA)
+    REQUIRED_ECONOMICS_PARAMETERS = (
+        'economics_start_year',
+        'economics_end_year',
+        'economics_ccs_start_year',
+        'ccs_injection_start_year',
+        'ccs_injection_end_year',
+        'geothermal_operation_end_year',
+        'ccs_monitoring_end_year',
+        'monitoring_annual_cost_during_injection',
+        'monitoring_annual_cost_after_injection',
+        'compressor_capex',
+        'compressor_annual_opex',
+        'geothermal_capex',
+        'geothermal_annual_opex',
+        'electricity_buy_price',
+        'electricity_sell_price',
+        'economics_interest_rate',
+        'economics_inflation_rate',
+        'emitter_emissions_annual',
+        'emitter_capex',
+        'emitter_opex_per_ton',
+        'transport_flow_rate',
+        'transport_mode',
+        'transport_distance_km',
+        'transport_capex',
+        'storage_capacity',
+        'storage_capex',
+        'storage_opex_per_ton',
+    )
     PARAM_TYPES = {
         'economics_start_year': int,
         'economics_end_year': int,
         'economics_ccs_start_year': int,
+        'ccs_injection_start_year': int,
+        'ccs_injection_end_year': int,
+        'geothermal_operation_end_year': int,
+        'ccs_monitoring_end_year': int,
         'economics_co2_price_scenario': int,
         'emitter_name': str,
         'emitter_capture_technology': str,
         'transport_section_name': str,
+        'transport_mode': str,
+        'pipeline_elbows_90_count': int,
+        'pipeline_elbows_45_count': int,
+        'pipeline_elbows_30_count': int,
         'storage_name': str,
         'storage_type': str,
         'co2_price_start_year': int,
@@ -110,6 +225,7 @@ class IOEndpoints(ParamMetadata):
         'economics_custom_price_function': {'linear', 'logarithmic', 'power_law'},
         'emitter_capture_technology': {'PI', 'NI', 'OXY'},
         'storage_type': {'DSA', 'DHF'},
+        'transport_mode': {'pipeline', 'truck', 'rail'},
     }
 
     def __init__(self, input_source):
@@ -134,6 +250,10 @@ class IOEndpoints(ParamMetadata):
                 print(f"Error: File not found at {input_source}")
                 raise
 
+        self._synchronize_co2_quantities(data)
+        self._synchronize_orc_efficiency(data)
+        self._synchronize_well_depths(data)
+
         # Backward compatibility for scenarios created before the three well
         # radii were separated. New scenarios should use the explicit keys.
         if 'rw' in data:
@@ -155,63 +275,346 @@ class IOEndpoints(ParamMetadata):
                 self.PARAM_METADATA[param][0],
             )
 
-        # Economics parameters are optional until the economics runner is connected.
+        # Parametri novog integriranog ugovora obvezni su, dok ostali postojeći
+        # ekonomski parametri ostaju neobvezni radi kompatibilnosti scenarija.
         for param in self.ECONOMICS_PARAM_METADATA:
-            if param in data:
+            if param in data or param in self.REQUIRED_ECONOMICS_PARAMETERS:
                 self.params[param] = self._validate(
                     data,
                     param,
                     self.PARAM_TYPES.get(param, float),
                     self.PARAM_METADATA[param][0],
                 )
+
+        self._validate_contract()
         
         # Derived attributes
+        # ``eta`` ostaje alias jer ga postojeće engineering klase još koriste.
+        self.eta = self.eta_orc
+        # ``h_ref`` ostaje interni alias jer ga generička VFP klasa očekuje.
+        # Scenario runner svakoj VFP instanci zatim dodjeljuje dubinu njezine
+        # konkretne bušotine.
+        self.h_ref = self.h_ref_co2
         self.m_dot = self.m_dot_annual * 1e6 / (365.25 * 24 * 3600)  # kg/s
         # Existing engineering classes still expose ``rw`` internally. The
         # runner assigns the role-specific radius to each model instance.
         self.rw = self.rw_co2
-        self.re = (self.A / np.pi) ** 0.5  # m
+        self.re = (self.A / math.pi) ** 0.5  # m
         self.V_p_ref = self.A * self.h_ef * self.poro  # m^3
         self.V_w_ref = self.V_p_ref  # m^3
-        self.p_max = 0.18 * self.h_top  # bar
+        self.p_max = self.fracture_pressure_gradient * self.h_top  # bar
         self.g = 9.80665  # m/s^2
+        self.component_available_hours_per_year = {
+            'co2_compressor': 8766.0 * self.co2_compressor_availability,
+            'co2_injection_well': 8766.0 * self.co2_injection_well_availability,
+            'orc': 8766.0 * self.orc_availability,
+            'geothermal_production_well': (
+                8766.0 * self.geothermal_production_well_availability
+            ),
+            'geothermal_injection_well': (
+                8766.0 * self.geothermal_injection_well_availability
+            ),
+        }
+
+    def _synchronize_co2_quantities(self, data):
+        """Validate and normalize all aliases of the annual CO2 quantity."""
+        emitter_t_per_year = self._validate(
+            data,
+            'emitter_emissions_annual',
+            float,
+            self.ECONOMICS_PARAM_METADATA['emitter_emissions_annual'][0],
+        )
+        if emitter_t_per_year <= 0:
+            raise ValueError('emitter_emissions_annual mora biti veći od nule')
+
+        aliases = {
+            'm_dot_annual': (emitter_t_per_year / 1000.0, 'ktpa'),
+            'transport_flow_rate': (emitter_t_per_year, 'tCO2/year'),
+        }
+        for key, (expected_value, unit) in aliases.items():
+            if key in data:
+                supplied_value = self._validate(data, key, float, unit)
+                if not math.isclose(
+                    supplied_value,
+                    expected_value,
+                    rel_tol=1e-12,
+                    abs_tol=1e-9,
+                ):
+                    raise ValueError(
+                        'Nekonzistentna godišnja količina CO2: '
+                        f'{key}={supplied_value:g} {unit}, a '
+                        f'emitter_emissions_annual={emitter_t_per_year:g} '
+                        'tCO2/year'
+                    )
+                normalized_entry = list(data[key])
+                normalized_entry[0] = expected_value
+                data[key] = normalized_entry
+            else:
+                data[key] = [
+                    expected_value,
+                    unit,
+                    self.PARAM_METADATA[key][1],
+                ]
+
+    def _synchronize_orc_efficiency(self, data):
+        """Expose ``eta_orc`` while retaining the legacy ``eta`` alias."""
+        if 'eta_orc' not in data and 'eta' not in data:
+            raise ValueError('Nedostaje eta_orc u ulaznim podacima')
+
+        if 'eta_orc' not in data:
+            legacy_eta = self._validate(data, 'eta', float, '-')
+            data['eta_orc'] = [legacy_eta, '-', self.PARAM_METADATA['eta_orc'][1]]
+        elif 'eta' not in data:
+            eta_orc = self._validate(data, 'eta_orc', float, '-')
+            data['eta'] = [eta_orc, '-', self.PARAM_METADATA['eta'][1]]
+        else:
+            eta_orc = self._validate(data, 'eta_orc', float, '-')
+            legacy_eta = self._validate(data, 'eta', float, '-')
+            if not math.isclose(eta_orc, legacy_eta, rel_tol=0.0, abs_tol=1e-12):
+                raise ValueError(
+                    'Nekonzistentna ORC učinkovitost: eta mora biti jednaka eta_orc'
+                )
+            normalized_entry = list(data['eta'])
+            normalized_entry[0] = eta_orc
+            data['eta'] = normalized_entry
+
+    def _synchronize_well_depths(self, data):
+        """Expose role-specific VFP depths with a legacy ``h_ref`` alias."""
+        depth_descriptions = {
+            'h_ref_co2': self.PARAM_METADATA['h_ref_co2'][1],
+            'h_ref_geothermal_production': (
+                self.PARAM_METADATA['h_ref_geothermal_production'][1]
+            ),
+            'h_ref_geothermal_injection': (
+                self.PARAM_METADATA['h_ref_geothermal_injection'][1]
+            ),
+        }
+
+        if 'h_ref' in data:
+            legacy_depth = self._validate(data, 'h_ref', float, 'm')
+            for key, description in depth_descriptions.items():
+                data.setdefault(key, [legacy_depth, 'm', description])
+
+        if 'h_ref_co2' in data:
+            co2_depth = self._validate(data, 'h_ref_co2', float, 'm')
+            data['h_ref'] = [
+                co2_depth,
+                'm',
+                self.PARAM_METADATA['h_ref'][1],
+            ]
+
+    def _validate_contract(self):
+        """Validate cross-parameter constraints of the integrated input contract."""
+        timeline = (
+            ('economics_start_year', self.economics_start_year),
+            ('economics_ccs_start_year', self.economics_ccs_start_year),
+            ('ccs_injection_start_year', self.ccs_injection_start_year),
+            ('ccs_injection_end_year', self.ccs_injection_end_year),
+            ('economics_end_year', self.economics_end_year),
+        )
+        for (earlier_name, earlier), (later_name, later) in zip(
+            timeline,
+            timeline[1:],
+        ):
+            if earlier > later:
+                raise ValueError(
+                    'Neispravna kronologija: '
+                    f'{earlier_name} ({earlier}) mora biti manji ili jednak '
+                    f'{later_name} ({later})'
+                )
+
+        for end_name in ('geothermal_operation_end_year', 'ccs_monitoring_end_year'):
+            end_year = getattr(self, end_name)
+            if end_year < self.ccs_injection_end_year:
+                raise ValueError(
+                    'Neispravna kronologija: '
+                    f'{end_name} ({end_year}) ne smije biti prije '
+                    f'ccs_injection_end_year ({self.ccs_injection_end_year})'
+                )
+            if end_year > self.economics_end_year:
+                raise ValueError(
+                    'Neispravna kronologija: '
+                    f'{end_name} ({end_year}) ne smije biti nakon '
+                    f'economics_end_year ({self.economics_end_year})'
+                )
+
+        efficiency_parameters = (
+            'eta_orc',
+            'eta_gt_injection_pump',
+            'eta_co2_compressor_isentropic',
+            'eta_co2_dense_phase_pump',
+        )
+        for key in efficiency_parameters:
+            value = getattr(self, key)
+            if not 0 < value <= 1:
+                raise ValueError(f'{key} mora biti veći od 0 i manji ili jednak 1')
+
+        availability_parameters = (
+            'co2_compressor_availability',
+            'co2_injection_well_availability',
+            'orc_availability',
+            'geothermal_production_well_availability',
+            'geothermal_injection_well_availability',
+        )
+        for key in availability_parameters:
+            value = getattr(self, key)
+            if not 0 < value <= 1:
+                raise ValueError(
+                    f'{key} mora biti veći od 0 i manji ili jednak 1'
+                )
+
+        if self.fracture_pressure_gradient <= 0:
+            raise ValueError('fracture_pressure_gradient mora biti veći od nule')
+        if self.dp < 0.5:
+            raise ValueError('Korak tlaka dp mora biti najmanje 0,5 bar')
+        for key in (
+            'h_ref_co2',
+            'h_ref_geothermal_production',
+            'h_ref_geothermal_injection',
+        ):
+            if getattr(self, key) <= 0:
+                raise ValueError(f'{key} mora biti veći od nule')
+        geomechanical_pressure_limit = (
+            self.fracture_pressure_gradient * self.h_top
+        )
+        if self.p_ref > geomechanical_pressure_limit:
+            raise ValueError(
+                'Početni tlak ležišta p_ref ne smije biti veći od dopuštenog '
+                'tlaka izvedenog iz gradijenta tlaka frakturiranja i dubine '
+                'vrha ležišta'
+            )
+
+        non_negative_parameters = (
+            'monitoring_annual_cost_during_injection',
+            'monitoring_annual_cost_after_injection',
+            'compressor_capex',
+            'compressor_annual_opex',
+            'geothermal_capex',
+            'geothermal_annual_opex',
+            'electricity_buy_price',
+            'electricity_sell_price',
+            'economics_interest_rate',
+            'economics_inflation_rate',
+            'emitter_capex',
+            'emitter_opex_per_ton',
+            'transport_capex',
+            'transport_opex_per_ton',
+            'transport_opex_eur_per_tkm',
+            'storage_capex',
+            'storage_opex_per_ton',
+            'storage_capacity',
+            'transport_distance_km',
+            'pipeline_roughness_m',
+            'pipeline_elbows_90_count',
+            'pipeline_elbows_45_count',
+            'pipeline_elbows_30_count',
+        )
+        for key in non_negative_parameters:
+            value = getattr(self, key)
+            if value is not None and value < 0:
+                raise ValueError(f'{key} ne smije biti negativan')
+
+        pipeline_parameters = (
+            'pipeline_inner_diameter_m',
+            'pipeline_roughness_m',
+            'pipeline_elbows_90_count',
+            'pipeline_elbows_45_count',
+            'pipeline_elbows_30_count',
+        )
+        if self.transport_mode == 'pipeline':
+            required_pipeline_parameters = (
+                *pipeline_parameters,
+                'transport_opex_per_ton',
+            )
+            missing = [
+                key
+                for key in required_pipeline_parameters
+                if getattr(self, key) is None
+            ]
+            if missing:
+                raise ValueError(
+                    'Za transport cjevovodom nedostaju parametri: '
+                    + ', '.join(missing)
+                )
+        elif self.transport_opex_eur_per_tkm is None:
+            raise ValueError(
+                'Za cestovni ili željeznički transport nedostaje '
+                'transport_opex_eur_per_tkm'
+            )
+
+        if (
+            self.pipeline_inner_diameter_m is not None
+            and self.pipeline_inner_diameter_m <= 0
+        ):
+            raise ValueError('pipeline_inner_diameter_m mora biti veći od nule')
+        if (
+            self.pipeline_roughness_m is not None
+            and self.pipeline_inner_diameter_m is not None
+            and self.pipeline_roughness_m >= self.pipeline_inner_diameter_m
+        ):
+            raise ValueError(
+                'pipeline_roughness_m mora biti manji od '
+                'pipeline_inner_diameter_m'
+            )
     
     def _validate(self, data, key, type_, unit):
         """Validate input parameter."""
         if key not in data:
-            raise ValueError(f"Missing {key} in input data")
+            raise ValueError(f"Nedostaje {key} u ulaznim podacima")
         if not isinstance(data[key], list) or len(data[key]) < 2:
-            raise ValueError(f"Invalid format for {key}: expected [value, unit, description]")
+            raise ValueError(
+                f"Neispravan format za {key}: očekuje se "
+                "[vrijednost, jedinica, opis]"
+            )
         if data[key][1] != unit:
-            raise ValueError(f"Invalid unit for {key}: expected {unit}, got {data[key][1]}")
+            raise ValueError(
+                f"Neispravna jedinica za {key}: očekuje se {unit}, "
+                f"dobiveno je {data[key][1]}"
+            )
 
         value = data[key][0]
         if type_ is float:
             if isinstance(value, bool) or not isinstance(value, (int, float)):
-                raise ValueError(f"Invalid type for {key}: expected number")
+                raise ValueError(f"Neispravan tip za {key}: očekuje se broj")
             validated_value = float(value)
+            if not math.isfinite(validated_value):
+                raise ValueError(
+                    f"Neispravna vrijednost za {key}: očekuje se konačan broj"
+                )
         elif type_ is int:
             if isinstance(value, bool) or not isinstance(value, int):
-                raise ValueError(f"Invalid type for {key}: expected integer")
+                raise ValueError(f"Neispravan tip za {key}: očekuje se cijeli broj")
             validated_value = value
         elif type_ is str:
             if not isinstance(value, str) or not value.strip():
-                raise ValueError(f"Invalid type for {key}: expected non-empty string")
+                raise ValueError(
+                    f"Neispravan tip za {key}: očekuje se neprazan tekst"
+                )
             validated_value = value
         elif type_ is list:
             if not isinstance(value, list) or not value:
-                raise ValueError(f"Invalid type for {key}: expected numeric list")
+                raise ValueError(
+                    f"Neispravan tip za {key}: očekuje se numerički niz"
+                )
             if any(
                 isinstance(item, bool) or not isinstance(item, (int, float))
                 for item in value
             ):
-                raise ValueError(f"Invalid type for {key}: expected numeric list")
+                raise ValueError(
+                    f"Neispravan tip za {key}: očekuje se numerički niz"
+                )
             validated_value = [float(item) for item in value]
+            if any(not math.isfinite(item) for item in validated_value):
+                raise ValueError(
+                    f"Neispravna vrijednost za {key}: očekuju se konačni brojevi"
+                )
         else:
-            raise TypeError(f"Unsupported validation type for {key}: {type_}")
+            raise TypeError(f"Nepodržan tip validacije za {key}: {type_}")
 
         if key in self.PARAM_CHOICES and validated_value not in self.PARAM_CHOICES[key]:
             choices = sorted(self.PARAM_CHOICES[key], key=str)
-            raise ValueError(f"Invalid value for {key}: expected one of {choices}")
+            raise ValueError(
+                f"Neispravna vrijednost za {key}: očekuje se jedna od {choices}"
+            )
 
         return validated_value

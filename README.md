@@ -1,9 +1,10 @@
-# GT-CCS – Geothermal-assisted Carbon Capture and Storage Calculator
+# GT-CCS – proračun geotermalno potpomognutog hvatanja i skladištenja CO2
 
-**GT-CCS** is a modular Python toolkit for engineering and economic analysis of a complete CCS chain (emitter → transport → storage) with optional integration of a geothermal doublet system. The codebase is split into two loosely coupled wings:
-
-- **Engineering wing** – `engineering/` package + `examples/engineering_demo.py`: reservoir material balance, wellbore hydraulics, geothermal IPR, fluid thermodynamics and power calculations; `inputs/` contains loading and metadata, while `outputs/` contains visualization.
-- **Economics wing** – `economics/economics.py` + `domain/ccs_chain.py` + `examples/economics_demo.py`: time-series CAPEX/OPEX cash flows, CO2 tax, CCS savings, NPV.
+**GT-CCS** je modularna Python i Streamlit aplikacija za integrirani tehnički i
+ekonomski proračun lanca emiter → hvatanje → transport → utiskivanje →
+skladištenje, uz geotermalni dublet. `services/ScenarioRunner` povezuje
+inženjerske vremenske nizove s godišnjom energetskom bilancom i komponentnim
+novčanim tokom.
 
 ---
 
@@ -29,9 +30,11 @@ CCUS_cluster/
 │   ├── wellbore.py
 │   ├── mbalance.py
 │   ├── geothermal.py
-│   └── pipeline.py
-├── outputs/                    # Result visualization helpers
+│   ├── transport.py
+│   └── pipeline.py             # Kompatibilni naziv
+├── outputs/                    # Prikaz i izvoz rezultata
 │   ├── __init__.py
+│   ├── result_export.py
 │   ├── visualization.py
 │   └── legacy/                 # Historical generated results
 │       ├── bhp.json
@@ -41,7 +44,10 @@ CCUS_cluster/
 │       └── s_eff_vs_co2_stored_kr_co2.png
 ├── economics/                  # Economic calculations package
 │   ├── __init__.py
-│   └── economics.py            # Economic base class
+│   ├── economics.py            # Naslijeđeni ekonomski model
+│   ├── cost_models.py
+│   ├── cash_flow_runner.py
+│   └── price_scenarios.py
 ├── examples/                   # Runnable and legacy examples
 │   ├── __init__.py
 │   ├── engineering_demo.py
@@ -52,9 +58,12 @@ CCUS_cluster/
 │       ├── water_well_pressure.py
 │       └── co2_well_pressure.py
 ├── docs/                       # Reserved documentation package
-├── services/                   # Reserved orchestration package
+├── services/                   # Povezivanje tehničkog i ekonomskog modela
+│   ├── scenario_runner.py
+│   └── engineering_economics_adapter.py
 ├── pages/                      # Reserved Streamlit pages
-├── tests/                      # Reserved automated tests
+├── tests/                      # Automatizirani testovi
+├── app.py                      # Streamlit sučelje
 ├── README.md
 ├── requirements.txt
 ├── changelog.txt
@@ -117,7 +126,9 @@ Reads `inputs/examples/main_inputs.json`, validates every parameter (type, unit,
 | `A` | m² | Aquifer area |
 | `h_ef` | m | Effective aquifer thickness |
 | `poro` | – | Porosity |
-| `h_ref` | m | Reference depth |
+| `h_ref_co2` | m | CO2 injection-well VFP reference depth |
+| `h_ref_geothermal_production` | m | Geothermal production-well VFP reference depth |
+| `h_ref_geothermal_injection` | m | Geothermal injection-well VFP reference depth |
 | `p_ref` | bar | Initial reservoir pressure |
 | `k` | m² | Average permeability |
 | `eta` | – | ORC efficiency |
@@ -141,11 +152,20 @@ Reads `inputs/examples/main_inputs.json`, validates every parameter (type, unit,
 |---|---|
 | `_validate(data, key, type_, unit)` | Raises `ValueError` on missing key, wrong type, or unit mismatch. |
 
+Legacy scenarios that contain only `h_ref` remain supported: that shared value is
+copied to all three role-specific depths. `IOEndpoints.h_ref` remains an internal
+alias of `h_ref_co2` for the generic VFP constructor, while `ScenarioRunner`
+assigns the matching role-specific depth to every well instance.
+
 ---
 
-### `engineering/pipeline.py` – class `Pipeline(ParamMetadata)`
+### `engineering/transport.py` – class `Transport`
 
-Stub for surface pipeline pressure drop calculation. Currently holds the `m_dot` parameter and a `calculate_pressure_drop` placeholder (not yet implemented).
+Konfiguracija zasebne transportne dionice: način transporta, godišnja količina
+CO2, udaljenost, CAPEX/OPEX te geometrija i koljena cjevovoda. Modul
+`engineering/pipeline.py` zadržava kompatibilni naziv `Pipeline`. Izračun
+horizontalnog pada tlaka namjerno nije uveden prije potvrde jednadžbe trenja i
+koeficijenata lokalnih gubitaka.
 
 ---
 
@@ -153,7 +173,9 @@ Stub for surface pipeline pressure drop calculation. Currently holds the `m_dot`
 
 Vertical Flow Performance class. Calculates the pressure profile along a CO2 injection or geothermal production/injection well using a step-wise integration of gravitational and frictional pressure gradients.
 
-**Parameters:** `rw`, `re`, `h_ef`, `h_ref`, `k`, `m_dot`
+**Parameters:** `rw`, `re`, `h_ef`, `h_ref`, `k`, `m_dot`. The generic
+`h_ref` attribute is set per instance from the corresponding role-specific
+scenario input before the pressure profile is calculated.
 
 | Method | Description |
 |---|---|
@@ -211,6 +233,20 @@ Calculates mechanical power demand for ORC turbine output, pump, and multi-stage
 | `calculate_ORC_power(m_dot, p_in, p_out, t_in, t_out, fluid, eta)` | Simple enthalpy-drop ORC model: `P = (h_in − h_out) × m_dot × η`. Returns power in kW; clipped to 0 if negative. |
 | `calculate_pump_power(fluid, m_dot, p_in_bar, p_out_bar, t_C, eta)` | Pump power from `P = Q·ΔP / η`. Returns kW; returns 0 if inlet pressure already exceeds outlet. |
 | `calculate_compression_power(fluid, p_in_bar, p_out_bar, t_in_C, m_dot, N_stages, eta_is, eta_p)` | Multi-stage intercooled compression using real-gas isentropic work (`Z`, `cp/cv` from CoolProp). Automatically switches to liquid pumping if the critical temperature is exceeded during compression (CO2 dense phase injection). Returns total power in kW. |
+
+---
+
+### `outputs/result_export.py`
+
+Pretvara mapiranje koje vraća `ScenarioRunner.run()` u strogi JSON ili Excel
+radnu knjigu. Oba formata sadrže aktivne ulaze, tehničke i ekonomske tablice,
+KPI-je, napomene scenarija i konfiguraciju transporta. Izvoz ne pokreće niti
+mijenja proračunske jednadžbe.
+
+| Funkcija | Rezultat |
+|---|---|
+| `build_results_json(results, active_inputs)` | UTF-8 JSON sa shemom `1.0`; `NaN` i beskonačne vrijednosti zapisuju se kao `null`. |
+| `build_results_excel(results, active_inputs)` | XLSX u memoriji s listovima `inputs`, `summary` i svim DataFrame rezultatima. |
 
 ---
 
@@ -362,85 +398,115 @@ Standalone proof-of-concept for the Lauwerier thermal breakthrough model, later 
 
 ## Quick start
 
-```bash
-# Create and activate virtual environment
-python -m venv .venv
-.\.venv\Scripts\activate        # Windows
-# source .venv/bin/activate     # Linux/macOS
+```powershell
+# Lokalno razvojno okruženje projekta
+& "C:/webdev/CCUS_cluster/CCUS_cluster/.gt_ccs_venv/Scripts/Activate.ps1"
 
-# Install dependencies
-pip install numpy pandas coolprop scipy matplotlib openpyxl
+# Pokretanje integrirane aplikacije
+python -m streamlit run app.py
 
-# Run engineering simulation
-python -m examples.engineering_demo
-
-# Run economic example
-python -m examples.economics_demo
+# Provjera testova
+python -m unittest discover -s tests -p "test_*.py" -v
 ```
 
 ---
 
-## TODO – Connecting Economics with Engineering Calculations
+## Sigurnosne kopije prije izmjene
 
-The two wings currently run independently: the engineering wing produces physical outputs (BHP, power, flow rates, temperatures), while the economics wing consumes user-supplied CAPEX/OPEX scalars. The steps below propose a concrete integration path.
+Prije prve izmjene datoteka napravi se lokalni snapshot eksplicitno navedenih
+datoteka. Skripta odbija direktorije, wildcard izraze i putanje izvan projekta,
+ne prepisuje postojeći snapshot te nakon kopiranja provjerava SHA-256 hash.
 
-### Step 1 – Derive OPEX from engineering outputs
-
-The most direct connection. `Power.calculate_compression_power` and `Power.calculate_ORC_power` already return annual energy demand in kW. Convert to yearly EUR costs using electricity prices:
-
-```python
-# In examples/engineering_demo.py (or a new integration service)
-energy_price_eur_per_kWh = 0.08
-annual_compression_cost = vfp_CO2_df['CO2 comp. P [kW]'] * 8760 * energy_price_eur_per_kWh
-annual_gt_revenue = vfp_gt_df['net power GT, kW'] * 8760 * energy_price_eur_per_kWh
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -Command `
+  "& '.\scripts\new_backup.ps1' -Source @('app.py','README.md','changelog.txt') -Reason 'Prije izmjene geotermalnog modela'"
 ```
 
-Pass these arrays directly into `Economics.set_OPEX()` instead of a flat `OPEX_per_ton` scalar.
+Snapshot se sprema u `backups/YYYYMMDD-HHMMSSfff/`, uz `manifest.json` s
+razlogom, vremenom, veličinom i hashom svake datoteke. Nakon izmjene njezin se
+sažetak upisuje u `changelog.txt`, po mogućnosti uz identifikator snapshot
+direktorija. Povrat se radi samo za izričito odabranu datoteku nakon provjere
+hasha iz manifesta; nema automatskog skupnog povrata ni brisanja starih kopija.
 
-### Step 2 – Time-align engineering and economic arrays
+Direktorij je lokalni rollback snapshot i zato je pravilom `/backups/` isključen
+iz Gita. Ne štiti od gubitka cijelog diska ili workspacea; za to je potrebna i
+vanjska sigurnosna kopija.
 
-Engineering outputs are indexed in fractional years (from material balance time steps); economic arrays are indexed in integer calendar years. Write a helper that resamples or interpolates engineering DataFrames to annual resolution before passing them to `domain.ccs_chain` objects.
+---
 
-### Step 3 – Make `Storage` aware of injection rate from material balance
+## Integracija tehničkog i ekonomskog modela
 
-`Storage.injection_rate` currently accepts a constant or a manually supplied list. Feed it directly from `mbal_df['m_CO2, Mt']` differentiated to annual increments, so economic calculations reflect actual injection ramp-up.
+`services/ScenarioRunner` sada vodi jedan integrirani izračun. Fizikalni izlazi
+pretvaraju se u godišnju tehničku tablicu, a zatim u odvojene i provjerljive
+stavke novčanog toka.
 
-### Step 4 – Introduce a `ScenarioRunner` orchestrator class
+- `emitter_emissions_annual` je autoritativna godišnja količina CO2; izvedene
+  količine hvatanja, transporta, utiskivanja i skladištenja moraju joj biti
+  jednake u aktivnoj godini.
+- Kalendar razlikuje početak ulaganja, početak i kraj utiskivanja, kraj rada
+  geotermalnog sustava te kraj monitoringa.
+- Snage ORC-a, geotermalne pumpe i kompresora integriraju se trapeznim pravilom
+  u MWh uz 8.766 sati po godini.
+- Električna bilanca je `ORC − geotermalna pumpa − kompresor CO2`; višak se
+  prodaje, a manjak kupuje.
+- Ako potencijalni proizvodni GT WHP nije viši od izlaznog ORC tlaka `p_out`,
+  cijeli geotermalni krug je isključen: proizvodni i reinjekcijski protok,
+  pumpna snaga, ORC snaga i neto GT snaga jednaki su nuli.
+- `p_out` je obvezan JSON parametar i uređiv je na vrhu Streamlit kartice
+  `Bušotine i geotermija`, zajedno s ostalim ORC izlaznim uvjetima.
+- Proizvodni geotermalni protok i dalje se računa uz korisnički zadani fiksni
+  drawdown `bhp_dp`; ciljani proizvodni WHP nije uveden kao rubni uvjet.
+- Za svaki raspoloživi vremenski moment rezultat prikazuje prosječnu aksijalnu
+  brzinu geotermalne vode u proizvodnoj i utisnoj bušotini. Brzina je duljinski
+  prosjek apsolutnih lokalnih brzina kroz jednake segmente VFP modela, a za
+  isključeni geotermalni krug iznosi nula.
+- Novčani tok zasebno prikazuje CAPEX i OPEX hvatanja, transporta, kompresora,
+  skladištenja i geotermalnog sustava, monitoring, električnu energiju i
+  vrijednost CO2.
+- Troškovi se prvo uvećavaju zadanom inflacijom, a nominalni novčani tok zatim
+  diskontira. Rezultati uključuju godišnji PV, kumulativni NPV, IRR te PV
+  prihoda i troškova.
+- U istom godišnjem prikazu uspoređuje se CCS scenarij s protuscenarijem bez
+  CCS-a, čiji je rashod `−emisije × godišnja cijena CO2`.
+- Godišnji novčani tok prikazuje se stupcima, kumulativni nediskontirani tok i
+  NPV linijama, a prihod prodaje i inflacijski prilagođen rashod kupnje
+  električne energije zasebnim provjerljivim komponentama.
+- Višeserijski godišnji stupci prikazuju se grupirano, jedan uz drugi, bez
+  zbrajanja. Legende koriste kratke oznake, a zaseban nominalni troškovni
+  dijagram uključuje hvatanje, transport, kompresor, skladište, geotermiju,
+  kupnju električne energije i monitoring nakon inflacijske prilagodbe.
+- Svaki proračun ispisuje godišnju količinu utisnutog CO2, krajnji godišnji BHP
+  CO2 utisne bušotine i vremenski ponderirani prosječni DSA tlak u konzolu i
+  ASCII datoteku `calculation.log`. Količina se ispisuje kao cijeli broj, a oba
+  tlaka na jednu decimalu. `result_active_year_CO2_quantity_constant` je
+  provjera izračunatog godišnjeg niza, a ne ulaz modela.
+- Zajednički rezultat tlakova prikazuje DSA tlak te BHP i WHP CO2 utisne,
+  geotermalne proizvodne i geotermalne utisne bušotine na jednom vremenskom
+  dijagramu i u tablici. Neaktivne bušotine nemaju prikazan tekući BHP/WHP.
+- Godišnje relativne propusnosti vode i CO2 uzorkuju se na kraju kalendarske
+  godine. Nakon utiskivanja drži se završno drenažno stanje jer imbibicija i
+  histereza nisu uključene u postojeći model.
+- Nazivna snaga kompresora jednaka je najvećoj izračunatoj potrebnoj snazi.
+- Utiskivanje završava na najranijem od planiranog kraja, nazivnog kapaciteta
+  skladišta i dopuštenog tlaka frakturiranja; rezultat sadrži razlog.
+- U Streamlitu promjena razdoblja utiskivanja ili godišnje količine po potrebi
+  automatski povećava `storage_capacity` u aktivnom JSON-u kako bi odabrana
+  posljednja godina ostala ostvariva. Naknadno ručno smanjenje kapaciteta ili
+  izravno učitan JSON s manjim kapacitetom i dalje namjerno skraćuje utiskivanje.
+- Raspoloživosti kompresora, ORC-a i triju bušotina evidentirane su u ulazima;
+  pripadni raspoloživi sati izvode se kao `8766 × raspoloživost`.
+- Kartica `Tablice` omogućuje preuzimanje potpunog rezultata u JSON i Excel
+  formatu, zajedno s aktivnim ulazima potrebnima za reprodukciju scenarija.
 
-Create `services/ScenarioRunner`, which owns both an `IOEndpoints` instance and the three `domain.ccs_chain` objects, and exposes a single `run()` method:
+Bazna godina PV-a je početna godina ekonomike. IRR nema zaseban ulaz stope,
+nego se izvodi iz nominalnog godišnjeg novčanog toka; pri više matematičkih
+korijena rezultat tu dvosmislenost izričito označava. Ulazi za horizontalni
+cjevovod postoje u klasi `engineering.Transport`, ali pad tlaka još se ne računa
+dok se ne potvrde jednadžba trenja i koeficijenti lokalnih gubitaka za koljena.
 
-```python
-class ScenarioRunner:
-    def __init__(self, json_path, economic_params):
-        self.inputs = IOEndpoints(json_path)
-        self.emitter = Emitter(...)
-        self.transport = Transport(...)
-        self.storage = Storage(...)
-
-    def run(self):
-        # 1. Engineering simulation
-        # 2. Resample to annual
-        # 3. Inject costs and revenues into economics objects
-        # 4. Compute NPV
-        # 5. Return combined results DataFrame
-```
-
-This makes `examples/economics_demo.py` a single call and enables parameter sweeps.
-
-### Step 5 – Add geothermal revenue to the NPV calculation
-
-Net geothermal power (`vfp_gt_df['net power GT, kW']`) represents a revenue stream that currently does not appear in the economic model. Introduce a `GTRevenue` subclass (or extend `Emitter`) that adds `annual_gt_revenue` as a negative OPEX (i.e. cost offset) in `_calc_CCS_savings`.
-
-### Step 6 – Sensitivity / scenario analysis
-
-Once steps 1–5 are in place, it becomes straightforward to run Monte Carlo or parameter sweeps over:
-- CO2 price scenarios (already supported: pessimistic / conservative / optimistic)
-- Electricity price
-- ORC efficiency `eta`
-- Reservoir permeability `k` and storage efficiency `E_eff`
-- CAPEX uncertainty (±20 %)
-
-Collect NPV distributions across scenarios and plot them using the existing `Visualization` class or a new dedicated method.
+Raspoloživost još ne mijenja on-stream protok ni energiju. Za očuvanje jednake
+godišnje mase CO2 pri raspoloživosti manjoj od jedan treba zasebno potvrditi
+način povećanja protoka tijekom radnih sati i zajednički raspored opreme.
 
 ---
 
@@ -454,3 +520,4 @@ Collect NPV distributions across scenarios and plot them using the existing `Vis
 | `CoolProp` | Thermophysical fluid properties |
 | `matplotlib` | Visualisation |
 | `openpyxl` | Excel read/write |
+| `streamlit` | Web korisničko sučelje |

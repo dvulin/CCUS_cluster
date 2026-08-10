@@ -6,5 +6,14 @@ from .wellbore import VFP
 from .mbalance import MaterialBalance
 from .geothermal import Geothermal
 from .pipeline import Pipeline
+from .transport import Transport
 
-__all__ = ["FluidProperties", "Power", "VFP", "MaterialBalance", "Geothermal", "Pipeline"]
+__all__ = [
+    "FluidProperties",
+    "Power",
+    "VFP",
+    "MaterialBalance",
+    "Geothermal",
+    "Pipeline",
+    "Transport",
+]

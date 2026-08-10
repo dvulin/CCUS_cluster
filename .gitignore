@@ -14,9 +14,14 @@ desktop.ini
 *.webp
 *.ico 
 *.tiff
-*.tif 
+*.tif
+*.docx
+*.xlsx
 
 .gt_ccs_venv/
+
+# Local pre-edit snapshots (manifest + SHA-256)
+/backups/
 
 # C extensions
 *.so

@@ -19,7 +19,19 @@ class Power(ParamMetadata):
         'm_dot': ('kg/s', 'Maseni protok CO2'),
         't_comp_in': ('°C', 'Ulazna temperatura u kompresiju CO2'),
         'p_comp_in': ('bar',      'Ulazni tlak u kompresiju CO2'),
-        'eta': ('-', 'ORC učinkovitost (bezdimenzionalna)')
+        'eta_orc': ('-', 'ORC učinkovitost (bezdimenzionalna)'),
+        'eta_gt_injection_pump': (
+            '-',
+            'Učinkovitost pumpe utisne geotermalne bušotine',
+        ),
+        'eta_co2_compressor_isentropic': (
+            '-',
+            'Izentropska učinkovitost kompresora CO2',
+        ),
+        'eta_co2_dense_phase_pump': (
+            '-',
+            'Učinkovitost pumpe CO2 u gustoj fazi',
+        ),
 
     }
 
@@ -55,14 +67,22 @@ class Power(ParamMetadata):
             output power, kW.
 
         """
-        if eta is None: eta = self.eta
+        # The ORC cannot accept the geothermal stream when its wellhead
+        # pressure is not above the configured ORC outlet pressure.  Calling
+        # the enthalpy difference across that invalid pressure ordering can
+        # otherwise create a large, non-physical start-up power spike.
+        if p_in <= p_out or m_dot <= 0:
+            return 0.0
+
+        if eta is None:
+            eta = self.eta_orc
         h_in = self.fluid_props.get_enthalpy(fluid, p = p_in*1e5, T = t_in+273.15)
         h_out = self.fluid_props.get_enthalpy(fluid, p = p_out*1e5, T = t_out+273.15)
         P = (h_in - h_out) * m_dot * eta * 0.001    # kW
         if P<0: P=0
         return P
 
-    def calculate_pump_power(self, fluid, m_dot, p_in_bar, p_out_bar, t_C, eta=0.9):
+    def calculate_pump_power(self, fluid, m_dot, p_in_bar, p_out_bar, t_C, eta=None):
         """
         Calculates pump power for liquids.
 
@@ -77,6 +97,10 @@ class Power(ParamMetadata):
         Returns:
             float: Pump power, W
         """
+        if m_dot <= 0:
+            return 0.0
+        if eta is None:
+            eta = self.eta_gt_injection_pump
         if p_in_bar>p_out_bar:
             return 0
         T_K = t_C + 273.15
@@ -88,7 +112,7 @@ class Power(ParamMetadata):
         return power_w * 0.001  #  kW
 
     def calculate_compression_power(self, fluid='CO2', p_in_bar=None, p_out_bar=None, t_in_C=None, m_dot=None,
-                                    N_stages=5, eta_is=0.75, eta_p=0.9, print_p_sat = False):
+                                    N_stages=5, eta_is=None, eta_p=None, print_p_sat = False):
         """
         Calculates compressor power, handling compression and optional pumping if above saturation pressure.
         Adapted from CO2Injector.compress.
@@ -112,6 +136,10 @@ class Power(ParamMetadata):
             t_in_C = self.t_comp_in
         if m_dot is None:
             m_dot = self.m_dot
+        if eta_is is None:
+            eta_is = self.eta_co2_compressor_isentropic
+        if eta_p is None:
+            eta_p = self.eta_co2_dense_phase_pump
         
         if p_in_bar>p_out_bar:
                 return 0
