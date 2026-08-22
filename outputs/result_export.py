@@ -31,6 +31,8 @@ RESULT_TABLE_SHEETS = {
     "mbal_df": "storage",
     "vfp_co2_df": "co2_well",
     "vfp_gt_df": "geothermal",
+    "co2_pipeline_df": "co2_pipeline",
+    "geothermal_pipeline_df": "geothermal_pipeline",
     "well_pressure_df": "well_pressures",
     "doublet_df": "thermal_front",
     "relative_permeability_df": "relative_permeability",

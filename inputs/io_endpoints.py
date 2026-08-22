@@ -11,6 +11,7 @@ class IOEndpoints(ParamMetadata):
         'rw_co2': ('m', 'Radijus utisne CO2 bušotine'),
         'rw_geothermal_production': ('m', 'Radijus proizvodne geotermalne bušotine'),
         'rw_geothermal_injection': ('m', 'Radijus utisne geotermalne bušotine'),
+        'epsilon': ('m', 'Apsolutna hrapavost bušotinske cijevi u VFP proračunu'),
         'A': ('m^2', 'Površina akvifera'),
         'h_ef': ('m', 'Efektivna debljina akvifera'),
         'poro': ('-', 'Poroznost akvifera (bezdimenzionalna)'),
@@ -53,7 +54,64 @@ class IOEndpoints(ParamMetadata):
             'bar/m',
             'Gradijent tlaka frakturiranja pokrovnih naslaga',
         ),
-        'd_doublet': ('m', 'udaljenost proizvodne i utisne geotermalne bušotine'),
+        'd_doublet': (
+            'm',
+            'Razmak geotermalnog para i duljina površinskog transporta vode',
+        ),
+        'geothermal_pipeline_inner_diameter_m': (
+            'm',
+            'Unutarnji promjer geotermalnog cjevovoda',
+        ),
+        'geothermal_pipeline_roughness_m': (
+            'm',
+            'Apsolutna hrapavost geotermalnog cjevovoda',
+        ),
+        'geothermal_pipeline_elbows_90_count': (
+            '-',
+            'Broj koljena geotermalnog cjevovoda od 90 stupnjeva',
+        ),
+        'geothermal_pipeline_elbows_45_count': (
+            '-',
+            'Broj koljena geotermalnog cjevovoda od 45 stupnjeva',
+        ),
+        'geothermal_pipeline_elbows_30_count': (
+            '-',
+            'Broj koljena geotermalnog cjevovoda od 30 stupnjeva',
+        ),
+        'pipeline_environment_type': (
+            '-',
+            'Vanjski uvjeti cjevovoda: zrak ili tlo',
+        ),
+        'pipeline_ambient_temperature_c': (
+            '°C',
+            'Temperatura okoliša cjevovoda',
+        ),
+        'pipeline_environment_thermal_conductivity_w_m_k': (
+            'W/(m K)',
+            'Toplinska vodljivost okoliša cjevovoda',
+        ),
+        'pipeline_environment_volumetric_heat_capacity_j_m3_k': (
+            'J/(m^3 K)',
+            'Volumetrijski toplinski kapacitet okoliša cjevovoda',
+        ),
+        'pipeline_burial_depth_m': (
+            'm',
+            'Dubina osi ukopanog cjevovoda',
+        ),
+        'pipeline_external_heat_transfer_coefficient_w_m2_k': (
+            'W/(m^2 K)',
+            'Vanjski koeficijent prijelaza topline cjevovoda',
+        ),
+        'pipeline_wall_thickness_m': ('m', 'Debljina stijenke cjevovoda'),
+        'pipeline_wall_thermal_conductivity_w_m_k': (
+            'W/(m K)',
+            'Toplinska vodljivost stijenke cjevovoda',
+        ),
+        'pipeline_insulation_thickness_m': ('m', 'Debljina izolacije cjevovoda'),
+        'pipeline_insulation_thermal_conductivity_w_m_k': (
+            'W/(m K)',
+            'Toplinska vodljivost izolacije cjevovoda',
+        ),
         'bhp_dp': ('bar', 'Pad tlaka na dnu geotermalne proizvodne bušotine'),
         'p_comp_in': ('bar', 'Ulazni tlak u kompresiju CO2'),
         't_comp_in': ('°C', 'Ulazna temperatura u kompresiju CO2'),
@@ -130,6 +188,14 @@ class IOEndpoints(ParamMetadata):
         'pipeline_elbows_90_count': ('-', 'Broj koljena transportnog cjevovoda od 90 stupnjeva'),
         'pipeline_elbows_45_count': ('-', 'Broj koljena transportnog cjevovoda od 45 stupnjeva'),
         'pipeline_elbows_30_count': ('-', 'Broj koljena transportnog cjevovoda od 30 stupnjeva'),
+        'co2_pipeline_inlet_pressure_bar': (
+            'bar',
+            'Ulazni tlak CO2 u transportni cjevovod',
+        ),
+        'co2_pipeline_inlet_temperature_c': (
+            '°C',
+            'Ulazna temperatura CO2 u transportni cjevovod',
+        ),
         'transport_capex': ('EUR', 'CAPEX transportne dionice'),
         'transport_opex_per_ton': ('EUR/tCO2', 'OPEX transporta po toni CO2'),
         'transport_opex_eur_per_tkm': (
@@ -205,6 +271,12 @@ class IOEndpoints(ParamMetadata):
         'pipeline_elbows_90_count': int,
         'pipeline_elbows_45_count': int,
         'pipeline_elbows_30_count': int,
+        'co2_pipeline_inlet_pressure_bar': float,
+        'co2_pipeline_inlet_temperature_c': float,
+        'geothermal_pipeline_elbows_90_count': int,
+        'geothermal_pipeline_elbows_45_count': int,
+        'geothermal_pipeline_elbows_30_count': int,
+        'pipeline_environment_type': str,
         'storage_name': str,
         'storage_type': str,
         'co2_price_start_year': int,
@@ -226,6 +298,7 @@ class IOEndpoints(ParamMetadata):
         'emitter_capture_technology': {'PI', 'NI', 'OXY'},
         'storage_type': {'DSA', 'DHF'},
         'transport_mode': {'pipeline', 'truck', 'rail'},
+        'pipeline_environment_type': {'air', 'soil'},
     }
 
     def __init__(self, input_source):
@@ -265,6 +338,8 @@ class IOEndpoints(ParamMetadata):
             }
             for key, description in radius_descriptions.items():
                 data.setdefault(key, [legacy_radius, 'm', description])
+
+        self._populate_pipeline_defaults(data)
         
         # Engineering parameters remain required for backward-compatible runs.
         for param in self.REQUIRED_PARAMETERS:
@@ -315,6 +390,62 @@ class IOEndpoints(ParamMetadata):
                 8766.0 * self.geothermal_injection_well_availability
             ),
         }
+
+    def _populate_pipeline_defaults(self, data):
+        """Migrate scenarios created before the thermo-hydraulic pipeline API."""
+
+        # Privremena razvojna shema imala je zasebnu GT duljinu. Jedini
+        # autoritativni razmak proizvodne i utisne bušotine sada je d_doublet.
+        data.pop('geothermal_pipeline_distance_m', None)
+
+        def existing_value(key, fallback):
+            entry = data.get(key)
+            if isinstance(entry, list) and entry:
+                return entry[0]
+            return fallback
+
+        default_values = {
+            'geothermal_pipeline_inner_diameter_m': existing_value(
+                'pipeline_inner_diameter_m', 0.30
+            ),
+            'geothermal_pipeline_roughness_m': existing_value(
+                'pipeline_roughness_m', 0.000045
+            ),
+            'geothermal_pipeline_elbows_90_count': existing_value(
+                'pipeline_elbows_90_count', 0
+            ),
+            'geothermal_pipeline_elbows_45_count': existing_value(
+                'pipeline_elbows_45_count', 0
+            ),
+            'geothermal_pipeline_elbows_30_count': existing_value(
+                'pipeline_elbows_30_count', 0
+            ),
+            'pipeline_environment_type': 'soil',
+            'pipeline_ambient_temperature_c': 12.0,
+            'pipeline_environment_thermal_conductivity_w_m_k': 1.5,
+            'pipeline_environment_volumetric_heat_capacity_j_m3_k': 2_000_000.0,
+            'pipeline_burial_depth_m': 1.0,
+            'pipeline_external_heat_transfer_coefficient_w_m2_k': 10.0,
+            'pipeline_wall_thickness_m': 0.01,
+            'pipeline_wall_thermal_conductivity_w_m_k': 45.0,
+            'pipeline_insulation_thickness_m': 0.05,
+            'pipeline_insulation_thermal_conductivity_w_m_k': 0.035,
+        }
+        for key, value in default_values.items():
+            unit, description = self.PARAM_METADATA[key]
+            data.setdefault(key, [value, unit, description])
+
+        transport_mode = existing_value('transport_mode', None)
+        if transport_mode == 'pipeline':
+            for key, value in (
+                ('co2_pipeline_inlet_pressure_bar', 150.0),
+                (
+                    'co2_pipeline_inlet_temperature_c',
+                    existing_value('t_comp_in', 20.0),
+                ),
+            ):
+                unit, description = self.PARAM_METADATA[key]
+                data.setdefault(key, [value, unit, description])
 
     def _synchronize_co2_quantities(self, data):
         """Validate and normalize all aliases of the annual CO2 quantity."""
@@ -474,6 +605,16 @@ class IOEndpoints(ParamMetadata):
         ):
             if getattr(self, key) <= 0:
                 raise ValueError(f'{key} mora biti veći od nule')
+        minimum_well_diameter = 2.0 * min(
+            self.rw_co2,
+            self.rw_geothermal_production,
+            self.rw_geothermal_injection,
+        )
+        if not 0.0 <= self.epsilon < minimum_well_diameter:
+            raise ValueError(
+                'epsilon mora biti nenegativan i manji od najmanjeg promjera '
+                'bušotinske cijevi'
+            )
         geomechanical_pressure_limit = (
             self.fracture_pressure_gradient * self.h_top
         )
@@ -508,6 +649,12 @@ class IOEndpoints(ParamMetadata):
             'pipeline_elbows_90_count',
             'pipeline_elbows_45_count',
             'pipeline_elbows_30_count',
+            'geothermal_pipeline_roughness_m',
+            'geothermal_pipeline_elbows_90_count',
+            'geothermal_pipeline_elbows_45_count',
+            'geothermal_pipeline_elbows_30_count',
+            'pipeline_burial_depth_m',
+            'pipeline_insulation_thickness_m',
         )
         for key in non_negative_parameters:
             value = getattr(self, key)
@@ -520,6 +667,8 @@ class IOEndpoints(ParamMetadata):
             'pipeline_elbows_90_count',
             'pipeline_elbows_45_count',
             'pipeline_elbows_30_count',
+            'co2_pipeline_inlet_pressure_bar',
+            'co2_pipeline_inlet_temperature_c',
         )
         if self.transport_mode == 'pipeline':
             required_pipeline_parameters = (
@@ -556,6 +705,71 @@ class IOEndpoints(ParamMetadata):
                 'pipeline_roughness_m mora biti manji od '
                 'pipeline_inner_diameter_m'
             )
+
+        if self.d_doublet <= 0:
+            raise ValueError('Razmak geotermalnog para mora biti veći od nule')
+        if self.geothermal_pipeline_inner_diameter_m <= 0:
+            raise ValueError(
+                'geothermal_pipeline_inner_diameter_m mora biti veći od nule'
+            )
+        if (
+            self.geothermal_pipeline_roughness_m
+            >= self.geothermal_pipeline_inner_diameter_m
+        ):
+            raise ValueError(
+                'geothermal_pipeline_roughness_m mora biti manji od '
+                'geothermal_pipeline_inner_diameter_m'
+            )
+
+        strictly_positive_thermal_parameters = (
+            'pipeline_environment_thermal_conductivity_w_m_k',
+            'pipeline_environment_volumetric_heat_capacity_j_m3_k',
+            'pipeline_external_heat_transfer_coefficient_w_m2_k',
+            'pipeline_wall_thickness_m',
+            'pipeline_wall_thermal_conductivity_w_m_k',
+            'pipeline_insulation_thermal_conductivity_w_m_k',
+        )
+        for key in strictly_positive_thermal_parameters:
+            if getattr(self, key) <= 0:
+                raise ValueError(f'{key} mora biti veći od nule')
+
+        if self.pipeline_ambient_temperature_c <= -273.15:
+            raise ValueError(
+                'pipeline_ambient_temperature_c mora biti veća od -273,15 °C'
+            )
+        if (
+            self.co2_pipeline_inlet_temperature_c is not None
+            and self.co2_pipeline_inlet_temperature_c <= -273.15
+        ):
+            raise ValueError(
+                'co2_pipeline_inlet_temperature_c mora biti veća od -273,15 °C'
+            )
+        if (
+            self.co2_pipeline_inlet_pressure_bar is not None
+            and self.co2_pipeline_inlet_pressure_bar <= 0
+        ):
+            raise ValueError(
+                'co2_pipeline_inlet_pressure_bar mora biti veći od nule'
+            )
+
+        if self.pipeline_environment_type == 'soil':
+            outside_radii = [
+                self.geothermal_pipeline_inner_diameter_m / 2.0
+                + self.pipeline_wall_thickness_m
+                + self.pipeline_insulation_thickness_m
+            ]
+            if self.pipeline_inner_diameter_m is not None:
+                outside_radii.append(
+                    self.pipeline_inner_diameter_m / 2.0
+                    + self.pipeline_wall_thickness_m
+                    + self.pipeline_insulation_thickness_m
+                )
+            minimum_burial_depth = max(outside_radii)
+            if self.pipeline_burial_depth_m <= minimum_burial_depth:
+                raise ValueError(
+                    'pipeline_burial_depth_m mora biti veći od vanjskog '
+                    'radijusa cjevovoda za okoliš tipa soil'
+                )
     
     def _validate(self, data, key, type_, unit):
         """Validate input parameter."""

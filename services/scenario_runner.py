@@ -11,8 +11,8 @@ from engineering import (
     FluidProperties,
     Geothermal,
     MaterialBalance,
+    Pipeline,
     Power,
-    Transport,
     VFP,
 )
 from inputs import IOEndpoints
@@ -22,6 +22,9 @@ from .engineering_economics_adapter import build_annual_engineering_ledger
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_INPUT_PATH = PROJECT_ROOT / "inputs" / "examples" / "main_inputs.json"
 CALCULATION_LOG_PATH = PROJECT_ROOT / "calculation.log"
+GT_TRANSPORT_MINIMUM_OUTLET_PRESSURE_BAR = 1.01325
+GT_TRANSPORT_OUTLET_PRESSURE_MARGIN_BAR = 1.0
+GT_TRANSPORT_MAX_RECALCULATIONS = 10
 
 
 def _clip_time_series(frame, time_column, end_elapsed_year):
@@ -271,12 +274,77 @@ def _annual_relative_permeability(
     )
 
 
+def _calculate_geothermal_transport(
+    transport,
+    *,
+    inlet_pressure_bar,
+    inlet_temperature_c,
+    mass_flow_kg_s,
+    length_m,
+    inner_diameter_m,
+    roughness_m,
+    elbow_counts,
+    nsteps=25,
+):
+    """Calculate the GT surface line and enforce its outlet pressure floor.
+
+    The first calculation starts at the configured ORC outlet pressure. If
+    the resulting outlet pressure is below atmospheric pressure, the inlet is
+    corrected exactly by the confirmed project rule and the line is solved
+    again. Repetition only protects against the small pressure dependence of
+    local water properties; one correction is normally sufficient.
+    """
+
+    initial_inlet_pressure_bar = float(inlet_pressure_bar)
+    effective_inlet_pressure_bar = initial_inlet_pressure_bar
+    initial_outlet_pressure_bar = None
+
+    for recalculations in range(GT_TRANSPORT_MAX_RECALCULATIONS + 1):
+        result = transport.calculate_outlet_conditions(
+            fluid="H2O",
+            inlet_pressure_bar=effective_inlet_pressure_bar,
+            inlet_temperature_c=inlet_temperature_c,
+            mass_flow_kg_s=mass_flow_kg_s,
+            length_m=length_m,
+            inner_diameter_m=inner_diameter_m,
+            roughness_m=roughness_m,
+            elbow_counts=elbow_counts,
+            nsteps=nsteps,
+            return_diagnostics=True,
+        )
+        outlet_pressure_bar = float(result["outlet_pressure_bar"])
+        if initial_outlet_pressure_bar is None:
+            initial_outlet_pressure_bar = outlet_pressure_bar
+        if outlet_pressure_bar >= GT_TRANSPORT_MINIMUM_OUTLET_PRESSURE_BAR:
+            return {
+                "result": result,
+                "initial_inlet_pressure_bar": initial_inlet_pressure_bar,
+                "initial_outlet_pressure_bar": initial_outlet_pressure_bar,
+                "effective_inlet_pressure_bar": effective_inlet_pressure_bar,
+                "pressure_correction_applied": recalculations > 0,
+                "recalculations": recalculations,
+            }
+
+        effective_inlet_pressure_bar = effective_inlet_pressure_bar - (
+            outlet_pressure_bar
+            - GT_TRANSPORT_MINIMUM_OUTLET_PRESSURE_BAR
+            - GT_TRANSPORT_OUTLET_PRESSURE_MARGIN_BAR
+        )
+
+    raise RuntimeError(
+        "Korekcija ulaznog tlaka površinskog GT transporta nije "
+        f"dosegnula {GT_TRANSPORT_MINIMUM_OUTLET_PRESSURE_BAR:.5f} bar "
+        f"nakon {GT_TRANSPORT_MAX_RECALCULATIONS} ponavljanja."
+    )
+
+
 def _write_calculation_log(
     diagnostics,
     *,
     planned_injection_end_year,
     actual_injection_end_year,
     stop_reason,
+    additional_notes=None,
 ):
     """Print and persist an ASCII annual CO2 injection/BHP diagnostic table."""
     active_quantities = diagnostics.loc[
@@ -321,6 +389,14 @@ def _write_calculation_log(
             f"injection_stop_reason = {stop_reason or 'planned end'}",
         ]
     )
+    if additional_notes:
+        lines.extend(
+            [
+                "",
+                "GEOTHERMAL TRANSPORT PRESSURE NOTES",
+                *[str(note) for note in additional_notes],
+            ]
+        )
     report = "\n".join(lines) + "\n"
     report = unicodedata.normalize("NFKD", report).encode(
         "ascii", errors="ignore"
@@ -355,7 +431,116 @@ class ScenarioRunner:
         """Execute the active engineering scenario and return its results."""
         inputs = IOEndpoints(self.input_source)
         fluid_props = FluidProperties()
-        transport = Transport(inputs)
+        transport = Pipeline(inputs, fluid_props)
+
+        pipeline_result_columns = [
+            "Fluid",
+            "Calculation basis",
+            "Mass flow [kg/s]",
+            "Length [m]",
+            "Inner diameter [m]",
+            "Roughness [m]",
+            "Total elbow loss coefficient [-]",
+            "Environment type",
+            "Inlet pressure [bar]",
+            "Outlet pressure [bar]",
+            "Pressure drop [bar]",
+            "Friction pressure drop [bar]",
+            "Minor pressure drop [bar]",
+            "Inlet temperature [°C]",
+            "Outlet temperature [°C]",
+            "Average velocity [m/s]",
+            "Linear heat transfer coefficient [W/(m K)]",
+            "Environment thermal diffusivity [m2/s]",
+            "Numerical segments used [-]",
+            "Convergence check segments [-]",
+            "Pressure error estimate [bar]",
+            "Temperature error estimate [°C]",
+        ]
+        if inputs.transport_mode == "pipeline":
+            co2_pipeline_result = transport.calculate_outlet_conditions(
+                fluid="CO2",
+                inlet_pressure_bar=inputs.co2_pipeline_inlet_pressure_bar,
+                inlet_temperature_c=inputs.co2_pipeline_inlet_temperature_c,
+                mass_flow_kg_s=inputs.m_dot,
+                length_m=inputs.transport_distance_km * 1000.0,
+                nsteps=50,
+                return_diagnostics=True,
+            )
+            co2_pipeline_diagnostics = co2_pipeline_result["diagnostics"]
+            co2_pipeline_df = pd.DataFrame(
+                [
+                    {
+                        "Fluid": "CO2",
+                        "Calculation basis": "nominal design flow",
+                        "Mass flow [kg/s]": inputs.m_dot,
+                        "Length [m]": inputs.transport_distance_km * 1000.0,
+                        "Inner diameter [m]": inputs.pipeline_inner_diameter_m,
+                        "Roughness [m]": inputs.pipeline_roughness_m,
+                        "Total elbow loss coefficient [-]": (
+                            co2_pipeline_diagnostics[
+                                "total_elbow_loss_coefficient"
+                            ]
+                        ),
+                        "Environment type": inputs.pipeline_environment_type,
+                        "Inlet pressure [bar]": (
+                            inputs.co2_pipeline_inlet_pressure_bar
+                        ),
+                        "Outlet pressure [bar]": co2_pipeline_result[
+                            "outlet_pressure_bar"
+                        ],
+                        "Pressure drop [bar]": co2_pipeline_result[
+                            "pressure_drop_bar"
+                        ],
+                        "Friction pressure drop [bar]": co2_pipeline_result[
+                            "friction_pressure_drop_bar"
+                        ],
+                        "Minor pressure drop [bar]": co2_pipeline_result[
+                            "minor_pressure_drop_bar"
+                        ],
+                        "Inlet temperature [°C]": (
+                            inputs.co2_pipeline_inlet_temperature_c
+                        ),
+                        "Outlet temperature [°C]": co2_pipeline_result[
+                            "outlet_temperature_c"
+                        ],
+                        "Average velocity [m/s]": co2_pipeline_diagnostics[
+                            "average_velocity_m_s"
+                        ],
+                        "Linear heat transfer coefficient [W/(m K)]": (
+                            co2_pipeline_diagnostics[
+                                "linear_heat_transfer_coefficient_w_m_k"
+                            ]
+                        ),
+                        "Environment thermal diffusivity [m2/s]": (
+                            co2_pipeline_diagnostics[
+                                "environment_thermal_diffusivity_m2_s"
+                            ]
+                        ),
+                        "Numerical segments used [-]": (
+                            co2_pipeline_diagnostics["nsteps_used"]
+                        ),
+                        "Convergence check segments [-]": (
+                            co2_pipeline_diagnostics[
+                                "convergence_check_nsteps"
+                            ]
+                        ),
+                        "Pressure error estimate [bar]": (
+                            co2_pipeline_diagnostics[
+                                "estimated_pressure_discretization_error_bar"
+                            ]
+                        ),
+                        "Temperature error estimate [°C]": (
+                            co2_pipeline_diagnostics[
+                                "estimated_temperature_discretization_error_c"
+                            ]
+                        ),
+                    }
+                ],
+                columns=pipeline_result_columns,
+            )
+        else:
+            co2_pipeline_df = pd.DataFrame(columns=pipeline_result_columns)
 
         mbalance = MaterialBalance(inputs, fluid_props)
         mbalance.rw = inputs.rw_co2
@@ -412,33 +597,42 @@ class ScenarioRunner:
         co2_injection_well.rw = inputs.rw_co2
         co2_injection_well.h_ref = inputs.h_ref_co2
         co2_injection_power = Power(inputs, fluid_props)
-        co2_vfp_temperature_c = 20.0
+        co2_vfp_temperature_c = float(inputs.t_comp_in)
+        surface_formation_temperature_c = 20.0
         co2_whp_values = []
         co2_power_values = []
         co2_bhp_density_values = []
         co2_whp_density_values = []
+        co2_bhp_temperature_values = []
+        co2_whp_temperature_values = []
 
         for bhp in vfp_co2_df["BHP [bar]"].to_numpy():
-            co2_whp_values.append(
+            co2_whp, co2_diagnostics = (
                 co2_injection_well.calculate_dp(
                     fluid="CO2",
                     bhp=bhp,
                     T_C=co2_vfp_temperature_c,
+                    epsilon=inputs.epsilon,
+                    return_diagnostics=True,
+                    flow_direction="injection",
+                    formation_surface_temperature_C=(
+                        surface_formation_temperature_c
+                    ),
+                    formation_bottomhole_temperature_C=inputs.t,
                 )
             )
+            co2_whp_values.append(co2_whp)
             co2_bhp_density_values.append(
-                fluid_props.get_density(
-                    "CO2",
-                    float(bhp) * 1e5,
-                    co2_vfp_temperature_c + 273.15,
-                )
+                co2_diagnostics["bottomhole_density_kg_m3"]
             )
             co2_whp_density_values.append(
-                fluid_props.get_density(
-                    "CO2",
-                    float(co2_whp_values[-1]) * 1e5,
-                    co2_vfp_temperature_c + 273.15,
-                )
+                co2_diagnostics["wellhead_density_kg_m3"]
+            )
+            co2_bhp_temperature_values.append(
+                co2_diagnostics["bottomhole_temperature_c"]
+            )
+            co2_whp_temperature_values.append(
+                co2_diagnostics["wellhead_temperature_c"]
             )
             co2_power_values.append(
                 co2_injection_power.calculate_compression_power(
@@ -450,6 +644,12 @@ class ScenarioRunner:
         vfp_co2_df["CO2 comp. P [kW]"] = co2_power_values
         vfp_co2_df["CO2 VFP density at BHP [kg/m3]"] = co2_bhp_density_values
         vfp_co2_df["CO2 VFP density at WHP [kg/m3]"] = co2_whp_density_values
+        vfp_co2_df["CO2 VFP temperature at BHP [°C]"] = (
+            co2_bhp_temperature_values
+        )
+        vfp_co2_df["CO2 VFP temperature at WHP [°C]"] = (
+            co2_whp_temperature_values
+        )
 
         planned_injection_duration = float(
             inputs.ccs_injection_end_year
@@ -556,11 +756,11 @@ class ScenarioRunner:
             geothermal_density.append(density)
 
         # Determine whether the candidate geothermal flow can reach the ORC
-        # inlet. If its calculated flowing WHP is not above the configured
-        # ORC outlet pressure, the complete GT loop is off: no production, no
-        # reinjection and no pump/ORC power. Re-evaluate after the thermal
-        # profile changes so a later temperature decline cannot leave a pump
-        # running while ORC power is zero.
+        # inlet. If its calculated flowing WHP is not above the effective ORC
+        # outlet pressure required by the surface transport line, the complete
+        # GT loop is off: no production, reinjection, pump or ORC power.
+        # Re-evaluate after the thermal profile changes so a later temperature
+        # decline cannot leave a pump running while ORC power is zero.
         geothermal_operability_well = VFP(inputs, fluid_props)
         geothermal_operability_well.rw = inputs.rw_geothermal_production
         geothermal_operability_well.h_ref = inputs.h_ref_geothermal_production
@@ -572,6 +772,33 @@ class ScenarioRunner:
         )
         potential_geothermal_injection_bhp = np.asarray(
             geothermal_injection_bhp, dtype=float
+        )
+        geothermal_elbow_counts = {
+            90: inputs.geothermal_pipeline_elbows_90_count,
+            45: inputs.geothermal_pipeline_elbows_45_count,
+            30: inputs.geothermal_pipeline_elbows_30_count,
+        }
+        potential_geothermal_transport_states = [
+            _calculate_geothermal_transport(
+                transport,
+                inlet_pressure_bar=inputs.p_out,
+                inlet_temperature_c=inputs.t_out,
+                mass_flow_kg_s=mass_flow,
+                length_m=inputs.d_doublet,
+                inner_diameter_m=(
+                    inputs.geothermal_pipeline_inner_diameter_m
+                ),
+                roughness_m=inputs.geothermal_pipeline_roughness_m,
+                elbow_counts=geothermal_elbow_counts,
+            )
+            for mass_flow in potential_geothermal_mass_flow
+        ]
+        potential_gt_transport_inlet_pressure = np.asarray(
+            [
+                state["effective_inlet_pressure_bar"]
+                for state in potential_geothermal_transport_states
+            ],
+            dtype=float,
         )
         geothermal_operating = np.ones(
             potential_geothermal_mass_flow.size, dtype=bool
@@ -610,6 +837,14 @@ class ScenarioRunner:
                         bhp=geothermal_production_bhp[index],
                         m_dot=potential_geothermal_mass_flow[index],
                         T_C=production_temperature[index],
+                        epsilon=inputs.epsilon,
+                        flow_direction="production",
+                        formation_surface_temperature_C=(
+                            surface_formation_temperature_c
+                        ),
+                        formation_bottomhole_temperature_C=(
+                            production_temperature[index]
+                        ),
                     )
                     for index in range(
                         potential_geothermal_mass_flow.size
@@ -622,7 +857,8 @@ class ScenarioRunner:
             # remains off for this scenario evaluation. Later time points are
             # still evaluated independently and may operate as pressure rises.
             next_operating = geothermal_operating & (
-                potential_production_whp > float(inputs.p_out)
+                potential_production_whp
+                > potential_gt_transport_inlet_pressure
             )
             if np.array_equal(next_operating, geothermal_operating):
                 break
@@ -643,8 +879,18 @@ class ScenarioRunner:
         injection_whp = []
         production_average_velocity = []
         injection_average_velocity = []
+        production_wellhead_temperature = []
+        injection_bottomhole_temperature = []
         orc_power = []
         pump_power = []
+        gt_transport_initial_outlet_pressure = []
+        gt_transport_inlet_pressure = []
+        gt_transport_outlet_pressure = []
+        gt_transport_outlet_temperature = []
+        gt_transport_pressure_corrected = []
+        gt_transport_recalculations = []
+        geothermal_transport_pressure_notes = []
+        geothermal_transport_corrected_timepoints = 0
 
         for index, injection_bhp in enumerate(geothermal_injection_bhp):
             if not geothermal_operating[index]:
@@ -652,9 +898,70 @@ class ScenarioRunner:
                 injection_whp.append(np.nan)
                 production_average_velocity.append(0.0)
                 injection_average_velocity.append(0.0)
+                production_wellhead_temperature.append(np.nan)
+                injection_bottomhole_temperature.append(np.nan)
                 pump_power.append(0.0)
                 orc_power.append(0.0)
+                gt_transport_initial_outlet_pressure.append(np.nan)
+                gt_transport_inlet_pressure.append(np.nan)
+                gt_transport_outlet_pressure.append(np.nan)
+                gt_transport_outlet_temperature.append(np.nan)
+                gt_transport_pressure_corrected.append(False)
+                gt_transport_recalculations.append(0)
                 continue
+
+            transport_state = potential_geothermal_transport_states[index]
+            water_pipeline_result = transport_state["result"]
+            transport_inlet_pressure_bar = float(
+                transport_state["effective_inlet_pressure_bar"]
+            )
+            transport_outlet_pressure_bar = float(
+                water_pipeline_result["outlet_pressure_bar"]
+            )
+            transport_outlet_temperature_c = float(
+                water_pipeline_result["outlet_temperature_c"]
+            )
+            gt_transport_initial_outlet_pressure.append(
+                float(transport_state["initial_outlet_pressure_bar"])
+            )
+            gt_transport_inlet_pressure.append(transport_inlet_pressure_bar)
+            gt_transport_outlet_pressure.append(transport_outlet_pressure_bar)
+            gt_transport_outlet_temperature.append(
+                transport_outlet_temperature_c
+            )
+            gt_transport_pressure_corrected.append(
+                bool(transport_state["pressure_correction_applied"])
+            )
+            gt_transport_recalculations.append(
+                int(transport_state["recalculations"])
+            )
+            if transport_state["pressure_correction_applied"]:
+                geothermal_transport_corrected_timepoints += 1
+                if not geothermal_transport_pressure_notes:
+                    geothermal_transport_pressure_notes.append(
+                        "first_time_year={time:.6g}; initial "
+                        "p_gt_transport_out={initial_out:.6f} bar < "
+                        "1.01325 bar; p_gt_transport_in corrected "
+                        "from {initial_in:.6f} to {corrected_in:.6f} bar; "
+                        "corrected p_gt_transport_out={corrected_out:.6f} bar; "
+                        "rule: p_in=p_in-(p_out-1.01325-1)".format(
+                            time=float(
+                                gt_support_df["Time, yr"].iloc[index]
+                            ),
+                            initial_out=float(
+                                transport_state[
+                                    "initial_outlet_pressure_bar"
+                                ]
+                            ),
+                            initial_in=float(
+                                transport_state[
+                                    "initial_inlet_pressure_bar"
+                                ]
+                            ),
+                            corrected_in=transport_inlet_pressure_bar,
+                            corrected_out=transport_outlet_pressure_bar,
+                        )
+                    )
 
             production_pressure, production_diagnostics = (
                 geothermal_production_well.calculate_dp(
@@ -662,7 +969,15 @@ class ScenarioRunner:
                     bhp=geothermal_production_bhp[index],
                     m_dot=geothermal_mass_flow[index],
                     T_C=production_temperature[index],
+                    epsilon=inputs.epsilon,
                     return_diagnostics=True,
+                    flow_direction="production",
+                    formation_surface_temperature_C=(
+                        surface_formation_temperature_c
+                    ),
+                    formation_bottomhole_temperature_C=(
+                        production_temperature[index]
+                    ),
                 )
             )
             injection_pressure, injection_diagnostics = (
@@ -670,8 +985,14 @@ class ScenarioRunner:
                     fluid="H2O",
                     bhp=injection_bhp,
                     m_dot=geothermal_mass_flow[index],
-                    T_C=inputs.t_out,
+                    T_C=transport_outlet_temperature_c,
+                    epsilon=inputs.epsilon,
                     return_diagnostics=True,
+                    flow_direction="injection",
+                    formation_surface_temperature_C=(
+                        surface_formation_temperature_c
+                    ),
+                    formation_bottomhole_temperature_C=inputs.t,
                 )
             )
             production_whp.append(production_pressure)
@@ -682,20 +1003,26 @@ class ScenarioRunner:
             injection_average_velocity.append(
                 injection_diagnostics["average_velocity_m_s"]
             )
+            production_wellhead_temperature.append(
+                production_diagnostics["wellhead_temperature_c"]
+            )
+            injection_bottomhole_temperature.append(
+                injection_diagnostics["bottomhole_temperature_c"]
+            )
             pump_power.append(
                 geothermal_power.calculate_pump_power(
                     fluid="H2O",
                     m_dot=geothermal_mass_flow[index],
-                    p_in_bar=production_whp[-1],
+                    p_in_bar=transport_outlet_pressure_bar,
                     p_out_bar=injection_whp[-1],
-                    t_C=inputs.t_out,
+                    t_C=transport_outlet_temperature_c,
                 )
             )
             orc_power.append(
                 geothermal_power.calculate_ORC_power(
                     m_dot=geothermal_mass_flow[index],
                     p_in=production_whp[-1],
-                    p_out=inputs.p_out,
+                    p_out=transport_inlet_pressure_bar,
                     t_in=production_temperature[index],
                     t_out=inputs.t_out,
                     fluid="H2O",
@@ -715,6 +1042,20 @@ class ScenarioRunner:
                 "inj WHP [bar]": injection_whp,
                 "avg prod velocity [m/s]": production_average_velocity,
                 "avg inj velocity [m/s]": injection_average_velocity,
+                "prod WHP t, °C": production_wellhead_temperature,
+                "inj BHP t, °C": injection_bottomhole_temperature,
+                "p_gt_transport_out initial [bar]": (
+                    gt_transport_initial_outlet_pressure
+                ),
+                "p_gt_transport_in [bar]": gt_transport_inlet_pressure,
+                "p_gt_transport_out [bar]": gt_transport_outlet_pressure,
+                "t_gt_transport_out [°C]": gt_transport_outlet_temperature,
+                "GT transport pressure corrected": (
+                    gt_transport_pressure_corrected
+                ),
+                "GT transport recalculations [-]": (
+                    gt_transport_recalculations
+                ),
                 "pump power, kW": pump_power,
                 "ORC power, kW": orc_power,
                 "geothermal active": geothermal_operating,
@@ -722,6 +1063,143 @@ class ScenarioRunner:
         )
         vfp_gt_df["net power GT, kW"] = (
             vfp_gt_df["ORC power, kW"] - vfp_gt_df["pump power, kW"]
+        )
+        if geothermal_transport_pressure_notes:
+            geothermal_transport_pressure_notes.insert(
+                0,
+                "correction_applied_time_points="
+                f"{geothermal_transport_corrected_timepoints}",
+            )
+        geothermal_pipeline_rows = []
+        geothermal_pipeline_state_columns = [
+            "p_gt_transport_out initial [bar]",
+            "p_gt_transport_in [bar]",
+            "p_gt_transport_out [bar]",
+            "GT transport pressure corrected",
+            "GT transport recalculations [-]",
+        ]
+        for index, (time_years, mass_flow, is_active) in enumerate(
+            zip(
+                vfp_gt_df["Time [yr]"].to_numpy(dtype=float),
+                vfp_gt_df["m_dot, kg/s"].to_numpy(dtype=float),
+                vfp_gt_df["geothermal active"].to_numpy(dtype=bool),
+            )
+        ):
+            base_row = {
+                "Time [yr]": time_years,
+                "geothermal active": bool(is_active),
+                "Fluid": "H2O",
+                "Calculation basis": "coupled operational time series",
+                "Mass flow [kg/s]": mass_flow,
+                "Length [m]": inputs.d_doublet,
+                "Inner diameter [m]": (
+                    inputs.geothermal_pipeline_inner_diameter_m
+                ),
+                "Roughness [m]": inputs.geothermal_pipeline_roughness_m,
+                "Total elbow loss coefficient [-]": sum(
+                    geothermal_elbow_counts[angle]
+                    * Pipeline.ELBOW_LOSS_COEFFICIENTS[angle]
+                    for angle in geothermal_elbow_counts
+                ),
+                "Environment type": inputs.pipeline_environment_type,
+                **{
+                    column: np.nan
+                    for column in geothermal_pipeline_state_columns
+                },
+            }
+            if not is_active or mass_flow <= 0.0:
+                base_row.update(
+                    {
+                        column: np.nan
+                        for column in pipeline_result_columns
+                        if column not in base_row
+                    }
+                )
+                geothermal_pipeline_rows.append(base_row)
+                continue
+
+            transport_state = potential_geothermal_transport_states[index]
+            water_pipeline_result = transport_state["result"]
+            water_pipeline_diagnostics = water_pipeline_result["diagnostics"]
+            base_row.update(
+                {
+                    "p_gt_transport_out initial [bar]": (
+                        transport_state["initial_outlet_pressure_bar"]
+                    ),
+                    "p_gt_transport_in [bar]": (
+                        transport_state["effective_inlet_pressure_bar"]
+                    ),
+                    "p_gt_transport_out [bar]": water_pipeline_result[
+                        "outlet_pressure_bar"
+                    ],
+                    "GT transport pressure corrected": bool(
+                        transport_state["pressure_correction_applied"]
+                    ),
+                    "GT transport recalculations [-]": int(
+                        transport_state["recalculations"]
+                    ),
+                    "Inlet pressure [bar]": transport_state[
+                        "effective_inlet_pressure_bar"
+                    ],
+                    "Outlet pressure [bar]": water_pipeline_result[
+                        "outlet_pressure_bar"
+                    ],
+                    "Pressure drop [bar]": water_pipeline_result[
+                        "pressure_drop_bar"
+                    ],
+                    "Friction pressure drop [bar]": water_pipeline_result[
+                        "friction_pressure_drop_bar"
+                    ],
+                    "Minor pressure drop [bar]": water_pipeline_result[
+                        "minor_pressure_drop_bar"
+                    ],
+                    "Inlet temperature [°C]": inputs.t_out,
+                    "Outlet temperature [°C]": water_pipeline_result[
+                        "outlet_temperature_c"
+                    ],
+                    "Average velocity [m/s]": water_pipeline_diagnostics[
+                        "average_velocity_m_s"
+                    ],
+                    "Linear heat transfer coefficient [W/(m K)]": (
+                        water_pipeline_diagnostics[
+                            "linear_heat_transfer_coefficient_w_m_k"
+                        ]
+                    ),
+                    "Environment thermal diffusivity [m2/s]": (
+                        water_pipeline_diagnostics[
+                            "environment_thermal_diffusivity_m2_s"
+                        ]
+                    ),
+                    "Numerical segments used [-]": (
+                        water_pipeline_diagnostics["nsteps_used"]
+                    ),
+                    "Convergence check segments [-]": (
+                        water_pipeline_diagnostics[
+                            "convergence_check_nsteps"
+                        ]
+                    ),
+                    "Pressure error estimate [bar]": (
+                        water_pipeline_diagnostics[
+                            "estimated_pressure_discretization_error_bar"
+                        ]
+                    ),
+                    "Temperature error estimate [°C]": (
+                        water_pipeline_diagnostics[
+                            "estimated_temperature_discretization_error_c"
+                        ]
+                    ),
+                }
+            )
+            geothermal_pipeline_rows.append(base_row)
+
+        geothermal_pipeline_df = pd.DataFrame(
+            geothermal_pipeline_rows,
+            columns=[
+                "Time [yr]",
+                "geothermal active",
+                *pipeline_result_columns,
+                *geothermal_pipeline_state_columns,
+            ],
         )
         well_pressure_df = _build_well_pressure_table(
             gt_support_df,
@@ -788,6 +1266,7 @@ class ScenarioRunner:
             planned_injection_end_year=inputs.ccs_injection_end_year,
             actual_injection_end_year=actual_injection_end_year,
             stop_reason=injection_stop_reason,
+            additional_notes=geothermal_transport_pressure_notes,
         )
 
         co2_price_df = generate_co2_price_path(inputs)
@@ -824,6 +1303,11 @@ class ScenarioRunner:
         )
         operational_vfp_gt_df = _clip_time_series(
             vfp_gt_df,
+            "Time [yr]",
+            geothermal_active_elapsed_years,
+        )
+        operational_geothermal_pipeline_df = _clip_time_series(
+            geothermal_pipeline_df,
             "Time [yr]",
             geothermal_active_elapsed_years,
         )
@@ -865,8 +1349,10 @@ class ScenarioRunner:
         return {
             "mbal_df": operational_mbal_df,
             "vfp_co2_df": operational_vfp_co2_df,
+            "co2_pipeline_df": co2_pipeline_df,
             "doublet_df": operational_doublet_df,
             "vfp_gt_df": operational_vfp_gt_df,
+            "geothermal_pipeline_df": operational_geothermal_pipeline_df,
             "gt_info": operational_gt_info,
             "relative_permeability_df": relative_permeability_df,
             "annual_relative_permeability_df": (
@@ -899,6 +1385,18 @@ class ScenarioRunner:
                 ),
                 "geothermal_active_elapsed_years": (
                     geothermal_active_elapsed_years
+                ),
+                "geothermal_transport_minimum_outlet_pressure_bar": (
+                    GT_TRANSPORT_MINIMUM_OUTLET_PRESSURE_BAR
+                ),
+                "geothermal_transport_outlet_pressure_margin_bar": (
+                    GT_TRANSPORT_OUTLET_PRESSURE_MARGIN_BAR
+                ),
+                "geothermal_transport_pressure_corrections": (
+                    geothermal_transport_pressure_notes
+                ),
+                "geothermal_transport_pressure_correction_count": (
+                    geothermal_transport_corrected_timepoints
                 ),
                 "post_injection_pressure_assumption": (
                     post_injection_pressure_assumption

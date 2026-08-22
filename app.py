@@ -33,6 +33,157 @@ WELL_DEPTH_DEFAULTS = {
 }
 
 
+def _chart_style_config():
+    """Return the shared high-contrast style for every application chart."""
+    return {
+        "axis": {
+            "labelColor": "#000000",
+            "labelFontSize": 15,
+            "labelFontWeight": 500,
+            "titleColor": "#000000",
+            "titleFontSize": 17,
+            "titleFontWeight": 600,
+            "domain": True,
+            "domainColor": "#000000",
+            "domainWidth": 1.5,
+            "ticks": True,
+            "tickColor": "#000000",
+            "tickSize": 7,
+            "tickWidth": 1.5,
+            "gridColor": "#D9D9D9",
+            "gridOpacity": 0.7,
+        },
+        "legend": {
+            "labelColor": "#000000",
+            "labelFontSize": 15,
+            "titleColor": "#000000",
+            "titleFontSize": 16,
+            "orient": "bottom",
+            "direction": "horizontal",
+        },
+    }
+
+
+def _wide_chart_spec(
+    *,
+    x_title,
+    y_title,
+    x_field,
+    x_type,
+    chart_type="line",
+    height=320,
+    y_domain=None,
+):
+    """Return a styled Vega-Lite spec for a long-form wide-data chart."""
+    if chart_type not in {"line", "bar"}:
+        raise ValueError("chart_type mora biti 'line' ili 'bar'.")
+    mark = {"type": chart_type, "clip": True}
+    if chart_type == "line":
+        mark.update({"strokeWidth": 2.2, "point": {"filled": True, "size": 24}})
+    x_axis = {"title": x_title}
+    if x_type == "quantitative":
+        x_axis["format"] = ".6~g"
+    y_scale = {"zero": chart_type == "bar"}
+    if y_domain is not None and chart_type == "line":
+        y_scale["domain"] = list(y_domain)
+    return {
+        "mark": mark,
+        "encoding": {
+            "x": {
+                "field": x_field,
+                "type": x_type,
+                "axis": x_axis,
+            },
+            "y": {
+                "field": "Value",
+                "type": "quantitative",
+                "axis": {"title": y_title, "format": ".6~g"},
+                "scale": y_scale,
+            },
+            "color": {
+                "field": "Series",
+                "type": "nominal",
+                "legend": {"title": None},
+            },
+            "tooltip": [
+                {"field": x_field, "type": x_type, "title": x_title},
+                {"field": "Series", "type": "nominal", "title": "Serija"},
+                {
+                    "field": "Value",
+                    "type": "quantitative",
+                    "title": y_title,
+                    "format": ",.4f",
+                },
+            ],
+        },
+        "height": height,
+        "config": _chart_style_config(),
+    }
+
+
+def _render_wide_chart(
+    frame,
+    *,
+    x_title,
+    y_title,
+    chart_type="line",
+    height=320,
+):
+    """Render numeric wide data after removing non-finite chart points."""
+    if isinstance(frame, pd.Series):
+        frame = frame.to_frame()
+    chart_frame = frame.reset_index()
+    source_x_field = chart_frame.columns[0]
+    value_columns = list(chart_frame.columns[1:])
+    x_field = "X"
+    chart_frame = chart_frame.rename(columns={source_x_field: x_field})
+    long_frame = chart_frame.melt(
+        id_vars=[x_field],
+        value_vars=value_columns,
+        var_name="Series",
+        value_name="Value",
+    )
+    long_frame["Value"] = pd.to_numeric(
+        long_frame["Value"], errors="coerce"
+    )
+    long_frame = long_frame.replace([np.inf, -np.inf], np.nan).dropna(
+        subset=[x_field, "Value"]
+    )
+    if long_frame.empty:
+        st.warning("Nema konačnih podataka za iscrtavanje ovog dijagrama.")
+        return
+    y_domain = None
+    if chart_type == "line":
+        y_min = float(long_frame["Value"].min())
+        y_max = float(long_frame["Value"].max())
+        y_span = y_max - y_min
+        y_padding = (
+            0.05 * y_span
+            if y_span > 0.0
+            else max(0.05 * abs(y_min), 1.0e-9)
+        )
+        y_domain = [y_min - y_padding, y_max + y_padding]
+    x_type = (
+        "quantitative"
+        if pd.api.types.is_numeric_dtype(long_frame[x_field])
+        else "ordinal"
+    )
+    st.vega_lite_chart(
+        long_frame,
+        _wide_chart_spec(
+            x_title=x_title,
+            y_title=y_title,
+            x_field=x_field,
+            x_type=x_type,
+            chart_type=chart_type,
+            height=height,
+            y_domain=y_domain,
+        ),
+        width="stretch",
+        theme=None,
+    )
+
+
 def _zoomable_line_chart_spec(
     *,
     x_title,
@@ -99,6 +250,7 @@ def _zoomable_line_chart_spec(
         },
         "params": [],
         "height": height,
+        "config": _chart_style_config(),
     }
 
     x_selection = {"type": "interval", "encodings": ["x"]}
@@ -227,6 +379,7 @@ def _compressor_density_chart_spec():
         ],
         "resolve": {"scale": {"x": "shared", "y": "independent"}},
         "height": 360,
+        "config": _chart_style_config(),
     }
 
 
@@ -650,8 +803,19 @@ def validate_active_inputs(inputs):
     ):
         if value(key) >= value("d_doublet"):
             errors.append(
-                f"Radijus {label} mora biti manji od udaljenosti geotermalnog dubleta."
+                f"Radijus {label} mora biti manji od razmaka geotermalnog para."
             )
+
+    minimum_well_diameter = 2.0 * min(
+        value("rw_co2"),
+        value("rw_geothermal_production"),
+        value("rw_geothermal_injection"),
+    )
+    if not 0.0 <= value("epsilon") < minimum_well_diameter:
+        errors.append(
+            "Hrapavost bušotinske cijevi epsilon mora biti nenegativna i "
+            "manja od najmanjeg promjera bušotinske cijevi."
+        )
 
     if value("krg_max") <= 0:
         errors.append(
@@ -737,7 +901,66 @@ def validate_active_inputs(inputs):
         if float(value(key)) < 0.0:
             errors.append(f"{key} ne smije biti negativan.")
 
+    if value("d_doublet") <= 0:
+        errors.append("Razmak geotermalnog para mora biti veći od nule.")
+    if value("geothermal_pipeline_inner_diameter_m") <= 0:
+        errors.append(
+            "Unutarnji promjer geotermalnog cjevovoda mora biti veći od nule."
+        )
+    if not 0 <= value("geothermal_pipeline_roughness_m") < value(
+        "geothermal_pipeline_inner_diameter_m"
+    ):
+        errors.append(
+            "Hrapavost geotermalnog cjevovoda mora biti manja od njegova promjera."
+        )
+    for key in (
+        "geothermal_pipeline_elbows_90_count",
+        "geothermal_pipeline_elbows_45_count",
+        "geothermal_pipeline_elbows_30_count",
+    ):
+        if value(key) < 0:
+            errors.append(f"{key} ne smije biti negativan.")
+
+    if value("pipeline_ambient_temperature_c") <= -273.15:
+        errors.append("Temperatura okoliša mora biti iznad apsolutne nule.")
+    for key in (
+        "pipeline_environment_thermal_conductivity_w_m_k",
+        "pipeline_environment_volumetric_heat_capacity_j_m3_k",
+        "pipeline_external_heat_transfer_coefficient_w_m2_k",
+        "pipeline_wall_thickness_m",
+        "pipeline_wall_thermal_conductivity_w_m_k",
+        "pipeline_insulation_thermal_conductivity_w_m_k",
+    ):
+        if value(key) <= 0:
+            errors.append(f"{key} mora biti veći od nule.")
+    if value("pipeline_insulation_thickness_m") < 0:
+        errors.append("Debljina izolacije ne smije biti negativna.")
+    largest_pipeline_outer_radius = max(
+        value("geothermal_pipeline_inner_diameter_m") / 2.0,
+        (
+            value("pipeline_inner_diameter_m") / 2.0
+            if value("pipeline_inner_diameter_m") is not None
+            else 0.0
+        ),
+    ) + value("pipeline_wall_thickness_m") + value(
+        "pipeline_insulation_thickness_m"
+    )
+    if (
+        value("pipeline_environment_type") == "soil"
+        and value("pipeline_burial_depth_m") <= largest_pipeline_outer_radius
+    ):
+        errors.append(
+            "Dubina osi ukopanog cjevovoda mora biti veća od vanjskog "
+            "radijusa cijevi s izolacijom."
+        )
+
     if value("transport_mode") == "pipeline":
+        if value("co2_pipeline_inlet_pressure_bar") <= 0:
+            errors.append("Ulazni tlak CO₂ cjevovoda mora biti veći od nule.")
+        if value("co2_pipeline_inlet_temperature_c") <= -273.15:
+            errors.append(
+                "Ulazna temperatura CO₂ cjevovoda mora biti iznad apsolutne nule."
+            )
         if value("pipeline_inner_diameter_m") <= 0:
             errors.append("Unutarnji promjer cjevovoda mora biti veći od nule.")
         if not 0 <= value("pipeline_roughness_m") < value(
@@ -794,6 +1017,10 @@ if ACTIVE_INPUTS_KEY not in st.session_state:
     st.session_state[ACTIVE_INPUTS_KEY] = deepcopy(DEFAULT_INPUTS)
 else:
     active_inputs = st.session_state[ACTIVE_INPUTS_KEY]
+    if active_inputs.pop("geothermal_pipeline_distance_m", None) is not None:
+        # Privremeni ključ više nije ulaz modela; d_doublet je jedina aktivna
+        # duljina GT voda. Ukloni i rezultate stare sheme iz hot-reload sesije.
+        _clear_stale_results()
     if "emitter_emissions_annual" in active_inputs:
         migrated_annual_tonnes = float(
             _entry_value(active_inputs, "emitter_emissions_annual")
@@ -1129,6 +1356,21 @@ with st.expander("Prilagodba ulaznog scenarija", expanded=True):
             unit="m",
         )
         paired_numeric_control(
+            "epsilon",
+            "Apsolutna hrapavost bušotinske cijevi ε",
+            0.0,
+            0.05,
+            slider_step=0.00001,
+            number_step=1e-7,
+            number_format="%.7f",
+            unit="m",
+            help_text=(
+                "Zajednička VFP hrapavost za CO₂ utisnu te proizvodnu i "
+                "utisnu geotermalnu bušotinu. Vrijednost 0,05 m odgovara "
+                "testu 100 × zadana hrapavost 0,0005 m."
+            ),
+        )
+        paired_numeric_control(
             "eta_gt_injection_pump",
             "Učinkovitost geotermalne utisne pumpe",
             0.01,
@@ -1160,7 +1402,7 @@ with st.expander("Prilagodba ulaznog scenarija", expanded=True):
         )
         paired_numeric_control(
             "d_doublet",
-            "Udaljenost geotermalnog dubleta d_doublet",
+            "Razmak geotermalnog para d_doublet",
             10.0,
             5000.0,
             slider_step=10.0,
@@ -1168,6 +1410,172 @@ with st.expander("Prilagodba ulaznog scenarija", expanded=True):
             number_format="%.2f",
             unit="m",
         )
+        st.markdown("#### Površinski cjevovod geotermalne vode")
+        st.caption(
+            "Ulazni tlak i temperatura ovog voda preuzimaju se s izlaza "
+            "ORC-a (`p_out`, `t_out`). Razmak geotermalnog para `d_doublet` "
+            "ujedno je duljina površinskog transporta, a ostala geometrija "
+            "odvojena je od CO₂ voda. Ako prvi izlazni tlak padne ispod "
+            "1,01325 bar, ORC izlazni tlak korigira se s rezervom od 1 bar "
+            "i pipeline proračun se ponavlja."
+        )
+        paired_numeric_control(
+            "geothermal_pipeline_inner_diameter_m",
+            "Unutarnji promjer geotermalnog cjevovoda",
+            0.01,
+            2.0,
+            slider_step=0.01,
+            number_step=0.001,
+            number_format="%.3f",
+            unit="m",
+        )
+        paired_numeric_control(
+            "geothermal_pipeline_roughness_m",
+            "Apsolutna hrapavost geotermalnog cjevovoda",
+            0.0,
+            0.01,
+            slider_step=0.00001,
+            number_step=1e-7,
+            number_format="%.7f",
+            unit="m",
+        )
+        for elbow_parameter, elbow_label in (
+            ("geothermal_pipeline_elbows_90_count", "GT koljena od 90°"),
+            ("geothermal_pipeline_elbows_45_count", "GT koljena od 45°"),
+            ("geothermal_pipeline_elbows_30_count", "GT koljena od 30°"),
+        ):
+            paired_numeric_control(
+                elbow_parameter,
+                elbow_label,
+                0,
+                1000,
+                slider_step=1,
+                number_step=1,
+                number_format="%d",
+                unit="-",
+                integer=True,
+            )
+
+        st.markdown("#### Toplinski parametri horizontalnih cjevovoda")
+        selection_control(
+            "pipeline_environment_type",
+            "Vanjski okoliš cjevovoda",
+            ["soil", "air"],
+            {"soil": "Tlo", "air": "Zrak"},
+        )
+        paired_numeric_control(
+            "pipeline_ambient_temperature_c",
+            "Temperatura vanjskog okoliša",
+            -50.0,
+            100.0,
+            slider_step=1.0,
+            number_step=0.1,
+            number_format="%.2f",
+            unit="°C",
+        )
+        paired_numeric_control(
+            "pipeline_environment_thermal_conductivity_w_m_k",
+            "Toplinska vodljivost okoliša",
+            0.01,
+            10.0,
+            slider_step=0.1,
+            number_step=0.001,
+            number_format="%.4f",
+            unit="W/(m·K)",
+            logarithmic=True,
+        )
+        paired_numeric_control(
+            "pipeline_environment_volumetric_heat_capacity_j_m3_k",
+            "Volumetrijski toplinski kapacitet okoliša",
+            1_000.0,
+            5_000_000.0,
+            slider_step=0.1,
+            number_step=1_000.0,
+            number_format="%.0f",
+            unit="J/(m³·K)",
+            logarithmic=True,
+            help_text=(
+                "Služi za svojstvo toplinske difuzivnosti i budući tranzijentni "
+                "model. U sadašnjem stacionarnom proračunu ne mijenja izlaznu "
+                "temperaturu bez vremena rada i početnog profila okoliša."
+            ),
+        )
+        st.caption(
+            "Volumetrijski toplinski kapacitet određuje dijagnostičku "
+            "toplinsku difuzivnost i priprema budući tranzijentni model; "
+            "u sadašnjem stacionarnom modelu ne mijenja izlaznu temperaturu. "
+            "Za okoliš `air` stacionarni vanjski otpor određuje zadani h; "
+            "vodljivost zraka također ostaje samo dio dijagnostičke "
+            "difuzivnosti."
+        )
+        paired_numeric_control(
+            "pipeline_wall_thickness_m",
+            "Debljina stijenke cijevi",
+            0.001,
+            0.10,
+            slider_step=0.001,
+            number_step=0.0001,
+            number_format="%.4f",
+            unit="m",
+        )
+        paired_numeric_control(
+            "pipeline_wall_thermal_conductivity_w_m_k",
+            "Toplinska vodljivost stijenke",
+            0.1,
+            500.0,
+            slider_step=0.1,
+            number_step=0.1,
+            number_format="%.3f",
+            unit="W/(m·K)",
+            logarithmic=True,
+        )
+        paired_numeric_control(
+            "pipeline_insulation_thickness_m",
+            "Debljina izolacije",
+            0.0,
+            0.50,
+            slider_step=0.005,
+            number_step=0.001,
+            number_format="%.3f",
+            unit="m",
+        )
+        paired_numeric_control(
+            "pipeline_insulation_thermal_conductivity_w_m_k",
+            "Toplinska vodljivost izolacije",
+            0.005,
+            1.0,
+            slider_step=0.1,
+            number_step=0.001,
+            number_format="%.4f",
+            unit="W/(m·K)",
+            logarithmic=True,
+        )
+        if _entry_value(
+            st.session_state[ACTIVE_INPUTS_KEY],
+            "pipeline_environment_type",
+        ) == "soil":
+            paired_numeric_control(
+                "pipeline_burial_depth_m",
+                "Dubina osi ukopanog cjevovoda",
+                0.1,
+                10.0,
+                slider_step=0.1,
+                number_step=0.01,
+                number_format="%.2f",
+                unit="m",
+            )
+        else:
+            paired_numeric_control(
+                "pipeline_external_heat_transfer_coefficient_w_m2_k",
+                "Vanjski koeficijent prijelaza topline prema zraku",
+                0.1,
+                200.0,
+                slider_step=0.1,
+                number_step=0.1,
+                number_format="%.2f",
+                unit="W/(m²·K)",
+                logarithmic=True,
+            )
         paired_numeric_control(
             "bhp_dp",
             "Pad tlaka proizvodne geotermalne bušotine bhp_dp",
@@ -1549,10 +1957,10 @@ with st.expander("Prilagodba ulaznog scenarija", expanded=True):
                 co2_price_chart["Godina"].astype(int).astype(str)
             )
             co2_price_chart = co2_price_chart.set_index("Godina")
-            st.line_chart(
+            _render_wide_chart(
                 co2_price_chart,
-                x_label="Godina",
-                y_label="Cijena CO₂ (EUR/tCO₂)",
+                x_title="Godina",
+                y_title="Cijena CO₂ (EUR/tCO₂)",
                 height=240,
             )
             if selected_price_mode != "custom":
@@ -1731,6 +2139,26 @@ with st.expander("Prilagodba ulaznog scenarija", expanded=True):
             )
             if transport_mode == "pipeline":
                 paired_numeric_control(
+                    "co2_pipeline_inlet_pressure_bar",
+                    "Ulazni tlak CO₂ cjevovoda",
+                    1.0,
+                    500.0,
+                    slider_step=5.0,
+                    number_step=0.1,
+                    number_format="%.2f",
+                    unit="bar",
+                )
+                paired_numeric_control(
+                    "co2_pipeline_inlet_temperature_c",
+                    "Ulazna temperatura CO₂ cjevovoda",
+                    -50.0,
+                    100.0,
+                    slider_step=1.0,
+                    number_step=0.1,
+                    number_format="%.2f",
+                    unit="°C",
+                )
+                paired_numeric_control(
                     "pipeline_inner_diameter_m",
                     "Unutarnji promjer cjevovoda",
                     0.01,
@@ -1905,6 +2333,16 @@ if st.session_state[ERROR_KEY] is not None:
     st.error(f"Proračun nije završen: {st.session_state[ERROR_KEY]}")
 
 results = st.session_state[RESULTS_KEY]
+if results is not None and not {
+    "co2_pipeline_df",
+    "geothermal_pipeline_df",
+}.issubset(results):
+    st.session_state[RESULTS_KEY] = None
+    results = None
+    st.info(
+        "Prethodni rezultati nastali su prije uvođenja pipeline tablica; "
+        "pokrenite proračun ponovno."
+    )
 
 if results is None:
     st.info(
@@ -1913,8 +2351,10 @@ if results is None:
 else:
     mbal_df = results["mbal_df"]
     vfp_co2_df = results["vfp_co2_df"]
+    co2_pipeline_df = results["co2_pipeline_df"]
     doublet_df = results["doublet_df"]
     vfp_gt_df = results["vfp_gt_df"]
+    geothermal_pipeline_df = results["geothermal_pipeline_df"]
     well_pressure_df = results["well_pressure_df"]
     gt_info = results["gt_info"]
     relative_permeability_df = results["relative_permeability_df"]
@@ -1955,6 +2395,11 @@ else:
             f"{scenario_notes['actual_injection_end_year']}. "
             f"{scenario_notes['injection_stop_note']}"
         )
+    for transport_note in scenario_notes.get(
+        "geothermal_transport_pressure_corrections",
+        [],
+    ):
+        st.warning(f"Korekcija tlaka GT površinskog transporta: {transport_note}")
     for coverage_note in scenario_notes["annualization"].get(
         "coverage_notes",
         [],
@@ -2301,18 +2746,18 @@ else:
 
     with overview_tab:
         st.markdown("#### Vremenski niz uskladištenog CO₂")
-        st.line_chart(
+        _render_wide_chart(
             storage_mass_chart,
-            x_label="Vrijeme (god)",
-            y_label="Uskladišteni CO₂ (Mt)",
+            x_title="Vrijeme (god)",
+            y_title="Uskladišteni CO₂ (Mt)",
             height=320,
         )
 
         st.markdown("#### Tlakovi na ušću i dnu bušotina")
-        st.line_chart(
+        _render_wide_chart(
             pressure_chart,
-            x_label="Vrijeme (god)",
-            y_label="Tlak (bar)",
+            x_title="Vrijeme (god)",
+            y_title="Tlak (bar)",
             height=320,
         )
         st.caption(well_pressure_caption)
@@ -2341,10 +2786,10 @@ else:
                 ),
             }
         ).set_index("Vrijeme (god)")
-        st.line_chart(
+        _render_wide_chart(
             combined_power_chart,
-            x_label="Vrijeme (god)",
-            y_label="Snaga (kW)",
+            x_title="Vrijeme (god)",
+            y_title="Snaga (kW)",
             height=360,
         )
         st.caption(
@@ -2355,23 +2800,24 @@ else:
 
     with storage_tab:
         st.markdown("#### Masa skladištenja")
-        st.line_chart(
+        _render_wide_chart(
             storage_mass_chart,
-            x_label="Vrijeme (god)",
-            y_label="Uskladišteni CO₂ (Mt)",
+            x_title="Vrijeme (god)",
+            y_title="Uskladišteni CO₂ (Mt)",
         )
         st.markdown("#### Tlakovi na ušću i dnu bušotina")
-        st.line_chart(
+        _render_wide_chart(
             pressure_chart,
-            x_label="Vrijeme (god)",
-            y_label="Tlak (bar)",
+            x_title="Vrijeme (god)",
+            y_title="Tlak (bar)",
         )
         st.caption(well_pressure_caption)
         st.markdown("#### Godišnja količina utisnutog CO₂")
-        st.bar_chart(
+        _render_wide_chart(
             annual_co2_chart,
-            x_label="Godina",
-            y_label="Utisnuti CO₂ (t/god)",
+            x_title="Godina",
+            y_title="Utisnuti CO₂ (t/god)",
+            chart_type="bar",
         )
         st.markdown("#### Snaga kompresora za CO₂")
         co2_time = vfp_co2_df["Time [yr]"].to_numpy(dtype=float)
@@ -2417,53 +2863,75 @@ else:
             compressor_density_chart,
             _compressor_density_chart_spec(),
             width="stretch",
+            theme=None,
         )
         st.caption(
             "Graf podržava pomicanje i uvećavanje po x-osi. Lijeva os "
             "prikazuje snagu kompresora, a desna gustoću "
-            "CO₂ na BHP-u i WHP-u; obje gustoće izračunate su pri izotermnoj "
-            "VFP pretpostavci od 20 °C."
+            "CO₂ na BHP-u i WHP-u; gustoće koriste lokalni tlak i temperaturu "
+            "iz spregnutog VFP profila."
         )
         st.markdown("#### Relativne propusnosti vode i CO₂")
-        st.line_chart(
+        _render_wide_chart(
             relative_permeability_chart,
-            x_label="Zasićenje vodom Sw (-)",
-            y_label="Relativna propusnost (-)",
+            x_title="Zasićenje vodom Sw (-)",
+            y_title="Relativna propusnost (-)",
         )
         st.markdown("#### Godišnje relativne propusnosti vode i CO₂")
-        st.line_chart(
+        _render_wide_chart(
             annual_relative_permeability_chart,
-            x_label="Godina",
-            y_label="Relativna propusnost (-)",
+            x_title="Godina",
+            y_title="Relativna propusnost (-)",
         )
         st.caption(
             "Prije početka utiskivanja koristi se zasićenje CO₂ jednako nuli. "
             "Nakon prestanka utiskivanja zadržava se završno drenažno stanje; "
             "imbibicija i histereza relativnih propusnosti nisu modelirane."
         )
+        if not co2_pipeline_df.empty:
+            st.markdown("#### Izlazni uvjeti CO₂ cjevovoda")
+            pipeline_row = co2_pipeline_df.iloc[0]
+            pipeline_metrics = st.columns(3)
+            pipeline_metrics[0].metric(
+                "Izlazni tlak CO₂ voda",
+                f"{pipeline_row['Outlet pressure [bar]']:.2f} bar",
+            )
+            pipeline_metrics[1].metric(
+                "Pad tlaka CO₂ voda",
+                f"{pipeline_row['Pressure drop [bar]']:.2f} bar",
+            )
+            pipeline_metrics[2].metric(
+                "Izlazna temperatura CO₂ voda",
+                f"{pipeline_row['Outlet temperature [°C]']:.2f} °C",
+            )
+            st.caption(
+                "Ovo je forward proračun pri nominalnom projektnom protoku. "
+                "Izlaz pipelinea zasad ne mijenja postojeću snagu kompresora "
+                "ni rubni uvjet CO₂ bušotine."
+            )
 
     with geothermal_tab:
         temperature_column, flow_column = st.columns(2)
         with temperature_column:
             st.markdown("#### Proizvodna temperatura")
-            st.line_chart(
+            _render_wide_chart(
                 geothermal_temperature_chart,
-                x_label="Vrijeme (god)",
-                y_label="Temperatura (°C)",
+                x_title="Vrijeme (god)",
+                y_title="Temperatura (°C)",
             )
         with flow_column:
             st.markdown("#### Maseni protok geotermalne vode")
-            st.line_chart(
+            _render_wide_chart(
                 geothermal_flow_chart,
-                x_label="Vrijeme (god)",
-                y_label="Maseni protok geotermalne vode (kg/s)",
+                x_title="Vrijeme (god)",
+                y_title="Maseni protok geotermalne vode (kg/s)",
             )
 
         st.markdown("#### Prosječna brzina geotermalne vode u bušotinama")
-        st.line_chart(
+        _render_wide_chart(
             geothermal_velocity_chart,
-            x_label="Vrijeme (god)",
-            y_label="Prosječna aksijalna brzina (m/s)",
+            x_title="Vrijeme (god)",
+            y_title="Prosječna aksijalna brzina (m/s)",
         )
         st.caption(
             "Prikazan je duljinski prosjek apsolutne lokalne brzine kroz "
@@ -2472,17 +2940,49 @@ else:
         )
 
         st.markdown("#### Neto snaga geotermalnog sustava")
-        st.line_chart(
+        _render_wide_chart(
             geothermal_power_chart,
-            x_label="Vrijeme (god)",
-            y_label="Snaga (kW)",
+            x_title="Vrijeme (god)",
+            y_title="Snaga (kW)",
         )
         st.markdown("#### Napredovanje toplinske fronte")
-        st.line_chart(
+        _render_wide_chart(
             thermal_front_chart,
-            x_label="Vrijeme (god)",
-            y_label="Radijus toplinske fronte (m)",
+            x_title="Vrijeme (god)",
+            y_title="Radijus toplinske fronte (m)",
         )
+        st.markdown("#### Izlazni uvjeti cjevovoda geotermalne vode")
+        st.caption(
+            "Proračun polazi od ORC izlaza p_out/t_out. Efektivni "
+            "p_gt_transport_in ulazi u ORC proračun, p_gt_transport_out je "
+            "ulazni tlak GT pumpe, a izlazna temperatura voda ulazi u utisni "
+            "VFP. Crvena korekcijska note pojavljuje se kada je prvi izlaz "
+            "ispod 1,01325 bar."
+        )
+        geothermal_pipeline_active = geothermal_pipeline_df.loc[
+            geothermal_pipeline_df["geothermal active"].astype(bool)
+        ].copy()
+        pipeline_pressure_column, pipeline_temperature_column = st.columns(2)
+        with pipeline_pressure_column:
+            _render_wide_chart(
+                geothermal_pipeline_active[
+                    [
+                        "Time [yr]",
+                        "p_gt_transport_in [bar]",
+                        "p_gt_transport_out [bar]",
+                    ]
+                ].set_index("Time [yr]"),
+                x_title="Vrijeme (god)",
+                y_title="Tlak (bar)",
+            )
+        with pipeline_temperature_column:
+            _render_wide_chart(
+                geothermal_pipeline_active[
+                    ["Time [yr]", "Outlet temperature [°C]"]
+                ].set_index("Time [yr]"),
+                x_title="Vrijeme (god)",
+                y_title="Izlazna temperatura (°C)",
+            )
 
     with economics_tab:
         total_cash_flow = float(annual_cash_flow_df["net_cash_flow"].sum())
@@ -2584,10 +3084,11 @@ else:
         )
 
         st.markdown("#### Godišnja količina utisnutog CO₂")
-        st.bar_chart(
+        _render_wide_chart(
             annual_co2_chart,
-            x_label="Godina",
-            y_label="Utisnuti CO₂ (t/god)",
+            x_title="Godina",
+            y_title="Utisnuti CO₂ (t/god)",
+            chart_type="bar",
         )
         st.markdown("#### Godišnja energetska bilanca")
         st.vega_lite_chart(
@@ -2599,6 +3100,7 @@ else:
                 integer_x=True,
             ),
             width="stretch",
+            theme=None,
         )
         st.caption(
             "ORC i prodana energija prikazani su pozitivno; GT pumpa, CO₂ "
@@ -2615,6 +3117,7 @@ else:
                 integer_x=True,
             ),
             width="stretch",
+            theme=None,
         )
         st.caption(
             "ORC, GT pumpa i CO₂ kompresor prikazani su kao pozitivne "
@@ -2633,6 +3136,7 @@ else:
                 integer_x=True,
             ),
             width="stretch",
+            theme=None,
         )
         st.caption(
             "Troškovi su negativni i uključuju inflaciju do godine nastanka; "
@@ -2656,6 +3160,7 @@ else:
                 interpolate="step-after",
             ),
             width="stretch",
+            theme=None,
         )
         st.caption(
             "Pozitivna vrijednost je prihod neto izvoza električne energije, a "
@@ -2673,6 +3178,7 @@ else:
                 integer_x=True,
             ),
             width="stretch",
+            theme=None,
         )
         st.caption(
             "Svaka linija predstavlja vrijednost samo te godine; PV je "
@@ -2680,10 +3186,10 @@ else:
             "Graf se može pomicati i uvećavati po x-osi."
         )
         st.markdown("#### Kumulativni novčani tok i NPV")
-        st.line_chart(
+        _render_wide_chart(
             cumulative_cash_flow_chart,
-            x_label="Godina",
-            y_label="Kumulativna vrijednost (EUR)",
+            x_title="Godina",
+            y_title="Kumulativna vrijednost (EUR)",
         )
         st.caption(
             "Troškovne stavke izražene su u baznim eurima te se prvo uvećavaju "
@@ -2750,8 +3256,12 @@ else:
             st.dataframe(well_pressure_df, width="stretch")
         with st.expander("CO₂ bušotina i kompresija"):
             st.dataframe(vfp_co2_df, width="stretch")
+        with st.expander("CO₂ cjevovod"):
+            st.dataframe(co2_pipeline_df, width="stretch")
         with st.expander("Geotermalni dublet i snaga"):
             st.dataframe(vfp_gt_df, width="stretch")
+        with st.expander("Cjevovod geotermalne vode"):
+            st.dataframe(geothermal_pipeline_df, width="stretch")
         with st.expander("Toplinska fronta"):
             st.dataframe(doublet_df, width="stretch")
         with st.expander("Relativne propusnosti"):
@@ -2768,11 +3278,16 @@ else:
             - `bhp_dp` je korisnički drawdown proizvodne geotermalne bušotine;
             - proizvodni GT WHP trenutačno nije ulaz, nego rezultat BHP-a,
               hidrostatskih i trenjskih gubitaka; ako potencijalni proizvodni
-              WHP nije viši od `p_out`, cijeli GT krug ima nulti protok,
+              WHP nije viši od efektivnog `p_gt_transport_in`, cijeli GT krug ima nulti protok,
               reinjekciju, pumpnu snagu, ORC snagu i neto snagu;
             - CO₂, proizvodna GT i utisna GT bušotina imaju zasebne radijuse;
-            - `t_out` se koristi za ORC izlaz i ohlađenu utisnu vodu;
-            - `p_out` se koristi kao ORC izlazni tlak;
+            - `t_out` se koristi na ORC izlazu i ulazu površinskog GT voda, a
+              izračunati `t_gt_transport_out` koristi utisni VFP;
+            - `p_out` je početni ORC izlazni tlak; ako je prvi
+              `p_gt_transport_out < 1,01325 bar`, efektivni
+              `p_gt_transport_in` korigira se potvrđenom formulom;
+            - `d_doublet` je razmak geotermalnog para i duljina površinskog
+              transporta vode;
             - neto geotermalna snaga predstavlja ORC snagu umanjenu za snagu pumpe;
             - godišnja masa CO₂ jednaka je za hvatanje, transport, utiskivanje
               i verificirano skladištenje;
@@ -2786,8 +3301,12 @@ else:
             - nakon prestanka utiskivanja tlak ležišta drži se konstantnim jer
               model pretpostavlja jednaku proizvodnju i ponovno utiskivanje
               geotermalne vode;
-            - horizontalni pad tlaka cjevovoda nije uključen dok se zasebno ne
-              potvrde jednadžba trenja i koeficijenti lokalnih gubitaka.
+            - horizontalni CO₂ i geotermalni cjevovodi računaju lokalna
+              svojstva, Darcyjeve i lokalne gubitke te stacionarnu izmjenu
+              topline kroz stijenku, izolaciju i zrak ili tlo;
+            - volumetrijski toplinski kapacitet okoliša služi za dijagnostičku
+              toplinsku difuzivnost; tranzijentni utjecaj zahtijevao bi još
+              vrijeme rada i početni temperaturni profil okoliša.
             """
         )
         st.info(

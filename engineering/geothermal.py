@@ -17,7 +17,10 @@ import CoolProp.CoolProp as CP
 
 class Geothermal(ParamMetadata):
     PARAM_METADATA = {
-        'd_doublet': ('m', 'udaljenost proizvodne i utisne geotermalne bušotine'),
+        'd_doublet': (
+            'm',
+            'Razmak geotermalnog para i duljina površinskog transporta vode',
+        ),
         't': ('°C', 'temperatura sloja'),
         'h_ef' : ('m', 'Efektivna debljina akvifera'),
         'k' : ('m2', 'Prosječna propusnost'),

@@ -5,7 +5,7 @@ Created on Wed Jul  9 23:36:01 2025
 @author: domagoj
 """
 
-from CoolProp.CoolProp import PropsSI
+from CoolProp.CoolProp import PhaseSI, PropsSI
 
 class FluidProperties:
     def __init__(self):
@@ -32,6 +32,9 @@ class FluidProperties:
     
     def get_specific_heat(self, fluid, p, T, param='CP0MASS'):
         return PropsSI(param, 'P', p, 'T', T, fluid)  # J/kg/K
+
+    def get_phase(self, fluid, p, T):
+        return PhaseSI('P', p, 'T', T, fluid)
     
     def get_Tc(self, fluid):
         return PropsSI('TCRIT', fluid)  # critical temperature, K
