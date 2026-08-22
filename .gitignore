@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+diagrams/
+uncertainty/
+
 desktop.ini
 **/[Dd]esktop.ini
 *.png 
@@ -19,6 +22,7 @@ desktop.ini
 *.xlsx
 
 .gt_ccs_venv/
+agents.md
 
 # Local pre-edit snapshots (manifest + SHA-256)
 /backups/
