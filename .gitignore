@@ -5,6 +5,14 @@ __pycache__/
 
 diagrams/
 uncertainty/
+tests/
+algorithm_development/
+backups/
+docs/
+domain/
+examples/
+scripts/
+outputs/legacy/
 
 desktop.ini
 **/[Dd]esktop.ini
@@ -23,6 +31,9 @@ desktop.ini
 
 .gt_ccs_venv/
 agents.md
+
+inputs/scenarios/*
+!inputs/scenarios/.gitkeep
 
 # Local pre-edit snapshots (manifest + SHA-256)
 /backups/
