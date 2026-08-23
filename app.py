@@ -13,6 +13,14 @@ from inputs.scenario_sync import (
     expand_storage_capacity_for_plan,
     required_storage_capacity_t,
 )
+from inputs.scenario_store import (
+    LAST_INPUTS_FILENAME,
+    delete_scenario,
+    list_saved_scenarios,
+    load_scenario,
+    save_scenario,
+    scenario_directory,
+)
 from outputs import build_results_excel, build_results_json
 from services.scenario_runner import DEFAULT_INPUT_PATH, ScenarioRunner
 
@@ -21,6 +29,12 @@ RESULTS_KEY = "engineering_demo_results"
 ERROR_KEY = "engineering_demo_error"
 ACTIVE_INPUTS_KEY = "active_scenario_inputs"
 CONTROL_PREFIX = "input__"
+SCENARIO_NOTICE_KEY = "scenario_store_notice"
+SCENARIO_STORE_ERROR_KEY = "scenario_store_error"
+SCENARIO_SEARCH_KEY = "scenario_store_search"
+SCENARIO_LOAD_SELECT_KEY = "scenario_store_load_selection"
+SCENARIO_DELETE_SELECT_KEY = "scenario_store_delete_selection"
+SCENARIO_DELETE_CONFIRM_KEY = "scenario_store_delete_confirm"
 CALENDAR_HOURS_PER_YEAR = 365.25 * 24.0
 WELL_DEPTH_DEFAULTS = {
     "h_ref_co2": "Referentna dubina utisne CO₂ bušotine za VFP proračun",
@@ -530,12 +544,50 @@ def _price_mode_changed(widget_key):
     _clear_stale_results()
 
 
-def _reset_scenario():
-    st.session_state[ACTIVE_INPUTS_KEY] = deepcopy(DEFAULT_INPUTS)
+def _activate_scenario(inputs):
+    st.session_state[ACTIVE_INPUTS_KEY] = deepcopy(inputs)
     for key in list(st.session_state):
         if key.startswith(CONTROL_PREFIX):
             del st.session_state[key]
     _clear_stale_results()
+
+
+def _reset_scenario():
+    _activate_scenario(DEFAULT_INPUTS)
+
+
+def _load_selected_scenario():
+    filename = st.session_state.get(SCENARIO_LOAD_SELECT_KEY)
+    if not filename:
+        return
+    try:
+        loaded_inputs = load_scenario(filename)
+    except (OSError, ValueError) as exc:
+        st.session_state[SCENARIO_STORE_ERROR_KEY] = str(exc)
+        return
+    _activate_scenario(loaded_inputs)
+    st.session_state[SCENARIO_STORE_ERROR_KEY] = None
+    st.session_state[SCENARIO_NOTICE_KEY] = (
+        f"Učitan je scenarij iz datoteke {filename}."
+    )
+
+
+def _delete_selected_scenario():
+    filename = st.session_state.get(SCENARIO_DELETE_SELECT_KEY)
+    confirmed = st.session_state.get(SCENARIO_DELETE_CONFIRM_KEY, False)
+    if not filename or not confirmed:
+        return
+    try:
+        delete_scenario(filename)
+    except (OSError, ValueError) as exc:
+        st.session_state[SCENARIO_STORE_ERROR_KEY] = str(exc)
+        return
+    st.session_state.pop(SCENARIO_DELETE_SELECT_KEY, None)
+    st.session_state.pop(SCENARIO_DELETE_CONFIRM_KEY, None)
+    st.session_state[SCENARIO_STORE_ERROR_KEY] = None
+    st.session_state[SCENARIO_NOTICE_KEY] = (
+        f"Obrisana je arhiva scenarija {filename}."
+    )
 
 
 def paired_numeric_control(
@@ -559,6 +611,10 @@ def paired_numeric_control(
     unit while allowing a more readable UI unit, for example tonnes stored as
     Mt in the capacity control.
     """
+    if maximum < minimum:
+        raise ValueError(
+            f"Neispravan raspon za {parameter}: {minimum} > {maximum}."
+        )
     inputs = st.session_state[ACTIVE_INPUTS_KEY]
     raw_value = _entry_value(inputs, parameter)
     display_value = float(raw_value) / float(stored_units_per_display_unit)
@@ -578,6 +634,24 @@ def paired_numeric_control(
 
     slider_widget_key = _slider_key(parameter)
     number_widget_key = _number_key(parameter)
+    number_label = label if unit == "-" else f"{label} ({unit})"
+    if maximum == minimum:
+        st.session_state.pop(slider_widget_key, None)
+        st.session_state[number_widget_key] = value
+        st.number_input(
+            number_label,
+            step=number_step,
+            format=number_format,
+            key=number_widget_key,
+            disabled=True,
+            help=help_text,
+        )
+        st.caption(
+            "Kontrola je fiksirana jer su trenutačna donja i gornja "
+            f"granica jednake ({_format_numeric_value(value, number_format)})."
+        )
+        return
+
     logarithmic_options = ()
     if logarithmic:
         minimum_exponent = math.log10(minimum)
@@ -653,7 +727,6 @@ def paired_numeric_control(
                 help=help_text,
             )
     with number_column:
-        number_label = label if unit == "-" else f"{label} ({unit})"
         st.number_input(
             number_label,
             min_value=minimum,
@@ -771,6 +844,9 @@ def validate_active_inputs(inputs):
     errors = []
     warnings = []
     value = lambda key: _entry_value(inputs, key)
+
+    if not str(value("scenario_name")).strip():
+        errors.append("Naziv scenarija ne smije biti prazan.")
 
     if value("m_dot_annual") <= 0:
         errors.append(
@@ -1096,6 +1172,8 @@ else:
     )
 
 with st.expander("Prilagodba ulaznog scenarija", expanded=True):
+    text_control("scenario_name", "Naziv scenarija")
+    st.divider()
     st.caption(
         "Početne vrijednosti svih kontrola učitavaju se iz aktivnog JSON ulaza; "
         "brojčana polja prikazuju trenutačno aktivne vrijednosti."
@@ -1301,6 +1379,53 @@ with st.expander("Prilagodba ulaznog scenarija", expanded=True):
             unit="m",
             help_text="Referentna vertikalna dubina CO₂ bušotine za VFP.",
         )
+        st.markdown("##### Kompresor za utiskivanje CO₂")
+        st.caption(
+            "p_comp_in i t_comp_in su usisni uvjeti kompresora za "
+            "utiskivanje. Nisu ulazni uvjeti neovisnog transportnog CO₂ "
+            "cjevovoda prikazanog u ekonomskom dijelu forme."
+        )
+        paired_numeric_control(
+            "p_comp_in",
+            "Ulazni tlak kompresora p_comp_in",
+            1.0,
+            100.0,
+            slider_step=1.0,
+            number_step=0.1,
+            number_format="%.2f",
+            unit="bar",
+        )
+        paired_numeric_control(
+            "t_comp_in",
+            "Ulazna temperatura kompresora t_comp_in",
+            -30.0,
+            100.0,
+            slider_step=1.0,
+            number_step=0.1,
+            number_format="%.2f",
+            unit="°C",
+        )
+        paired_numeric_control(
+            "eta_co2_compressor_isentropic",
+            "Izentropska učinkovitost kompresora CO₂",
+            0.01,
+            1.0,
+            slider_step=0.01,
+            number_step=0.001,
+            number_format="%.3f",
+            unit="-",
+        )
+        paired_numeric_control(
+            "eta_co2_dense_phase_pump",
+            "Učinkovitost pumpe CO₂ u gustoj fazi",
+            0.01,
+            1.0,
+            slider_step=0.01,
+            number_step=0.001,
+            number_format="%.3f",
+            unit="-",
+        )
+        st.markdown("##### Geotermalne bušotine")
         minimum_numeric_control(
             "h_ref_geothermal_production",
             "Dubina proizvodne geotermalne bušotine",
@@ -1373,26 +1498,6 @@ with st.expander("Prilagodba ulaznog scenarija", expanded=True):
         paired_numeric_control(
             "eta_gt_injection_pump",
             "Učinkovitost geotermalne utisne pumpe",
-            0.01,
-            1.0,
-            slider_step=0.01,
-            number_step=0.001,
-            number_format="%.3f",
-            unit="-",
-        )
-        paired_numeric_control(
-            "eta_co2_compressor_isentropic",
-            "Izentropska učinkovitost kompresora CO₂",
-            0.01,
-            1.0,
-            slider_step=0.01,
-            number_step=0.001,
-            number_format="%.3f",
-            unit="-",
-        )
-        paired_numeric_control(
-            "eta_co2_dense_phase_pump",
-            "Učinkovitost pumpe CO₂ u gustoj fazi",
             0.01,
             1.0,
             slider_step=0.01,
@@ -1590,27 +1695,6 @@ with st.expander("Prilagodba ulaznog scenarija", expanded=True):
                 "BHP proizvodne bušotine = p_ref − bhp_dp."
             ),
         )
-        paired_numeric_control(
-            "p_comp_in",
-            "Ulazni tlak kompresora p_comp_in",
-            1.0,
-            100.0,
-            slider_step=1.0,
-            number_step=0.1,
-            number_format="%.2f",
-            unit="bar",
-        )
-        paired_numeric_control(
-            "t_comp_in",
-            "Ulazna temperatura kompresora t_comp_in",
-            -30.0,
-            100.0,
-            slider_step=1.0,
-            number_step=0.1,
-            number_format="%.2f",
-            unit="°C",
-        )
-
     with relperm_controls_tab:
         paired_numeric_control(
             "E_eff",
@@ -2138,19 +2222,31 @@ with st.expander("Prilagodba ulaznog scenarija", expanded=True):
                 stored_units_per_display_unit=1_000_000.0,
             )
             if transport_mode == "pipeline":
+                st.info(
+                    "Sljedeći tlak i temperatura zadaju početak zasebnog "
+                    "forward proračuna transportnog CO₂ cjevovoda. Ulazni "
+                    "tlak nije p_comp_in niti se automatski računa kao izlaz "
+                    "kompresora; rezultat zasad ne mijenja kompresor ni CO₂ "
+                    "utisnu bušotinu."
+                )
                 paired_numeric_control(
                     "co2_pipeline_inlet_pressure_bar",
-                    "Ulazni tlak CO₂ cjevovoda",
+                    "Zadani tlak na početku CO₂ transportnog cjevovoda",
                     1.0,
                     500.0,
                     slider_step=5.0,
                     number_step=0.1,
                     number_format="%.2f",
                     unit="bar",
+                    help_text=(
+                        "Neovisni projektni ulaz transportnog voda. Zadana "
+                        "vrijednost 150 bar nije tlak iza kompresora iz "
+                        "energetskog proračuna."
+                    ),
                 )
                 paired_numeric_control(
                     "co2_pipeline_inlet_temperature_c",
-                    "Ulazna temperatura CO₂ cjevovoda",
+                    "Zadana temperatura na početku CO₂ transportnog cjevovoda",
                     -50.0,
                     100.0,
                     slider_step=1.0,
@@ -2280,6 +2376,80 @@ for validation_warning in validation_warnings:
 
 with st.sidebar:
     st.header("Aktivni scenarij")
+    scenario_notice = st.session_state.pop(SCENARIO_NOTICE_KEY, None)
+    scenario_store_error = st.session_state.pop(SCENARIO_STORE_ERROR_KEY, None)
+    if scenario_notice:
+        st.success(scenario_notice)
+    if scenario_store_error:
+        st.error(scenario_store_error)
+
+    st.subheader("Učitavanje spremljenog scenarija")
+    scenario_search = st.text_input(
+        "Pretraži prema nazivu scenarija",
+        key=SCENARIO_SEARCH_KEY,
+        placeholder="Upišite dio naziva",
+    )
+    try:
+        saved_scenarios = list_saved_scenarios()
+    except OSError as exc:
+        saved_scenarios = []
+        st.error(f"Spremište scenarija nije dostupno: {exc}")
+    normalized_search = scenario_search.strip().casefold()
+    matching_scenarios = [
+        scenario
+        for scenario in saved_scenarios
+        if not normalized_search
+        or normalized_search in scenario.scenario_name.casefold()
+    ]
+    scenario_by_filename = {
+        scenario.filename: scenario for scenario in matching_scenarios
+    }
+    if scenario_by_filename:
+        st.selectbox(
+            "Scenarij za učitavanje (ime scenarija, ime datoteke)",
+            options=list(scenario_by_filename),
+            format_func=lambda filename: scenario_by_filename[filename].label,
+            key=SCENARIO_LOAD_SELECT_KEY,
+        )
+        st.button(
+            "Učitaj odabrani scenarij",
+            width="stretch",
+            on_click=_load_selected_scenario,
+        )
+    else:
+        st.caption("Nema spremljenih scenarija koji odgovaraju pretraživanju.")
+
+    archive_by_filename = {
+        scenario.filename: scenario
+        for scenario in matching_scenarios
+        if scenario.filename != LAST_INPUTS_FILENAME
+    }
+    with st.expander("Brisanje spremljenog scenarija"):
+        if archive_by_filename:
+            st.selectbox(
+                "Scenarij za brisanje (ime scenarija, ime datoteke)",
+                options=list(archive_by_filename),
+                format_func=lambda filename: archive_by_filename[filename].label,
+                key=SCENARIO_DELETE_SELECT_KEY,
+            )
+            delete_confirmed = st.checkbox(
+                "Potvrđujem brisanje odabrane arhive",
+                key=SCENARIO_DELETE_CONFIRM_KEY,
+            )
+            st.button(
+                "Obriši odabrani scenarij",
+                width="stretch",
+                disabled=not delete_confirmed,
+                on_click=_delete_selected_scenario,
+            )
+            st.caption(
+                "Briše se samo odabrana arhiva; last_inputs.json ostaje sačuvan."
+            )
+        else:
+            st.caption("Nema arhivskih scenarija za brisanje.")
+
+    st.caption(f"Direktorij scenarija: {scenario_directory()}")
+    st.divider()
     st.caption("Zadana ulazna datoteka")
     st.code(str(DEFAULT_INPUT_PATH), language=None)
 
@@ -2320,6 +2490,19 @@ if clear_requested:
 
 if run_requested:
     st.session_state[ERROR_KEY] = None
+    try:
+        last_inputs_path, archived_inputs_path = save_scenario(
+            st.session_state[ACTIVE_INPUTS_KEY]
+        )
+        st.success(
+            "Ulazi su automatski spremljeni u "
+            f"{last_inputs_path.name} i {archived_inputs_path.name}."
+        )
+    except (OSError, TypeError, ValueError) as exc:
+        st.warning(
+            "Proračun se nastavlja, ali automatsko spremanje ulaza nije uspjelo: "
+            f"{exc}"
+        )
     with st.spinner("Izvodim tehničko-ekonomski proračun aktivnog scenarija..."):
         try:
             st.session_state[RESULTS_KEY] = ScenarioRunner(
@@ -2889,25 +3072,34 @@ else:
             "imbibicija i histereza relativnih propusnosti nisu modelirane."
         )
         if not co2_pipeline_df.empty:
-            st.markdown("#### Izlazni uvjeti CO₂ cjevovoda")
+            st.markdown(
+                "#### Neovisni forward proračun CO₂ transportnog cjevovoda"
+            )
             pipeline_row = co2_pipeline_df.iloc[0]
-            pipeline_metrics = st.columns(3)
+            pipeline_metrics = st.columns(4)
             pipeline_metrics[0].metric(
+                "Zadani tlak na početku voda",
+                f"{pipeline_row['Inlet pressure [bar]']:.2f} bar",
+            )
+            pipeline_metrics[1].metric(
                 "Izlazni tlak CO₂ voda",
                 f"{pipeline_row['Outlet pressure [bar]']:.2f} bar",
             )
-            pipeline_metrics[1].metric(
+            pipeline_metrics[2].metric(
                 "Pad tlaka CO₂ voda",
                 f"{pipeline_row['Pressure drop [bar]']:.2f} bar",
             )
-            pipeline_metrics[2].metric(
+            pipeline_metrics[3].metric(
                 "Izlazna temperatura CO₂ voda",
                 f"{pipeline_row['Outlet temperature [°C]']:.2f} °C",
             )
-            st.caption(
-                "Ovo je forward proračun pri nominalnom projektnom protoku. "
-                "Izlaz pipelinea zasad ne mijenja postojeću snagu kompresora "
-                "ni rubni uvjet CO₂ bušotine."
+            st.info(
+                "Ovaj rezultat polazi od zasebno zadanog projektnog ulaza, "
+                "koji je u defaultnom scenariju 150 bar. Zato približno "
+                "148,7 bar na kraju znači pad od približno 1,3 bar duž "
+                "transportne dionice; to nije izračunati izlaz kompresora. "
+                "Transportni endpoint zasad nije spojen sa snagom kompresora "
+                "ni WHP-om CO₂ utisne bušotine."
             )
 
     with geothermal_tab:

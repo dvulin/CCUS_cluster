@@ -35,7 +35,7 @@ CCUS_cluster/
 │   ├── mbalance.py
 │   ├── geothermal.py
 │   ├── transport.py
-│   └── pipeline.py             # Kompatibilni naziv
+│   └── pipeline.py             # Horizontalni termo-hidraulički proračun
 ├── outputs/                    # Prikaz i izvoz rezultata
 │   ├── __init__.py
 │   ├── result_export.py
@@ -168,15 +168,73 @@ assigns the matching role-specific depth to every well instance.
 
 Konfiguracija zasebne transportne dionice: način transporta, godišnja količina
 CO2, udaljenost, CAPEX/OPEX te geometrija i koljena cjevovoda. Modul
-`engineering/pipeline.py` zadržava kompatibilni naziv `Pipeline`. Izračun
-horizontalnog pada tlaka namjerno nije uveden prije potvrde jednadžbe trenja i
-koeficijenata lokalnih gubitaka.
+`engineering/pipeline.py` sadrži generički stacionarni 1D proračun za CO₂ i
+vodu. Metoda `Pipeline.calculate_outlet_conditions` prima vrstu fluida, ulazni
+tlak i temperaturu, maseni protok i geometriju te vraća izlazni tlak i
+temperaturu.
+
+Po segmentu se lokalno računaju gustoća, viskoznost i specifični toplinski
+kapacitet iz trenutačnog tlaka i temperature. Pad tlaka koristi Darcy–Weisbach,
+Haalandov turbulentni faktor trenja (`64/Re` za laminarni tok) i lokalne
+koeficijente koljena `K90=0,9`, `K45=0,4`, `K30=0,2`. Cjevovod je horizontalan,
+pa nema gravitacijskog člana. Budući da položaji koljena nisu ulaz, njihov se
+ukupni `K` ravnomjerno raspodjeljuje po numeričkim segmentima. Temperatura se
+približava zadanoj temperaturi
+okoliša stabilnim eksponencijalnim korakom kroz serijski toplinski otpor
+stijenke, izolacije i vanjskog okoliša. Za zrak se zadaje vanjski koeficijent
+prijelaza topline, a za ukopani vod vodljivost tla i dubina osi cijevi.
+Otpor unutarnjeg graničnog sloja fluida trenutačno se zanemaruje, pa modelirani
+serijski otpor počinje na unutarnjoj stijenci cijevi.
+
+CO₂ dionica koristi `transport_distance_km` i postojeću CO₂ geometriju. Vod za
+geotermalnu vodu koristi `d_doublet` kao razmak geotermalnog para i duljinu
+površinskog transporta vode te zasebne
+`geothermal_pipeline_*` parametre promjera, hrapavosti i koljena. Integrirani
+scenarij za CO₂ koristi eksplicitne `co2_pipeline_inlet_pressure_bar` i
+`co2_pipeline_inlet_temperature_c`; za vodu su ulazni uvjeti postojeći ORC
+izlazi `p_out` i `t_out`. Ako prvi `p_gt_transport_out` padne ispod
+`1,01325 bar`, efektivni ORC izlazni tlak računa se potvrđenim pravilom
+`p_gt_transport_in = p_gt_transport_in - (p_gt_transport_out - 1,01325 - 1)`
+i pipeline se ponovno računa. Time se dobiva približno jedan bar rezerve iznad
+atmosferskog tlaka.
+
+`pipeline_environment_volumetric_heat_capacity_j_m3_k` validira se i zajedno s
+vodljivošću daje dijagnostičku toplinsku difuzivnost okoliša. Ne ulazi u
+stacionarnu izlaznu temperaturu: za tranzijentni utjecaj toplinskog kapaciteta
+trebali bi još vrijeme od pokretanja i početni temperaturni profil okoliša.
+Model također ne uključuje promjenu nadmorske visine, dvofazni tok ni
+Joule–Thomsonov član. CO₂ proračun zato prati CoolProp fazu i prekida se prije
+prijelaza liquid↔gas ili eksplicitnog dvofaznog stanja. Početna segmentacija
+automatski se udvostručuje dok izlazni tlak i temperatura ne zadovolje zadane
+tolerancije ili dok se ne dosegne `maximum_nsteps`.
+
+CO₂ tablica ostaje forward dijagnostika nominalnog projektnog protoka.
+Geotermalni pipeline spojen je s energetskim i bušotinskim proračunom:
+efektivni `p_gt_transport_in` koristi ORC, `p_gt_transport_out` je ulazni tlak
+GT pumpe, a `t_gt_transport_out` ulazna temperatura utisnog VFP-a. Svaka
+korekcija preniskog prvog izlaznog tlaka ispisuje se, sprema u
+`calculation.log` i izlaže kroz `scenario_notes`.
 
 ---
 
 ### `engineering/wellbore.py` – class `VFP(ParamMetadata)`
 
 Vertical Flow Performance class. Calculates the pressure profile along a CO2 injection or geothermal production/injection well using a step-wise integration of gravitational and frictional pressure gradients.
+
+The fluid temperature is integrated in the physical flow direction while the
+pressure can be integrated from either known endpoint. A linear formation
+temperature profile and an effective heat-transfer coefficient are used in a
+stable exponential heat-transfer step; every pressure segment evaluates local
+density and viscosity at its local pressure and temperature. `T_C` is the
+fluid inlet temperature (wellhead for injection, bottomhole for production).
+The active scenario currently uses 20 °C as an explicit surface-formation
+temperature proxy and the scenario reservoir/production temperature at the
+bottom; this proxy is intentionally independent of ORC `t_out`. Fluid heat
+capacity is evaluated once at scenario reference pressure `p_ref` and inlet
+temperature so the thermal profile does not depend on whether BHP or WHP is
+the known pressure boundary.
+The model represents steady 1D heat exchange with the formation; it does not
+include Joule–Thomson, adiabatic or transient cement/rock effects.
 
 **Parameters:** `rw`, `re`, `h_ef`, `h_ref`, `k`, `m_dot`. The generic
 `h_ref` attribute is set per instance from the corresponding role-specific
@@ -185,7 +243,7 @@ scenario input before the pressure profile is calculated.
 | Method | Description |
 |---|---|
 | `colebrook(D, Re, e)` | Solves the Colebrook-White implicit equation via `scipy.optimize.fsolve`; returns the Darcy-Weisbach friction factor. |
-| `calculate_dp(fluid, m_dot, bhp, whp, T_C, depth_total, nsteps, pipe_diameter, epsilon)` | Integrates from BHP→WHP (or WHP→BHP depending on which pressure is given). Returns the unknown end-point pressure in bar. Handles both production and injection directions. |
+| `calculate_dp(fluid, m_dot, bhp, whp, T_C, depth_total, nsteps, pipe_diameter, epsilon, flow_direction, formation_surface_temperature_C, formation_bottomhole_temperature_C, heat_transfer_coefficient_W_m2_K, specific_heat_capacity_J_kg_K)` | Integrates temperature in the physical flow direction and pressure from the known BHP or WHP. Local `ρ(p,T)` and `μ(p,T)` affect gravity, friction and the resulting endpoint pressure. The optional diagnostics include the complete temperature profile and endpoint properties. |
 
 ---
 
@@ -425,6 +483,23 @@ Runnable economic example. Instantiates three objects — `Emitter` (NEXE, 716 k
 
 Central input file for all engineering calculations. Each parameter is stored as `[value, unit, description]` and validated against `IOEndpoints.PARAM_METADATA` on load.
 
+### Spremljeni Streamlit scenariji
+
+Polje `scenario_name` nalazi se na početku Streamlit unosa i u glavnoj te
+uncertainty JSON datoteci; zadana vrijednost je `GT-CCUS`. Svaki klik na
+`Pokreni proračun` automatski sprema trenutačne ulaze u
+`inputs/scenarios/last_inputs.json` te u novu arhivu oblika
+`YYMMDD_HHmm_inputs.json`. Ako se više proračuna pokrene unutar iste minute,
+arhive dobivaju nastavke `_2`, `_3`, ... i nijedna se postojeća arhiva ne
+prepisuje.
+
+Lijevi izbornik omogućuje pretraživanje prema nazivu scenarija, učitavanje te
+brisanje točno odabrane arhive prikazane kao `ime scenarija, ime datoteke`.
+Brisanje zahtijeva zasebnu potvrdu i ne dopušta brisanje `last_inputs.json`.
+Na Streamlit Cloud instalaciji datoteke na lokalnom filesystemu instance mogu
+nestati pri ponovnom pokretanju ili novom deploymentu; za trajnu višekorisničku
+pohranu potrebno je naknadno povezati vanjsko spremište.
+
 ---
 
 ### `outputs/legacy/bhp.json`
@@ -555,9 +630,10 @@ stavke novčanog toka.
 
 Bazna godina PV-a je početna godina ekonomike. IRR nema zaseban ulaz stope,
 nego se izvodi iz nominalnog godišnjeg novčanog toka; pri više matematičkih
-korijena rezultat tu dvosmislenost izričito označava. Ulazi za horizontalni
-cjevovod postoje u klasi `engineering.Transport`, ali pad tlaka još se ne računa
-dok se ne potvrde jednadžba trenja i koeficijenti lokalnih gubitaka za koljena.
+korijena rezultat tu dvosmislenost izričito označava. Horizontalni pipeline
+model računa izlazni tlak i temperaturu za CO₂ i geotermalnu vodu. CO₂ endpoint
+zasad je zasebna forward dijagnostika, dok GT endpoint mijenja pumpnu i ORC
+snagu te ulaznu temperaturu utisnog VFP-a.
 
 Raspoloživost još ne mijenja on-stream protok ni energiju. Za očuvanje jednake
 godišnje mase CO2 pri raspoloživosti manjoj od jedan treba zasebno potvrditi

@@ -1,4 +1,5 @@
 {
+  "scenario_name": ["GT-CCUS", "-", "Naziv scenarija"],
   "m_dot_annual": [700.0,	"ktpa",     "Izvedena godišnja količina CO2 za utiskivanje"],
   "rw_co2": [0.15, 			"m",        "Radijus utisne CO2 bušotine"],
   "rw_geothermal_production": [0.15, "m",     "Radijus proizvodne geotermalne bušotine"],
