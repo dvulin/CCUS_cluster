@@ -116,7 +116,7 @@ class IOEndpoints(ParamMetadata):
         'p_comp_in': ('bar', 'Ulazni tlak u kompresiju CO2'),
         't_comp_in': ('°C', 'Ulazna temperatura u kompresiju CO2'),
         'E_eff' : ('-', 'Učinkovitost skladištenja CO2 u akviferu'),
-        'S_plume_core' : ('-','Osnovno zasićenje s CO2 u zoni bušotine'),
+        'S_plume_core' : ('-','Minimalno bazno zasićenje CO2 u zoni bušotine'),
         'Sw_i': ('-', 'Minimalno zasićenje vodom'),
         'krw_max': ('-', 'Maksimalna relativna propusnost za vodu'),
         'krg_max': ('-', 'Maksimalna relativna propusnost za CO2'),
@@ -127,6 +127,7 @@ class IOEndpoints(ParamMetadata):
     }
 
     ECONOMICS_PARAM_METADATA = {
+        'scenario_name': ('-', 'Naziv scenarija'),
         'economics_start_year': ('year', 'Početna godina ekonomskog razdoblja'),
         'economics_end_year': ('year', 'Završna godina ekonomskog razdoblja'),
         'economics_ccs_start_year': ('year', 'Početna godina ulaganja u CCS lanac'),
@@ -256,6 +257,7 @@ class IOEndpoints(ParamMetadata):
         'storage_opex_per_ton',
     )
     PARAM_TYPES = {
+        'scenario_name': str,
         'economics_start_year': int,
         'economics_end_year': int,
         'economics_ccs_start_year': int,

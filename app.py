@@ -35,6 +35,8 @@ SCENARIO_SEARCH_KEY = "scenario_store_search"
 SCENARIO_LOAD_SELECT_KEY = "scenario_store_load_selection"
 SCENARIO_DELETE_SELECT_KEY = "scenario_store_delete_selection"
 SCENARIO_DELETE_CONFIRM_KEY = "scenario_store_delete_confirm"
+COLLAPSE_INPUTS_ON_RUN_KEY = "collapse_inputs_on_run_once"
+CHART_FONT_SIZE_ADJUSTMENT_KEY = "chart_font_size_adjustment"
 CALENDAR_HOURS_PER_YEAR = 365.25 * 24.0
 WELL_DEPTH_DEFAULTS = {
     "h_ref_co2": "Referentna dubina utisne CO₂ bušotine za VFP proračun",
@@ -47,35 +49,65 @@ WELL_DEPTH_DEFAULTS = {
 }
 
 
-def _chart_style_config():
-    """Return the shared high-contrast style for every application chart."""
+def _chart_style_config(font_size_adjustment=0):
+    """Return the shared chart style with a runtime-compatible font offset."""
+    from chart_styles import vega_lite_chart_config
+
+    # Always call the no-argument API so a Streamlit process that still has the
+    # preceding chart_styles module cached can complete its current rerun.  The
+    # runtime offset is deliberately applied here to the fresh configuration.
+    config = vega_lite_chart_config()
+    adjustment = int(font_size_adjustment)
+    for section, font_size_keys in {
+        "axis": ("labelFontSize", "titleFontSize"),
+        "legend": ("labelFontSize", "titleFontSize"),
+        "title": ("fontSize",),
+    }.items():
+        for font_size_key in font_size_keys:
+            if font_size_key in config.get(section, {}):
+                config[section][font_size_key] += adjustment
+    return config
+
+
+def _legend_visibility_parameter(series_field):
+    """Return a legend-bound selection containing visible chart series."""
     return {
-        "axis": {
-            "labelColor": "#000000",
-            "labelFontSize": 15,
-            "labelFontWeight": 500,
-            "titleColor": "#000000",
-            "titleFontSize": 17,
-            "titleFontWeight": 600,
-            "domain": True,
-            "domainColor": "#000000",
-            "domainWidth": 1.5,
-            "ticks": True,
-            "tickColor": "#000000",
-            "tickSize": 7,
-            "tickWidth": 1.5,
-            "gridColor": "#D9D9D9",
-            "gridOpacity": 0.7,
+        "name": "legend_visible_series",
+        "select": {
+            "type": "point",
+            "fields": [series_field],
+            # Vega expression string forces ordinary clicks to toggle each
+            # series independently; boolean True toggles only with Shift.
+            "toggle": "true",
         },
-        "legend": {
-            "labelColor": "#000000",
-            "labelFontSize": 15,
-            "titleColor": "#000000",
-            "titleFontSize": 16,
-            "orient": "bottom",
-            "direction": "horizontal",
-        },
+        "bind": "legend",
     }
+
+
+def _legend_opacity_encoding():
+    """Show selected series and fully hide each deselected series."""
+    return {
+        "condition": {
+            "param": "legend_visible_series",
+            "empty": False,
+            "value": 1.0,
+        },
+        "value": 0.0,
+    }
+
+
+def _initialize_legend_selection(spec, series_field, series_names):
+    """Initialize a chart legend with every available series selected."""
+    initial_value = [
+        {series_field: series_name}
+        for series_name in dict.fromkeys(str(name) for name in series_names)
+    ]
+    for container in [spec, *spec.get("layer", [])]:
+        for parameter in container.get("params", []):
+            if parameter.get("name") == "legend_visible_series":
+                parameter["value"] = initial_value
+                return spec
+    raise ValueError("Vega-Lite specifikacija nema interaktivnu legendu.")
 
 
 def _wide_chart_spec(
@@ -87,6 +119,7 @@ def _wide_chart_spec(
     chart_type="line",
     height=320,
     y_domain=None,
+    font_size_adjustment=0,
 ):
     """Return a styled Vega-Lite spec for a long-form wide-data chart."""
     if chart_type not in {"line", "bar"}:
@@ -119,6 +152,7 @@ def _wide_chart_spec(
                 "type": "nominal",
                 "legend": {"title": None},
             },
+            "opacity": _legend_opacity_encoding(),
             "tooltip": [
                 {"field": x_field, "type": x_type, "title": x_title},
                 {"field": "Series", "type": "nominal", "title": "Serija"},
@@ -130,9 +164,14 @@ def _wide_chart_spec(
                 },
             ],
         },
+        "params": [_legend_visibility_parameter("Series")],
         "height": height,
-        "config": _chart_style_config(),
+        "config": _chart_style_config(font_size_adjustment),
     }
+
+
+def _current_chart_font_size_adjustment():
+    return int(st.session_state.get(CHART_FONT_SIZE_ADJUSTMENT_KEY, 0))
 
 
 def _render_wide_chart(
@@ -157,6 +196,7 @@ def _render_wide_chart(
         var_name="Series",
         value_name="Value",
     )
+    long_frame["Series"] = long_frame["Series"].astype(str)
     long_frame["Value"] = pd.to_numeric(
         long_frame["Value"], errors="coerce"
     )
@@ -182,8 +222,7 @@ def _render_wide_chart(
         if pd.api.types.is_numeric_dtype(long_frame[x_field])
         else "ordinal"
     )
-    st.vega_lite_chart(
-        long_frame,
+    spec = _initialize_legend_selection(
         _wide_chart_spec(
             x_title=x_title,
             y_title=y_title,
@@ -192,7 +231,14 @@ def _render_wide_chart(
             chart_type=chart_type,
             height=height,
             y_domain=y_domain,
+            font_size_adjustment=_current_chart_font_size_adjustment(),
         ),
+        "Series",
+        value_columns,
+    )
+    st.vega_lite_chart(
+        long_frame,
+        spec,
         width="stretch",
         theme=None,
     )
@@ -211,6 +257,7 @@ def _zoomable_line_chart_spec(
     integer_x=False,
     interpolate="linear",
     height=360,
+    font_size_adjustment=0,
 ):
     """Return a multi-series Vega-Lite line spec with optional separate y zoom."""
     x_axis = {"title": x_title}
@@ -247,6 +294,7 @@ def _zoomable_line_chart_spec(
                 "type": "nominal",
                 "legend": {"title": None},
             },
+            "opacity": _legend_opacity_encoding(),
             "tooltip": [
                 x_tooltip,
                 {
@@ -264,7 +312,7 @@ def _zoomable_line_chart_spec(
         },
         "params": [],
         "height": height,
-        "config": _chart_style_config(),
+        "config": _chart_style_config(font_size_adjustment),
     }
 
     x_selection = {"type": "interval", "encodings": ["x"]}
@@ -301,10 +349,11 @@ def _zoomable_line_chart_spec(
                 "bind": "scales",
             }
         )
+    spec["params"].append(_legend_visibility_parameter(series_field))
     return spec
 
 
-def _compressor_density_chart_spec():
+def _compressor_density_chart_spec(font_size_adjustment=0):
     """Return an interactive dual-axis compressor-power/density chart spec."""
     common_x = {
         "field": "Vrijeme (god)",
@@ -350,7 +399,8 @@ def _compressor_density_chart_spec():
                         "name": "compressor_density_x_zoom",
                         "select": {"type": "interval", "encodings": ["x"]},
                         "bind": "scales",
-                    }
+                    },
+                    _legend_visibility_parameter("Serija"),
                 ],
                 "encoding": {
                     "x": common_x,
@@ -364,6 +414,7 @@ def _compressor_density_chart_spec():
                         "scale": {"zero": True},
                     },
                     "color": common_color,
+                    "opacity": _legend_opacity_encoding(),
                     "tooltip": common_tooltip,
                 },
             },
@@ -382,6 +433,7 @@ def _compressor_density_chart_spec():
                         "scale": {"zero": False},
                     },
                     "color": common_color,
+                    "opacity": _legend_opacity_encoding(),
                     "strokeDash": {
                         "field": "Serija",
                         "type": "nominal",
@@ -393,8 +445,27 @@ def _compressor_density_chart_spec():
         ],
         "resolve": {"scale": {"x": "shared", "y": "independent"}},
         "height": 360,
-        "config": _chart_style_config(),
+        "config": _chart_style_config(font_size_adjustment),
     }
+
+
+def _render_long_series_chart(
+    frame,
+    spec,
+    *,
+    series_field="Serija",
+):
+    """Render a long-form Vega chart with all legend series selected."""
+    chart_frame = frame.copy()
+    chart_frame[series_field] = chart_frame[series_field].astype(str)
+    series_names = chart_frame[series_field].dropna().unique().tolist()
+    spec = _initialize_legend_selection(spec, series_field, series_names)
+    st.vega_lite_chart(
+        chart_frame,
+        spec,
+        width="stretch",
+        theme=None,
+    )
 
 
 def _entry_value(inputs, key):
@@ -441,6 +512,7 @@ def _set_entry_value(key, value):
 def _clear_stale_results():
     st.session_state[RESULTS_KEY] = None
     st.session_state[ERROR_KEY] = None
+    st.session_state[COLLAPSE_INPUTS_ON_RUN_KEY] = False
 
 
 def _slider_key(parameter):
@@ -554,6 +626,10 @@ def _activate_scenario(inputs):
 
 def _reset_scenario():
     _activate_scenario(DEFAULT_INPUTS)
+
+
+def _collapse_inputs_on_run():
+    st.session_state[COLLAPSE_INPUTS_ON_RUN_KEY] = True
 
 
 def _load_selected_scenario():
@@ -904,7 +980,8 @@ def validate_active_inputs(inputs):
 
     if value("S_plume_core") > 1.0 - value("Sw_i"):
         warnings.append(
-            "S_plume_core je veći od raspoloživog raspona zasićenja 1 − Sw_i; "
+            "Minimalno zasićenje CO₂ veće je od raspoloživog "
+            "raspona zasićenja 1 − Sw_i; "
             "postojeći Corey model tada reže CO₂ zasićenje na granicu."
         )
 
@@ -1171,7 +1248,13 @@ else:
         "prethodne rezultate kako se ne bi prikazivali zastarjeli podaci."
     )
 
-with st.expander("Prilagodba ulaznog scenarija", expanded=True):
+collapse_inputs_now = bool(
+    st.session_state.get(COLLAPSE_INPUTS_ON_RUN_KEY, False)
+)
+with st.expander(
+    "Prilagodba ulaznog scenarija",
+    expanded=not collapse_inputs_now,
+):
     text_control("scenario_name", "Naziv scenarija")
     st.divider()
     st.caption(
@@ -1708,13 +1791,19 @@ with st.expander("Prilagodba ulaznog scenarija", expanded=True):
         )
         paired_numeric_control(
             "S_plume_core",
-            "Zasićenje jezgre plumea S_plume_core",
+            "Minimalno zasićenje CO₂",
             0.0,
             1.0,
             slider_step=0.01,
             number_step=0.001,
             number_format="%.3f",
             unit="-",
+            help_text=(
+                "Bazna vrijednost zasićenja CO₂ u zoni blizu bušotine. "
+                "Tijekom utiskivanja model je dodaje članu "
+                "m_CO₂ / storage_capacity; nije rezidualno zasićenje "
+                "nakon utiskivanja."
+            ),
         )
         paired_numeric_control(
             "Sw_i",
@@ -2472,6 +2561,7 @@ with st.sidebar:
         type="primary",
         width="stretch",
         disabled=bool(validation_errors),
+        on_click=_collapse_inputs_on_run,
     )
     clear_requested = st.button(
         "Očisti rezultate",
@@ -2532,6 +2622,24 @@ if results is None:
         "Za prikaz rezultata odaberite **Pokreni proračun** u bočnom izborniku."
     )
 else:
+    st.session_state.setdefault(CHART_FONT_SIZE_ADJUSTMENT_KEY, 0)
+    with st.expander("Aa  Veličina fonta dijagrama", expanded=False):
+        st.slider(
+            "Dodatna promjena veličine fonta",
+            min_value=-6,
+            max_value=12,
+            step=1,
+            key=CHART_FONT_SIZE_ADJUSTMENT_KEY,
+            help=(
+                "Vrijednost se dodaje svim fontovima Streamlit dijagrama. "
+                "Nula koristi zajednički projektni stil iz chart_styles.py."
+            ),
+        )
+        st.caption(
+            "Promjena se odmah primjenjuje na naslove i oznake osi, "
+            "brojčane vrijednosti i legende svih prikazanih dijagrama."
+        )
+
     mbal_df = results["mbal_df"]
     vfp_co2_df = results["vfp_co2_df"]
     co2_pipeline_df = results["co2_pipeline_df"]
@@ -3042,11 +3150,11 @@ else:
             ],
             ignore_index=True,
         )
-        st.vega_lite_chart(
+        _render_long_series_chart(
             compressor_density_chart,
-            _compressor_density_chart_spec(),
-            width="stretch",
-            theme=None,
+            _compressor_density_chart_spec(
+                _current_chart_font_size_adjustment()
+            ),
         )
         st.caption(
             "Graf podržava pomicanje i uvećavanje po x-osi. Lijeva os "
@@ -3283,16 +3391,15 @@ else:
             chart_type="bar",
         )
         st.markdown("#### Godišnja energetska bilanca")
-        st.vega_lite_chart(
+        _render_long_series_chart(
             annual_energy_chart_long,
             _zoomable_line_chart_spec(
                 x_title="Godina",
                 y_title="Energija (MWh)",
                 zoom_name="annual_energy_x_zoom",
                 integer_x=True,
+                font_size_adjustment=_current_chart_font_size_adjustment(),
             ),
-            width="stretch",
-            theme=None,
         )
         st.caption(
             "ORC i prodana energija prikazani su pozitivno; GT pumpa, CO₂ "
@@ -3300,16 +3407,15 @@ else:
             "može pomicati i uvećavati po x-osi."
         )
         st.markdown("#### Prosječna godišnja snaga komponenti")
-        st.vega_lite_chart(
+        _render_long_series_chart(
             annual_average_power_chart_long,
             _zoomable_line_chart_spec(
                 x_title="Godina",
                 y_title="Prosječna snaga (MW)",
                 zoom_name="annual_average_power_x_zoom",
                 integer_x=True,
+                font_size_adjustment=_current_chart_font_size_adjustment(),
             ),
-            width="stretch",
-            theme=None,
         )
         st.caption(
             "ORC, GT pumpa i CO₂ kompresor prikazani su kao pozitivne "
@@ -3317,7 +3423,7 @@ else:
             f"godišnje energije s {calendar_hours_per_year:.0f} sati; MWh/h = MW."
         )
         st.markdown("#### Godišnji troškovi po komponentama")
-        st.vega_lite_chart(
+        _render_long_series_chart(
             annual_cost_component_chart_long,
             _zoomable_line_chart_spec(
                 x_title="Godina",
@@ -3326,9 +3432,8 @@ else:
                 y_zoom_name="annual_cost_revenue_y_zoom",
                 value_format=",.3f",
                 integer_x=True,
+                font_size_adjustment=_current_chart_font_size_adjustment(),
             ),
-            width="stretch",
-            theme=None,
         )
         st.caption(
             "Troškovi su negativni i uključuju inflaciju do godine nastanka; "
@@ -3340,7 +3445,7 @@ else:
             "pritisnutu tipku Shift."
         )
         st.markdown("#### Trošak/prihod od električne energije")
-        st.vega_lite_chart(
+        _render_long_series_chart(
             electricity_cash_flow_chart_long,
             _zoomable_line_chart_spec(
                 x_title="Godina",
@@ -3350,9 +3455,8 @@ else:
                 value_format=",.3f",
                 integer_x=True,
                 interpolate="step-after",
+                font_size_adjustment=_current_chart_font_size_adjustment(),
             ),
-            width="stretch",
-            theme=None,
         )
         st.caption(
             "Pozitivna vrijednost je prihod neto izvoza električne energije, a "
@@ -3361,16 +3465,15 @@ else:
             "Shift + kotačić y-os."
         )
         st.markdown("#### Godišnji novčani tok: s CCS-om i bez CCS-a")
-        st.vega_lite_chart(
+        _render_long_series_chart(
             annual_cash_flow_chart_long,
             _zoomable_line_chart_spec(
                 x_title="Godina",
                 y_title="Novčani tok (EUR)",
                 zoom_name="annual_cash_flow_x_zoom",
                 integer_x=True,
+                font_size_adjustment=_current_chart_font_size_adjustment(),
             ),
-            width="stretch",
-            theme=None,
         )
         st.caption(
             "Svaka linija predstavlja vrijednost samo te godine; PV je "

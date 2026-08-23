@@ -13,36 +13,20 @@ Extended visualization methods for GT_CCS_engineering comprehensive analysis
 import matplotlib.pyplot as plt
 import numpy as np
 
+from chart_styles import (
+    LEGACY_MATPLOTLIB_STYLE_NAME,
+    legacy_geothermal_font_sizes,
+    legacy_matplotlib_rc_params,
+)
+
 class Visualization:
 
     def __init__(self):
         self._set_plot_style()
 
     def _set_plot_style(self):
-        plt.style.use('ggplot')
-        plt.rcParams.update({
-            'figure.facecolor': 'white',
-            'font.family': 'serif',
-            'font.size': 12,
-            'text.color': 'black',
-            'axes.labelcolor': 'black',
-            'axes.titlesize': 12,
-            'axes.labelsize': 12,
-            'xtick.labelsize': 10,
-            'xtick.color': 'black',
-            'ytick.labelsize': 10,
-            'ytick.color': 'black',
-            'legend.fontsize': 10,
-            'figure.facecolor': 'white',
-            'axes.facecolor': 'white',
-            'grid.color': 'lightgray',
-            'grid.linewidth': 0.5, # Thinner grid lines
-            'axes.spines.left': True,
-            'axes.spines.bottom': True,
-            'axes.spines.top': False,
-            'axes.spines.right': False,
-            'axes.linewidth': 1.0,
-        })
+        plt.style.use(LEGACY_MATPLOTLIB_STYLE_NAME)
+        plt.rcParams.update(legacy_matplotlib_rc_params())
 
     def time_vs_CO2_stored_vs_bhp_vs_whp(self, mbal_df, bhp_df):
         fig, ax1 = plt.subplots()
@@ -176,10 +160,9 @@ class Visualization:
         Prikazuje vremensku evoluciju geotermalne proizvodnje:
         protok geotermalne vode (lijeva os) i proizvodnu temperaturu (desna os).
         """
-        font_title = 16
-        font_labels = 14
-        font_ticks = 12
-        font_legend = 1
+        font_sizes = legacy_geothermal_font_sizes()
+        font_labels = font_sizes['labels']
+        font_ticks = font_sizes['ticks']
         
         fig, ax1 = plt.subplots(figsize=(10, 6))
         ax1.set_xlabel('vrijeme [god]', fontsize = font_labels)
