@@ -709,6 +709,10 @@ C:\Users\dvulin\anaconda3\python.exe -m streamlit run streamlit_app/app.py
 # → http://localhost:8501
 ```
 
+Jezik (hrvatski / engleski) bira se u sidebaru; svi su tekstovi u
+`streamlit_app/i18n.py` (UTF-8, bez ovisnosti o konzoli). Preuzimanje CSV-a
+koristi UTF-8 s BOM-om (`utf-8-sig`) da Excel ispravno prikaže hrvatske znakove.
+
 Kartica **Ulazi** sadrži uređive tablice za sve dionike: emitere (id, naziv, početna
 godina, vjerojatnost implementacije, krivulja emisija, capture kapacitet/CAPEX/OPEX),
 pristupe emiter → skladište (način, udaljenost, kapacitet, CAPEX, OPEX, početna

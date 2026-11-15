@@ -473,6 +473,11 @@ def frames_to_scenario(base: ScenarioConfig, frames: dict) -> ScenarioConfig:
 def build_map_figure(snapshot, scenario: ScenarioConfig):
     """Draw the transport graph of one year (nodes, edges, flow width)."""
 
+    # Croatian diacritics must render: DejaVu Sans covers the full Latin-Extended
+    # set, and a proper minus sign avoids the "missing glyph" box for negative axes
+    plt.rcParams["font.family"] = ["DejaVu Sans", "Arial", "sans-serif"]
+    plt.rcParams["axes.unicode_minus"] = False
+
     positions: dict[str, tuple[float, float]] = {}
     for node in scenario.nodes:
         if node.location.latitude is not None and node.location.longitude is not None:
@@ -534,34 +539,56 @@ def snapshot_frame(rows: list[dict]):
 
 
 # --------------------------------------------------------------------- app
+
+
 def main() -> None:
     import streamlit as st
 
+    try:  # package import (tests) or script import (streamlit run)
+        from .i18n import strings
+    except ImportError:  # pragma: no cover - script execution
+        from i18n import strings
+
     st.set_page_config(page_title="CCUS cluster", layout="wide")
-    st.title("CCUS cluster â€“ dinamiÄŤni emiteri i multimodalni transport")
+
+    if "language" not in st.session_state:
+        st.session_state["language"] = "hr"
+    t = strings(st.session_state["language"])
+    st.title(t["app_title"])
 
     with st.sidebar:
-        st.header("Scenarij")
+        st.header("CCUS cluster")
+        language = st.selectbox(
+            t.get("language", "Jezik"),
+            ["hr", "en"],
+            format_func=lambda code: {"hr": "Hrvatski", "en": "English"}[code],
+            index=["hr", "en"].index(st.session_state["language"]),
+            key="language",
+        )
+        t = strings(st.session_state["language"])
+
+        st.subheader(t["sidebar_scenario"])
         source = st.radio(
-            "Izvor",
-            ["Klaster (14 emitera)", "Jedan lanac (legacy)", "UÄŤitaj JSON"],
+            t["sidebar_source"],
+            [t["source_cluster"], t["source_single"], t["source_upload"]],
             index=0,
         )
-        if source == "Klaster (14 emitera)":
+        if source == t["source_cluster"]:
             payload = DEFAULT_CLUSTER
-        elif source == "Jedan lanac (legacy)":
+        elif source == t["source_single"]:
             payload = DEFAULT_SCENARIO
         else:
-            uploaded = st.file_uploader("JSON scenarij", type=["json"])
+            uploaded = st.file_uploader(t["upload_label"], type=["json"])
             payload = uploaded.getvalue() if uploaded is not None else DEFAULT_CLUSTER
+
         try:
             base_scenario = load_scenario(payload)
-            st.success(f"Scenarij: {base_scenario.name}")
+            st.success(t["scenario_loaded"].format(name=base_scenario.name))
         except Exception as exc:  # noqa: BLE001 - surfaced to the user
-            st.error(f"Nevrjeđan scenarij: {exc}")
+            st.error(t["scenario_invalid"].format(error=exc))
             return
 
-        if st.button("UÄŤitaj scenarij"):
+        if st.button(t["load_scenario"]):
             st.session_state["frames"] = scenario_to_frames(base_scenario)
             st.session_state["base"] = base_scenario.model_dump()
             st.session_state.pop("result", None)
@@ -576,110 +603,95 @@ def main() -> None:
     base_scenario = ScenarioConfig.model_validate(base) if base else base_scenario
 
     inputs_tab, overview, network, reservoir, economics, tables = st.tabs(
-        ["Ulazi", "SaĹľetak", "MreĹľa", "SkladiĹˇte", "Ekonomika", "Tablice"]
+        [
+            t["tab_inputs"],
+            t["tab_overview"],
+            t["tab_network"],
+            t["tab_reservoir"],
+            t["tab_economics"],
+            t["tab_tables"],
+        ]
     )
 
     with inputs_tab:
-        st.caption(
-            "Uredi tablice, zatim klikni 'Primijeni i pokreni'. Nove emitere, pristupe i skladiĹˇta "
-            "dodajeĹˇ u redak na dnu tablice (prazno polje = NaN)."
-        )
+        st.caption(t["inputs_hint"])
+
+        st.markdown(f"#### {t['sec_emitters']}")
         frames["emitters"] = st.data_editor(
             frames["emitters"],
             num_rows="dynamic",
             width="stretch",
             key="editor_emitters",
-            column_config={
-                "id": st.column_config.TextColumn("id", help="slug: mala slova, bez razmaka"),
-                "name": st.column_config.TextColumn("naziv"),
-                "activation_year": st.column_config.NumberColumn("početak", help="prva godina doprinosa"),
-                "implementation_probability": st.column_config.NumberColumn(
-                    "vjerojatnost", min_value=0.0, max_value=1.0, step=0.1,
-                    help="1.0 = 2026., 0.5 = 2028., 0.1 = 2033.",
-                ),
-                "curve": st.column_config.SelectboxColumn("krivulja", options=["constant", "power_law", "piecewise_linear"]),
-                "e0_t_per_year": st.column_config.NumberColumn("E0 (t/god)", help="emisija u referentnoj godini"),
-                "a": st.column_config.NumberColumn("a", help="linearni pad, npr. -0,03"),
-                "c": st.column_config.NumberColumn("c", help="potencijski eksponent, npr. 1,5"),
-                "constant_t_per_year": st.column_config.NumberColumn("konstantno (t/god)"),
-                "capture_capacity_t_per_year": st.column_config.NumberColumn("capture kapacitet (t/god)", help="0 = bez ograničenja"),
-                "capture_capex_eur": st.column_config.NumberColumn("capture CAPEX (EUR)"),
-                "capture_opex_eur_per_t": st.column_config.NumberColumn("capture OPEX (EUR/t)"),
-            },
+            column_config=_column_config(st, t["col_emitters"], frames["emitters"].columns, number=True, text={"id", "name"}),
         )
+
+        st.markdown(f"#### {t['sec_connections']}")
         frames["connections"] = st.data_editor(
             frames["connections"],
             num_rows="dynamic",
             width="stretch",
             key="editor_connections",
-            column_config={
-                "emitter_id": st.column_config.TextColumn("emiter", help="id iz tablice Emiteri"),
-                "sink_id": st.column_config.TextColumn("skladište", help="id iz tablice Skladišta"),
-                "start_year": st.column_config.NumberColumn("od godine", help="nezavisno po paru"),
-                "end_year": st.column_config.NumberColumn("do godine", help="prazno = do kraja"),
-                "mode": st.column_config.SelectboxColumn("način", options=["pipeline", "truck", "rail", "marine"]),
-                "distance_km": st.column_config.NumberColumn("L (km)"),
-                "capacity_t_per_year": st.column_config.NumberColumn("kapacitet (t/god)"),
-                "capex_eur": st.column_config.NumberColumn("CAPEX (EUR)", help="naplaćuje se u startnoj godini"),
-                "opex_eur_per_t": st.column_config.NumberColumn("OPEX (EUR/t)"),
-                "opex_eur_per_tkm": st.column_config.NumberColumn("OPEX (EUR/t·km)"),
-            },
+            column_config=_column_config(
+                st,
+                t["col_connections"],
+                frames["connections"].columns,
+                number=True,
+                text={"emitter_id", "sink_id"},
+                select={"mode": ["pipeline", "truck", "rail", "marine"]},
+            ),
         )
+
+        st.markdown(f"#### {t['sec_sinks']}")
         frames["sinks"] = st.data_editor(
             frames["sinks"],
             num_rows="dynamic",
             width="stretch",
             key="editor_sinks",
-            column_config={
-                "id": st.column_config.TextColumn("id"),
-                "name": st.column_config.TextColumn("naziv"),
-                "type": st.column_config.SelectboxColumn("tip", options=["DSA", "DHF"]),
-                "capacity_t": st.column_config.NumberColumn("kapacitet (t)"),
-                "depth_m": st.column_config.NumberColumn("dubina (m)", help="default 1500 m"),
-                "porosity": st.column_config.NumberColumn("poroznost", min_value=0.0, max_value=1.0, step=0.01, help="default 0,20"),
-                "permeability_m2": st.column_config.NumberColumn("propusnost (m²)", help="default 100 mD = 1e-13 m²"),
-                "commissioning_year": st.column_config.NumberColumn("od godine"),
-                "capex_eur": st.column_config.NumberColumn("CAPEX (EUR)"),
-                "opex_eur_per_t": st.column_config.NumberColumn("OPEX (EUR/t)"),
-                "monitoring_cost_during_injection_eur_per_year": st.column_config.NumberColumn("monitoring (EUR/god) – injekcija"),
-                "monitoring_cost_after_injection_eur_per_year": st.column_config.NumberColumn("monitoring (EUR/god) – nakon"),
-            },
+            column_config=_column_config(
+                st,
+                t["col_sinks"],
+                frames["sinks"].columns,
+                number=True,
+                text={"id", "name"},
+                select={"type": ["DSA", "DHF"]},
+            ),
         )
+
+        st.markdown(f"#### {t['sec_geothermal']}")
         frames["geothermal"] = st.data_editor(
             frames["geothermal"],
             num_rows="dynamic",
             width="stretch",
             key="editor_geothermal",
-            column_config={
-                "id": st.column_config.TextColumn("id"),
-                "name": st.column_config.TextColumn("naziv"),
-                "sink_id": st.column_config.TextColumn("skladište", help="dublet na tom skladištu"),
-                "d_doublet_m": st.column_config.NumberColumn("razmak para (m)"),
-                "reservoir_temperature_c": st.column_config.NumberColumn("T ležišta (°C)"),
-                "eta_orc": st.column_config.NumberColumn("η ORC", min_value=0.0, max_value=1.0, step=0.01),
-                "p_out_bar": st.column_config.NumberColumn("p izlaza ORC (bar)"),
-                "t_out_c": st.column_config.NumberColumn("T izlaza ORC (°C)"),
-                "operation_start_year": st.column_config.NumberColumn("od godine"),
-                "operation_end_year": st.column_config.NumberColumn("do godine"),
-                "capex_eur": st.column_config.NumberColumn("CAPEX (EUR)"),
-                "fixed_opex_eur_per_year": st.column_config.NumberColumn("OPEX (EUR/god)"),
-            },
+            column_config=_column_config(
+                st,
+                t["col_geothermal"],
+                frames["geothermal"].columns,
+                number=True,
+                text={"id", "name", "sink_id"},
+            ),
         )
 
-        st.markdown("#### Ekonomika")
+        st.markdown(f"#### {t['sec_economics']}")
         column_a, column_b, column_c, column_d = st.columns(4)
-        start_year = column_a.number_input("PoÄŤetna godina", 2000, 2100, int(base_scenario.start_year))
-        end_year = column_b.number_input("ZavrĹˇna godina", 2000, 2100, int(base_scenario.end_year))
+        start_year = column_a.number_input(t["econ_start"], 2000, 2100, int(base_scenario.start_year))
+        end_year = column_b.number_input(t["econ_end"], 2000, 2100, int(base_scenario.end_year))
         discount = column_c.number_input(
-            "Diskontna stopa", 0.0, 0.5,
-            float(base_scenario.economics.discount_rate) if base_scenario.economics else 0.05, 0.005,
+            t["econ_discount"],
+            0.0,
+            0.5,
+            float(base_scenario.economics.discount_rate) if base_scenario.economics else 0.05,
+            0.005,
         )
         inflation = column_d.number_input(
-            "Inflacija", 0.0, 0.5,
-            float(base_scenario.economics.inflation_rate) if base_scenario.economics else 0.05, 0.005,
+            t["econ_inflation"],
+            0.0,
+            0.5,
+            float(base_scenario.economics.inflation_rate) if base_scenario.economics else 0.05,
+            0.005,
         )
 
-        if st.button("Primijeni i pokreni", type="primary"):
+        if st.button(t["btn_apply"], type="primary"):
             try:
                 scenario = frames_to_scenario(base_scenario, frames)
                 scenario = scenario.model_copy(
@@ -687,70 +699,94 @@ def main() -> None:
                         "start_year": int(start_year),
                         "end_year": int(end_year),
                         "economics": scenario.economics.model_copy(
-                            update={"start_year": int(start_year), "end_year": int(end_year),
-                                    "discount_rate": float(discount), "inflation_rate": float(inflation)}
-                        ) if scenario.economics else None,
+                            update={
+                                "start_year": int(start_year),
+                                "end_year": int(end_year),
+                                "discount_rate": float(discount),
+                                "inflation_rate": float(inflation),
+                            }
+                        )
+                        if scenario.economics
+                        else None,
                     }
                 )
                 st.session_state["result"] = ScenarioEngine(scenario).run()
                 st.session_state["scenario"] = scenario
                 st.session_state["base"] = scenario.model_dump()
-                st.success("Scenarij je osvjeĹľen.")
+                st.success(t["applied_ok"])
             except Exception as exc:  # noqa: BLE001 - surfaced to the user
                 st.session_state.pop("result", None)
-                st.error(f"Scenarij nije valjan: {exc}")
+                st.error(t["scenario_invalid_short"].format(error=exc))
 
     result = st.session_state.get("result")
     if result is None:
-        st.info("Uredi tablice i klikni 'Primijeni i pokreni', ili pokreni postojeći scenarij.")
+        st.info(t["info_start"])
         return
 
     active_scenario = st.session_state.get("scenario", base_scenario)
     years = active_scenario.years()
-    year = st.slider("Vremenska os", min(years), max(years), min(years), step=1)
+    year = st.slider(t["slider_time"], min(years), max(years), min(years), step=1)
     snapshot = year_snapshot(result, year)
 
     with overview:
         columns = st.columns(4)
-        columns[0].metric("UsjeÄŤeno COâ‚‚ (t)", f"{snapshot.totals['captured_t']:,.0f}")
-        columns[1].metric("Rutirano (t)", f"{snapshot.totals['routed_t']:,.0f}")
-        columns[2].metric("Utisnuto (t)", f"{snapshot.totals['injected_t']:,.0f}")
-        columns[3].metric("Pohranjeno ukupno (t)", f"{snapshot.totals['stored_t']:,.0f}")
-        st.markdown("#### Emiteri")
+        columns[0].metric(t["metric_captured"], f"{snapshot.totals['captured_t']:,.0f}")
+        columns[1].metric(t["metric_routed"], f"{snapshot.totals['routed_t']:,.0f}")
+        columns[2].metric(t["metric_injected"], f"{snapshot.totals['injected_t']:,.0f}")
+        columns[3].metric(t["metric_stored"], f"{snapshot.totals['stored_t']:,.0f}")
+        st.markdown(f"#### {t['sec_emitters']}")
         st.dataframe(snapshot_frame(snapshot.emitters), width="stretch")
-        st.markdown("#### GodiĹˇnji tehniÄŤki bilten")
+        st.markdown(f"#### {t['sec_ledger']}")
         st.dataframe(result.ledger, width="stretch")
 
     with network:
         st.pyplot(build_map_figure(snapshot, active_scenario), width="stretch")
-        st.markdown("#### Usmjerenja u odabranoj godini")
+        st.markdown(f"#### {t['sec_edges']}")
         st.dataframe(snapshot_frame(snapshot.edges), width="stretch")
 
     with reservoir:
         for sink_id, frame in result.reservoir.items():
-            st.markdown(f"#### {sink_id}")
+            st.markdown(f"#### {t['sec_sink_detail']}: {sink_id}")
             st.line_chart(frame.set_index("year")[["pressure_bar", "bhp_bar"]])
             st.dataframe(frame, width="stretch")
 
     with economics:
         if result.cash_flow is not None:
             columns = st.columns(4)
-            columns[0].metric("NPV (EUR)", f"{result.kpis.get('npv_eur') or 0.0:,.0f}")
-            columns[1].metric("IRR", f"{(result.kpis.get('irr') or 0.0) * 100:.2f} %")
-            columns[2].metric("PV prihodi (EUR)", f"{result.kpis.get('pv_revenues_eur') or 0.0:,.0f}")
-            columns[3].metric("PV troĹˇkovi (EUR)", f"{result.kpis.get('pv_costs_eur') or 0.0:,.0f}")
+            columns[0].metric(t["metric_npv"], f"{result.kpis.get('npv_eur') or 0.0:,.0f}")
+            columns[1].metric(t["metric_irr"], f"{(result.kpis.get('irr') or 0.0) * 100:.2f} %")
+            columns[2].metric(t["metric_pv_revenue"], f"{result.kpis.get('pv_revenues_eur') or 0.0:,.0f}")
+            columns[3].metric(t["metric_pv_cost"], f"{result.kpis.get('pv_costs_eur') or 0.0:,.0f}")
             st.line_chart(result.cash_flow.set_index("year")[["net_cash_flow", "cumulative_npv"]])
             st.dataframe(result.cash_flow, width="stretch")
 
     with tables:
-        st.markdown("#### Rute")
+        st.markdown(f"#### {t['sec_routes']}")
         st.dataframe(result.routing_frame(), width="stretch")
         st.download_button(
-            "Preuzmi tehniÄŤki bilten (CSV)",
-            result.ledger.to_csv(index=False).encode("utf-8"),
-            file_name="ccus_ledger.csv",
-            mime="text/csv",
+            t["download_ledger"],
+            result.ledger.to_csv(index=False).encode("utf-8-sig"),
+            file_name=t["file_ledger"],
+            mime="text/csv; charset=utf-8",
         )
+
+
+def _column_config(st, labels: dict, columns, *, number: bool, text: set[str], select: dict | None = None):
+    """Build a ``column_config`` mapping from the translation table."""
+
+    select = select or {}
+    config = {}
+    for column in columns:
+        label, help_text = labels.get(column, (column, ""))
+        if column in select:
+            config[column] = st.column_config.SelectboxColumn(label, options=select[column], help=help_text or None)
+        elif column in text:
+            config[column] = st.column_config.TextColumn(label, help=help_text or None)
+        elif number:
+            config[column] = st.column_config.NumberColumn(label, help=help_text or None)
+        else:
+            config[column] = st.column_config.Column(label, help=help_text or None)
+    return config
 
 
 if __name__ == "__main__":
