@@ -727,8 +727,9 @@ poroznost 0,20, propusnost 100 mD (1e-13 m²), dubina 1500 m.
 C:\Users\dvulin\anaconda3\python.exe -c "from ccus_core.io.excel_import import build_scenario; from ccus_core.io import dump_file; dump_file(build_scenario('docs/examples/CCS TABLICE 2015-2022 example.xlsx'), 'inputs/examples/croatia_cluster_2025_2050.json')"
 ```
 
-`inputs/examples/croatia_cluster_2025_2050.json` je kanonski, čitljiv oblik
-svakog ulaza: svaka vrijednost ima stupce `value`, `unit` i `comment`
-(pokreni engine: `ScenarioEngine.from_json(...)`).  Model emisija je
-`E(t) = E0 + b·x^c` s `b = a·E0`, a godina uključenja emitera izvodi se iz
-vjerojatnosti implementacije (1,0 → 2026., 0,5 → 2028., 0,1 → 2033.).
+`inputs/examples/croatia_cluster_2025_2050.json` je kanonski, kompaktni oblik
+ulaza (**189 redaka** za 14 emitera i 3 skladišta): jedan blok po redu, a
+jedinice i objašnjenja nalaze se u legendi `_comments` na vrhu. Zadane vrijednosti
+se ne zapisuju (samo se mijenja ono što odstupa od defaulta), a `edges` se
+obnavljaju iz `connections`. Stari „verbose" zapis (`value`/`unit`/`comment` po
+listu) i dalje je dostupan: `dump(scenario, style="verbose")`.

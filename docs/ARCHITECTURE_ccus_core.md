@@ -165,19 +165,33 @@ usual consistency checks (decommissioning, capture commissioning).
 When a policy block is present, the without-CCS counterfactual uses **taxable**
 emissions (gross × (1 − free share)) instead of gross emissions.
 
-### 9.4 Canonical JSON input (human readable, column aligned)
+### 9.4 Canonical JSON input (compact, editable, documented)
 
-`ccus_core.io.commented_json` reads and writes a JSON document in which every
-leaf is a three-column record::
+`ccus_core.io.commented_json` reads and writes the scenario document. The default
+`style="compact"` keeps **one block per line** while it fits in 320 characters
+and moves the prose into a `_comments` legend at the top of the file:
 
-    "start_year": {
-      "value": 2025,
-      "unit": "year",
-      "comment": "first year of the simulation horizon"
-    }
+```json
+{
+  "schema": "ccus-cluster/2.0",
+  "_format": "compact: one block per line; units and explanations in _comments",
+  "_comments": { "emitters[].activation_year": "year - first year the emitter can contribute", "…": "…" },
+  "scenario": {
+    "start_year": 2025,
+    "emitters": [
+      {"id": "nexe", "name": "NEXE", "node_id": "nexe-gate", "activation_year": 2028,
+       "gross_emissions": {"kind": "power_law", "e0_t_per_year": 1118203.087, "reference_year": 2025, "a": -0.03, "c": 1.5}}
+    ],
+    "connections": [ {"emitter_id": "nexe", "sink_id": "ivanic", "start_year": 2028, "mode": "pipeline", "distance_km": 22.0} ]
+  }
+}
+```
 
-Plain JSON is still accepted (the loader unwraps both forms).  `dump()` /
-`dump_file()` regenerate the annotated form; the unit and comment columns come
+The 14-emitter / 3-sink cluster example is **189 lines** (previously 4 000+).
+Defaults are omitted (`exclude_defaults=True`) and derived `edges` are not
+written when `connections` are present — they are rebuilt on load. The loader
+still accepts plain JSON and the older `style="verbose"` records
+(`value`/`unit`/`comment` per leaf), which remain available for archival. regenerate the annotated form; the unit and comment columns come
 from `FIELD_METADATA`.
 
 ### 9.5 Workbook import (one way, Excel → JSON)

@@ -160,8 +160,9 @@ def test_commented_json_round_trip():
         policy=PolicyConfig(),
     )
     text = commented_json.dump(scenario)
-    assert '"unit": "t CO2/year"' in text
-    assert '"comment":' in text
+    assert '"_comments"' in text
+    assert '"schema": "ccus-cluster/2.0"' in text
+    assert '"kind": "power_law"' in text
     reloaded = load(text)
     # E(t) = 1000 - 50 * 2**1.5 = 858.5786...
     assert reloaded.emitter_by_id("e1").gross_emissions.value_at(2027) == pytest.approx(

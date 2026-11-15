@@ -96,7 +96,7 @@ def unwrap(value: Any) -> Any:
     if isinstance(value, dict):
         if set(value) <= RECORD_KEYS and "value" in value:
             return value["value"]
-        return {key: unwrap(item) for key, item in value.items()}
+        return {key: unwrap(item) for key, item in value.items() if not key.startswith("_")}
     if isinstance(value, list):
         return [unwrap(item) for item in value]
     return value
@@ -150,19 +150,89 @@ def _wrap(value: Any, path: str = "") -> Any:
     return record
 
 
-def dump(scenario: ScenarioConfig, *, indent: int = 2) -> str:
-    """Render a scenario as a commented, column-aligned JSON document."""
+def _render(value: Any, level: int, indent: int, inline_limit: int) -> str:
+    """Compact JSON renderer: a block stays on one line while it fits."""
 
-    payload = scenario.model_dump(exclude_none=True)
-    body = {
+    pad = " " * (indent * level)
+    inner = " " * (indent * (level + 1))
+
+    if isinstance(value, dict):
+        compact = (
+            "{"
+            + ", ".join(
+                f"{json.dumps(key, ensure_ascii=False)}: {_render(item, 0, indent, inline_limit)}"
+                for key, item in value.items()
+            )
+            + "}"
+        )
+        if len(compact) <= inline_limit:
+            return compact
+        items = [
+            f"{inner}{json.dumps(key, ensure_ascii=False)}: {_render(item, level + 1, indent, inline_limit)}"
+            for key, item in value.items()
+        ]
+        return "{\n" + ",\n".join(items) + "\n" + pad + "}"
+
+    if isinstance(value, list):
+        rendered = [_render(item, 0, indent, inline_limit) for item in value]
+        compact = "[" + ", ".join(rendered) + "]"
+        if len(compact) <= inline_limit:
+            return compact
+        items = [f"{inner}{item}" for item in (_render(item, level + 1, indent, inline_limit) for item in value)]
+        return "[\n" + ",\n".join(items) + "\n" + pad + "]"
+
+    return json.dumps(value, ensure_ascii=False)
+
+
+def _legend() -> dict[str, str]:
+    """``key -> "unit — comment"`` for every documented field."""
+
+    legend: dict[str, str] = {}
+    for key, (unit, comment) in FIELD_METADATA.items():
+        if comment is None:
+            continue
+        text = comment.replace("—", "-")
+        legend[key] = f"{unit} - {text}" if unit and unit != "-" else text
+    return legend
+
+
+def dump(scenario: ScenarioConfig, *, style: str = "compact", indent: int = 2, inline_limit: int = 320) -> str:
+    """Render a scenario as JSON.
+
+    ``style="compact"`` (default) keeps one block per line while it fits in
+    ``inline_limit`` characters, which keeps a 14-emitter cluster well below 500
+    lines.  ``style="verbose"`` writes the older three-column ``value``/``unit``/
+    ``comment`` records for every leaf.
+    """
+
+    payload = scenario.model_dump(exclude_none=True, exclude_defaults=True)
+    if payload.get("connections"):
+        # edges are derived from the connections: keeping both would double the
+        # size of the document and invite inconsistencies
+        payload.pop("edges", None)
+    if style == "verbose":
+        payload = scenario.model_dump(exclude_none=True)
+        body = {"schema": "ccus-cluster/2.0", "scenario": _wrap(payload, "scenario")}
+        return json.dumps(body, indent=indent, ensure_ascii=False) + "\n"
+
+    body: dict[str, Any] = {
         "schema": "ccus-cluster/2.0",
-        "scenario": _wrap(payload, "scenario"),
+        "_format": "compact: one block per line; units and explanations in _comments",
+        "_comments": _legend(),
+        "scenario": payload,
     }
-    return json.dumps(body, indent=indent, ensure_ascii=False) + "\n"
+    return _render(body, 0, indent, inline_limit) + "\n"
 
 
-def dump_file(scenario: ScenarioConfig, path: str | Path) -> Path:
+def dump_file(
+    scenario: ScenarioConfig,
+    path: str | Path,
+    *,
+    style: str = "compact",
+    indent: int = 2,
+    inline_limit: int = 320,
+) -> Path:
     target = Path(path)
     target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(dump(scenario), encoding="utf-8")
+    target.write_text(dump(scenario, style=style, indent=indent, inline_limit=inline_limit), encoding="utf-8")
     return target

@@ -24,6 +24,7 @@ from ccus_core import ScenarioEngine, ScenarioConfig, year_snapshot  # noqa: E40
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_SCENARIO = REPOSITORY_ROOT / "inputs" / "examples" / "ccus_cluster_v1.json"
+DEFAULT_CLUSTER = REPOSITORY_ROOT / "inputs" / "examples" / "croatia_cluster_2025_2050.json"
 
 MODE_COLOURS = {
     "pipeline": "#1f77b4",
@@ -41,8 +42,10 @@ MODE_LABELS = {
 
 
 # --------------------------------------------------------------------- data
-def load_scenario(payload: bytes | str | Path) -> ScenarioConfig:
+def load_scenario(payload: bytes | str | Path):
     """Validate a JSON scenario from a path, a string or an uploaded file."""
+
+    from ccus_core.io import commented_json
 
     if isinstance(payload, bytes):
         payload = payload.decode("utf-8")
@@ -50,7 +53,7 @@ def load_scenario(payload: bytes | str | Path) -> ScenarioConfig:
         payload = Path(payload).read_text(encoding="utf-8")
     if isinstance(payload, str):
         payload = json.loads(payload)
-    return ScenarioConfig.model_validate(payload)
+    return commented_json.from_payload(payload)
 
 
 def apply_overrides(scenario: ScenarioConfig, overrides: dict) -> ScenarioConfig:
@@ -177,12 +180,18 @@ def main() -> None:
 
     with st.sidebar:
         st.header("Scenarij")
-        source = st.radio("Izvor", ["Primjer iz repozitorija", "Učitaj JSON"], index=0)
-        if source == "Primjer iz repozitorija":
-            payload: bytes | str | Path = DEFAULT_SCENARIO
+        source = st.radio(
+            "Izvor",
+            ["Klaster (14 emitera)", "Jedan lanac (legacy)", "Učitaj JSON"],
+            index=0,
+        )
+        if source == "Klaster (14 emitera)":
+            payload: bytes | str | Path = DEFAULT_CLUSTER
+        elif source == "Jedan lanac (legacy)":
+            payload = DEFAULT_SCENARIO
         else:
             uploaded = st.file_uploader("JSON scenarij", type=["json"])
-            payload = uploaded.getvalue() if uploaded is not None else DEFAULT_SCENARIO
+            payload = uploaded.getvalue() if uploaded is not None else DEFAULT_CLUSTER
         try:
             scenario = load_scenario(payload)
             st.success(f"Scenarij: {scenario.name}")
