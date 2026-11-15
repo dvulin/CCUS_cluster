@@ -702,6 +702,24 @@ dionica propušta 280.000 t/god, a nakon 2043. usko grlo je pomorska dionica
 
 Detalji: `docs/ARCHITECTURE_ccus_core.md`.
 
+### Whitepaper
+
+`docs/whitepaper/build_whitepaper.py` regenerates the 3-page technical
+whitepaper (`GT-CCUS_whitepaper.docx`) and its figures from the real model
+results:
+
+```powershell
+C:\Users\dvulin\anaconda3\python.exe docs\whitepaper\build_whitepaper.py
+```
+
+### Više emitera po skladištu i obrnuto
+
+`ScenarioConfig.connections` definira svaki pristup emiter → skladište zasebno
+(može više skladišta po emiteru, više emitera po skladištu, i **nezavisna
+početna godina po paru**); validator ih pretvara u transportne dionice.
+`storage_defaults` daje ležišni model za svako novo DSA/DHF skladište:
+poroznost 0,20, propusnost 100 mD (1e-13 m²), dubina 1500 m.
+
 ### Uvoz radne knjige i kanonski JSON
 
 ```powershell

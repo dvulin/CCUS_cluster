@@ -193,6 +193,27 @@ The import is deliberately a *starting point*: each emitter keeps the single leg
 from the workbook, so once a sink is full the excess CO2 is reported as
 `unallocated` until extra edges are added.
 
+### 9.6 Many-to-many access and default reservoirs
+
+`ScenarioConfig.connections` holds `EmitterSinkConnection` objects, one per
+emitter→sink access:
+
+* many sinks per emitter (several connections, different `sink_id`),
+* many emitters per sink (several connections, same `sink_id`),
+* an independent `start_year` per pair, so each emitter can join a given storage
+  system in its own year.
+
+The validator expands every connection into a directed `TransportEdge` with a
+single `EdgeState` (`valid_from_year = start_year`, optional `end_year`), and
+refuses duplicates or unknown references.  The workbook import produces
+connections rather than edges.
+
+`storage_defaults` (`ReservoirDefaults`) supplies the physics for newly declared
+sites: **porosity 0.20, permeability 100 mD (1e-13 m²), depth 1500 m**, with
+25 km² area, 150 m thickness, 150 bar reference pressure and the 0.18 bar/m
+fracture gradient.  Every sink without explicit `reservoir` gets this model, so
+pressure, BHP and the injection limit exist for any DSA/DHF the user adds.
+
 ## 10. What is deliberately not done yet
 
 * monthly resolution (the solver is yearly; `ScenarioConfig.step` accepts `monthly`
