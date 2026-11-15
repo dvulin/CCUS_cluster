@@ -127,7 +127,73 @@ pytest tests -q --runslow    # adds the legacy ScenarioRunner golden regression
 | `test_app_layer.py` | UI data functions only (no Streamlit import) |
 | `test_legacy_oracle.py` | golden regression of `services.ScenarioRunner` (slow) |
 
-## 9. What is deliberately not done yet
+## 9. Emission-change model, onboarding and policy (from the cluster workbook)
+
+### 9.1 Emission curve
+
+`EmissionCurve` gained the thesis curve ``kind="power_law"``::
+
+    E(t) = max(0, E0 + b * (t - t0)**c),   b = a * E0
+
+``a`` is the linear decline rate (-0.02 … -0.05), ``c`` the power-law exponent
+(1.5).  `net_zero_year()` returns the first year the curve reaches zero
+(Plomin 2036, Zagreb 2037 in the workbook).  The other curve families
+(`constant`, `piecewise_linear`, `polynomial`) are unchanged.
+
+### 9.2 Onboarding from the implementation probability
+
+The workbook uses a CCS implementation probability per emitter
+(1.0 / 0.5 / 0.1).  `ScenarioConfig.onboarding_years` maps it to the first
+contributing year (default `1.0 → 2026`, `0.9 → 2027`, `0.5 → 2028`,
+`0.1 → 2033`).  An emitter may declare either `activation_year` or
+`implementation_probability`; the validator resolves the year and then applies the
+usual consistency checks (decommissioning, capture commissioning).
+
+### 9.3 Policy block
+
+`PolicyConfig` (optional on the scenario) carries:
+
+| Block | Content |
+|---|---|
+| `ets` | free-allocation phase-out: 50 % (2025), 47.5 %, 42.5 %, 32.5 %, 17.5 %, 0 % (2030) |
+| `prices` | three CO2 price scenarios 2025-2050 (optimistic / conservative / pessimistic) |
+| `capture` | CAPEX/OPEX per tonne by technology (PI 100, NI 75, OXY 90 EUR/t; OPEX 30/40/25/20) + oxygen plant CAPEX |
+| `transport` | 0.7 EUR/(t·km); OPEX 15 EUR/t up to 45 km, ``22*ln(L) - 80`` above |
+| `storage` | injection CAPEX/OPEX per tonne |
+| `financial` | real rate, inflation, Fisher nominal rate (6 % / 6 % → 12.36 %) |
+
+When a policy block is present, the without-CCS counterfactual uses **taxable**
+emissions (gross × (1 − free share)) instead of gross emissions.
+
+### 9.4 Canonical JSON input (human readable, column aligned)
+
+`ccus_core.io.commented_json` reads and writes a JSON document in which every
+leaf is a three-column record::
+
+    "start_year": {
+      "value": 2025,
+      "unit": "year",
+      "comment": "first year of the simulation horizon"
+    }
+
+Plain JSON is still accepted (the loader unwraps both forms).  `dump()` /
+`dump_file()` regenerate the annotated form; the unit and comment columns come
+from `FIELD_METADATA`.
+
+### 9.5 Workbook import (one way, Excel → JSON)
+
+`ccus_core.io.excel_import.build_scenario()` reads `razrada scenarija`,
+`emissions-change` and `storage` with a small standard-library XLSX reader
+(`openpyxl` cannot open this particular workbook because of its stylesheet) and
+returns a `ScenarioConfig`.  The result for the supplied workbook is committed as
+`inputs/examples/croatia_cluster_2025_2050.json` (14 emitters, 14 single-leg
+edges, 3 sinks: Ivanić 5.5 Mt, Stružec 1.7 Mt, Boksić 13.7 Mt).
+
+The import is deliberately a *starting point*: each emitter keeps the single leg
+from the workbook, so once a sink is full the excess CO2 is reported as
+`unallocated` until extra edges are added.
+
+## 10. What is deliberately not done yet
 
 * monthly resolution (the solver is yearly; `ScenarioConfig.step` accepts `monthly`
   but no solver consumes it yet);

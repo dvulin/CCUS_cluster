@@ -101,8 +101,14 @@ class StorageSink(CoreModel):
             and self.decommission_year < self.commissioning_year
         ):
             raise ValueError("decommission_year must not precede commissioning_year")
-        if self.storage_type is StorageType.DHF and self.reservoir is None:
-            raise ValueError("a depleted-field sink requires reservoir properties")
+        if self.storage_type is StorageType.DHF and self.reservoir is None and self.max_injection_rate_t_per_year is None:
+            # capacity-only DHF sites are allowed (e.g. workbook import), but they
+            # must say so explicitly instead of silently pretending to have physics
+            if not self.notes:
+                raise ValueError(
+                    "a depleted-field sink without reservoir properties needs a note "
+                    "declaring it as capacity-only"
+                )
         return self
 
     def active_in(self, year: int) -> bool:

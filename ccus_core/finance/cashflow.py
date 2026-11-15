@@ -31,6 +31,23 @@ def _add_schedule(target: dict[int, float], year: int, amount: float) -> None:
         target[int(year)] = target.get(int(year), 0.0) + float(amount)
 
 
+def _counterfactual_emissions(scenario: ScenarioConfig, years: list[int]) -> dict[int, float]:
+    """Emissions that would be paid for without CCS.
+
+    With a policy block the EU ETS free-allocation phase-out is applied, so the
+    counterfactual follows the thesis rule (50 % free in 2025, 0 % from 2030).
+    """
+
+    gross = {
+        year: sum(emitter.available_emissions(year) for emitter in scenario.emitters)
+        for year in years
+    }
+    if scenario.policy is None:
+        return gross
+    ets = scenario.policy.ets
+    return {year: ets.taxable_emissions(year, value) for year, value in gross.items()}
+
+
 def build_cash_flow_config(
     scenario: ScenarioConfig,
     *,
@@ -157,10 +174,7 @@ def build_cash_flow_config(
                 "annual_cost_during_injection": monitoring_during,
                 "annual_cost_after_injection": monitoring_after,
             },
-            "emitter_emissions_annual": {
-                year: sum(emitter.available_emissions(year) for emitter in scenario.emitters)
-                for year in years
-            },
+            "emitter_emissions_annual": _counterfactual_emissions(scenario, years),
         }
     )
     return config, notes

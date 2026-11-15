@@ -120,12 +120,15 @@ class ScenarioEngine:
     # ------------------------------------------------------------------ constructors
     @classmethod
     def from_dict(cls, payload: dict, **kwargs) -> "ScenarioEngine":
-        return cls(ScenarioConfig.model_validate(payload), **kwargs)
+        from ccus_core.io.commented_json import from_payload
+
+        return cls(from_payload(payload), **kwargs)
 
     @classmethod
     def from_json(cls, path: str | Path, **kwargs) -> "ScenarioEngine":
-        text = Path(path).read_text(encoding="utf-8")
-        return cls.from_dict(json.loads(text), **kwargs)
+        from ccus_core.io.commented_json import load_file
+
+        return cls(load_file(path), **kwargs)
 
     # ------------------------------------------------------------------ run
     def run(self) -> SimulationResult:
@@ -146,5 +149,10 @@ class ScenarioEngine:
 def run_scenario(config: ScenarioConfig | dict, **kwargs) -> SimulationResult:
     """Convenience wrapper: config in, :class:`SimulationResult` out."""
 
-    scenario = config if isinstance(config, ScenarioConfig) else ScenarioConfig.model_validate(config)
+    if isinstance(config, ScenarioConfig):
+        scenario = config
+    else:
+        from ccus_core.io.commented_json import from_payload
+
+        scenario = from_payload(config)
     return ScenarioEngine(scenario, **kwargs).run()

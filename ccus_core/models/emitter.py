@@ -21,13 +21,18 @@ class EmissionCurve(CoreModel):
     * ``polynomial`` – the legacy ``E(t) = E0 + a * E0 * (t - t0) ** c`` shape.
     """
 
-    kind: Literal["constant", "piecewise_linear", "polynomial"]
+    kind: Literal["constant", "piecewise_linear", "polynomial", "power_law"]
     constant_t_per_year: float | None = None
     points: dict[int, float] | None = None
     polynomial_a: float = 0.0
     polynomial_c: float = 1.0
     reference_year: int | None = None
     zero_outside_points: bool = True
+    # power-law parameters (thesis: E(t) = E0 + b * x**c, b = a * E0)
+    e0_t_per_year: float | None = None
+    a: float = 0.0
+    b: float | None = None
+    c: float = 1.5
 
     @model_validator(mode="after")
     def _check_family(self) -> "EmissionCurve":
@@ -49,6 +54,13 @@ class EmissionCurve(CoreModel):
         elif self.kind == "polynomial":
             if self.polynomial_c <= 0.0:
                 raise ValueError("polynomial exponent c must be positive")
+        elif self.kind == "power_law":
+            if self.e0_t_per_year is None or self.e0_t_per_year < 0.0:
+                raise ValueError("power_law curve requires a non-negative e0_t_per_year")
+            if self.reference_year is None:
+                raise ValueError("power_law curve requires reference_year")
+            if self.c <= 0.0:
+                raise ValueError("power_law exponent c must be positive")
         else:  # pragma: no cover - Literal guards this
             raise ValueError(f"unsupported emission curve kind: {self.kind}")
         return self
@@ -99,12 +111,45 @@ class EmissionCurve(CoreModel):
             polynomial_c=float(c),
         )
 
+    @classmethod
+    def power_law(
+        cls,
+        *,
+        e0_t_per_year: float,
+        reference_year: int,
+        a: float,
+        c: float = 1.5,
+        b: float | None = None,
+    ) -> "EmissionCurve":
+        """Thesis curve ``E(t) = E0 + b * x**c`` with ``b = a * E0`` by default."""
+
+        return cls(
+            kind="power_law",
+            e0_t_per_year=float(e0_t_per_year),
+            reference_year=int(reference_year),
+            a=float(a),
+            b=None if b is None else float(b),
+            c=float(c),
+        )
+
+    def _power_law_value(self, year: int) -> float:
+        base = float(self.e0_t_per_year or 0.0)
+        reference = int(self.reference_year or 0)
+        x = int(year) - reference
+        if x <= 0:
+            return base
+        coefficient = float(self.b) if self.b is not None else float(self.a) * base
+        return max(0.0, base + coefficient * (float(x) ** float(self.c)))
+
     def value_at(self, year: int) -> float:
         """Return the gross emission rate (t CO2/yr) for one calendar year."""
 
         year = int(year)
         if self.kind == "constant":
             return float(self.constant_t_per_year or 0.0)
+
+        if self.kind == "power_law":
+            return self._power_law_value(year)
 
         if self.kind == "polynomial":
             base = float(self.constant_t_per_year or 0.0)
@@ -120,6 +165,24 @@ class EmissionCurve(CoreModel):
 
     def to_series(self, years: Sequence[int]) -> list[float]:
         return [self.value_at(int(year)) for year in years]
+
+    def net_zero_year(self, *, latest_year: int = 2100) -> int | None:
+        """First year in which the curve reaches zero (None if it never does)."""
+
+        if self.kind == "power_law" and self.e0_t_per_year:
+            base = float(self.e0_t_per_year)
+            coefficient = float(self.b) if self.b is not None else float(self.a) * base
+            if coefficient < 0.0 and self.c > 0.0:
+                x = (-base / coefficient) ** (1.0 / float(self.c))
+                return int(self.reference_year or 0) + int(-(-x // 1))  # ceil
+        if self.kind == "piecewise_linear" and self.points:
+            for year in range(min(self.points), latest_year + 1):
+                if self.value_at(year) <= 0.0:
+                    return year
+            return None
+        if self.kind == "constant":
+            return (int(self.reference_year or 0)) if float(self.constant_t_per_year or 0.0) <= 0.0 else None
+        return None
 
 
 class CaptureTechnology(str, Enum):
@@ -168,7 +231,16 @@ class Emitter(CoreModel):
     id: Slug
     name: str = Field(min_length=1)
     node_id: Slug = Field(description="Network node where captured CO2 enters the system.")
-    activation_year: int = Field(description="First year the emitter can contribute.")
+    activation_year: int | None = Field(
+        default=None,
+        description="First year the emitter can contribute; derived from the implementation probability when omitted.",
+    )
+    implementation_probability: float | None = Field(
+        default=None,
+        ge=0.0,
+        le=1.0,
+        description="CCS implementation probability used to derive the onboarding year (1.0, 0.5, 0.1 ...).",
+    )
     decommission_year: int | None = None
     gross_emissions: EmissionCurve
     capture: CaptureUnit | None = None
@@ -176,9 +248,13 @@ class Emitter(CoreModel):
 
     @model_validator(mode="after")
     def _check_window(self) -> "Emitter":
-        if self.decommission_year is not None and self.decommission_year < self.activation_year:
+        if self.activation_year is not None and self.decommission_year is not None and self.decommission_year < self.activation_year:
             raise ValueError("decommission_year must not precede activation_year")
-        if self.capture is not None and self.capture.commissioning_year < self.activation_year:
+        if (
+            self.activation_year is not None
+            and self.capture is not None
+            and self.capture.commissioning_year < self.activation_year
+        ):
             raise ValueError("capture commissioning_year must not precede activation_year")
         return self
 
@@ -186,6 +262,8 @@ class Emitter(CoreModel):
         """True when the emitter itself is online (independent of capture)."""
 
         year = int(year)
+        if self.activation_year is None:
+            return False
         if year < self.activation_year:
             return False
         return self.decommission_year is None or year <= self.decommission_year

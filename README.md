@@ -701,3 +701,16 @@ dionica propušta 280.000 t/god, a nakon 2043. usko grlo je pomorska dionica
 (81.600 t/god zbog kapaciteta brodova i vremenskih uvjeta).
 
 Detalji: `docs/ARCHITECTURE_ccus_core.md`.
+
+### Uvoz radne knjige i kanonski JSON
+
+```powershell
+# Excel -> JSON (jednosmjerno; radna knjiga se ne mijenja)
+C:\Users\dvulin\anaconda3\python.exe -c "from ccus_core.io.excel_import import build_scenario; from ccus_core.io import dump_file; dump_file(build_scenario('docs/examples/CCS TABLICE 2015-2022 example.xlsx'), 'inputs/examples/croatia_cluster_2025_2050.json')"
+```
+
+`inputs/examples/croatia_cluster_2025_2050.json` je kanonski, čitljiv oblik
+svakog ulaza: svaka vrijednost ima stupce `value`, `unit` i `comment`
+(pokreni engine: `ScenarioEngine.from_json(...)`).  Model emisija je
+`E(t) = E0 + b·x^c` s `b = a·E0`, a godina uključenja emitera izvodi se iz
+vjerojatnosti implementacije (1,0 → 2026., 0,5 → 2028., 0,1 → 2033.).

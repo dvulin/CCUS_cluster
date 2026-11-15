@@ -11,7 +11,24 @@ from .economics import EconomicsConfig
 from .edge import TransportEdge
 from .emitter import Emitter
 from .node import Node
+from .policy import PolicyConfig
 from .sink import GeothermalSystem, StorageSink
+
+DEFAULT_ONBOARDING_YEARS: dict[float, int] = {
+    1.0: 2026,
+    0.9: 2027,
+    0.5: 2028,
+    0.1: 2033,
+}
+
+
+def _nearest_onboarding_year(probability: float, mapping: dict[float, int]) -> int:
+    """Map an implementation probability to a year, using the nearest key."""
+
+    if probability in mapping:
+        return int(mapping[probability])
+    nearest = min(mapping, key=lambda key: abs(float(key) - float(probability)))
+    return int(mapping[nearest])
 
 
 class ScenarioConfig(CoreModel):
@@ -33,6 +50,14 @@ class ScenarioConfig(CoreModel):
     edges: list[TransportEdge] = Field(default_factory=list)
     storage_sinks: list[StorageSink] = Field(default_factory=list)
     geothermal_systems: list[GeothermalSystem] = Field(default_factory=list)
+    onboarding_years: dict[float, int] | None = Field(
+        default=None,
+        description="Implementation probability -> first contributing year (thesis: 1.0=2026, 0.5=2028, 0.1=2033).",
+    )
+    policy: PolicyConfig | None = Field(
+        default=None,
+        description="ETS allowances, CO2 price scenarios, unit costs and financial parameters.",
+    )
     economics: EconomicsConfig | None = None
     notes: str | None = None
 
@@ -44,6 +69,19 @@ class ScenarioConfig(CoreModel):
         node_ids = [node.id for node in self.nodes]
         self._require_unique(node_ids, "node")
         known_nodes = set(node_ids)
+
+        onboarding = dict(DEFAULT_ONBOARDING_YEARS)
+        if self.onboarding_years:
+            onboarding.update({float(key): int(value) for key, value in self.onboarding_years.items()})
+        for emitter in self.emitters:
+            if emitter.activation_year is None:
+                if emitter.implementation_probability is None:
+                    raise ValueError(
+                        f"emitter '{emitter.id}' needs either activation_year or implementation_probability"
+                    )
+                emitter.activation_year = _nearest_onboarding_year(
+                    float(emitter.implementation_probability), onboarding
+                )
 
         self._require_unique([emitter.id for emitter in self.emitters], "emitter")
         self._require_unique([edge.id for edge in self.edges], "edge")
