@@ -5,11 +5,8 @@ __pycache__/
 
 diagrams/
 uncertainty/
-tests/
 algorithm_development/
 backups/
-docs/
-domain/
 examples/
 scripts/
 outputs/legacy/

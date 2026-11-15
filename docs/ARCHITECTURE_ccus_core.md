@@ -1,0 +1,139 @@
+# `ccus_core` – architecture and extension notes
+
+This document describes the UI-agnostic core added on branch `feat/ccus-core`.  It
+complements [STUDY_ccus_cluster.md](STUDY_ccus_cluster.md), which documents the
+*existing* `gt-ccs-streamlit` code.
+
+## 1. Layering
+
+```
+streamlit_app/app.py      presentation only  -> imports ccus_core
+ccus_core/engine.py       facade             -> ScenarioEngine.run()
+ccus_core/network/        graph + routing    -> no physics, no UI
+ccus_core/simulation/     solver + wrappers  -> imports engineering/*
+ccus_core/finance/        cash-flow adapter  -> imports economics/*
+ccus_core/models/         Pydantic models    -> no I/O at all
+engineering/, economics/  legacy physics and audited cash flow (unchanged)
+```
+
+Rules enforced by the test suite:
+
+* `ccus_core` never imports `streamlit`, `matplotlib`, `tkinter` or `xlwings`;
+* `engineering` and `economics` are imported *by* the core, never the reverse;
+* the models accept JSON in and return JSON/DataFrame out.
+
+## 2. Data model (`ccus_core/models`)
+
+| Model | Purpose |
+|---|---|
+| `ScenarioConfig` | root document: years, nodes, emitters, edges, sinks, geothermal, economics |
+| `EmissionCurve` | `constant`, `piecewise_linear` (ramp/steady/decline) or legacy `polynomial` |
+| `Emitter` | onboarding year, decommissioning, gross emissions, optional `CaptureUnit` |
+| `Node` / `PortHub` | graph vertices, onshore/offshore flag, berth and weather limits |
+| `EdgeState` | one transport state: mode, capacity, distance, CAPEX, tariff, modal design |
+| `TransportEdge` | ordered state timeline plus conditional `InfrastructureUpgrade`s |
+| `StorageSink` | capacity, reservoir properties, wells, monitoring, compressor/efficiency data |
+| `GeothermalSystem` | doublet geometry, ORC/pump efficiencies, availability, OPEX |
+| `EconomicsConfig` | discounting, inflation, electricity prices, CO2 price path |
+
+## 3. Temporal state logic
+
+`TransportEdge.resolve_state(year, cumulative_mass_t=None, fired_upgrades=None)`:
+
+1. the planned state is the latest `EdgeState` whose `[valid_from_year,
+   valid_until_year]` window contains the year;
+2. every fired `InfrastructureUpgrade` contributes its `new_state` from
+   `fired_year + lead_time_years`;
+3. the candidate with the largest start year wins.
+
+A `year` trigger can be evaluated inside the model.  A `cumulative_mass` trigger
+cannot, because it needs the chronological history of the edge: the solver records
+the firing year and passes it back through `fired_upgrades`.  This keeps the model
+free of solver state (required for `st.session_state` and desktop state stores).
+
+## 4. Routing
+
+`RoutingEngine.route(year, supplies, sink_remaining_capacity)` allocates each
+emitter's captured CO2 along the cheapest feasible path:
+
+* cost = sum of the per-tonne tariffs of the arcs of the year;
+* capacity = minimum of the explicit edge capacity, the modal design capacity
+  (fleet size, vessel/weather cycle) and the residual capacity;
+* residual capacities are decremented as the allocation proceeds, so an early
+  emitter can starve a later one – the behaviour a cluster study must expose;
+* any tonnage that cannot be routed is reported in `RoutingResult.unallocated`
+  with an explanatory note.
+
+## 5. Physics coupling
+
+`VariableRateReservoir` reuses `engineering.MaterialBalance` unchanged:
+
+1. `capacity_curve()` runs the legacy pressure ramp once and stores `m_CO2(p)`;
+2. for a scheduled annual mass it inverts the curve, `p(t) = interp(Σm, m_CO2, p)`;
+3. the BHP is recomputed with the *local* annual rate through the already
+   rate-parameterised `solve_BHP_from_CO2_mass_flow`;
+4. saturation and Corey permeabilities come from the existing
+   `calculate_effective_saturation` / `kr_Corey`.
+
+For the reference case (700 kt/yr, 2028-2040) this reproduces the legacy result
+276.0935 bar at the end of injection – see
+`tests/test_solver.py::test_reservoir_curve_matches_the_legacy_constant_rate_case`.
+
+`GeothermalCoupling` drives `Geothermal`, `VFP` and `Power` with the annual storage
+pressure and reports production flow, ORC power and pump power per year.
+
+## 6. Finance
+
+`build_cash_flow_config` translates the scenario plus the routed cost into the
+flat configuration of the existing `economics.CashFlowRunner`:
+
+* CAPEX is placed with `capex_schedule_eur` (per-year map), which is how upgrade
+  CAPEX (truck → pipeline) enters the cash flow;
+* transport OPEX follows the routed modal cost of each year;
+* inflation escalation, discounting, cumulative NPV, IRR and the without-CCS
+  counterfactual are computed by the audited `CashFlowRunner`.
+
+## 7. Solver output
+
+`SimulationResult` holds:
+
+| Attribute | Content |
+|---|---|
+| `routing` | `list[RoutingResult]` – one per year (allocations, edge flows, sink injections) |
+| `reservoir` | `{sink_id: DataFrame}` – annual pressure, saturation, BHP |
+| `geothermal` | `{system_id: DataFrame}` – annual flow, ORC/pump power |
+| `ledger` | annual technical ledger consumed by the cash-flow model |
+| `cash_flow` | annual cash flow with NPV/IRR columns |
+| `kpis` | stored/routed/unallocated CO2, NPV, IRR, PV revenues and costs |
+| `to_dict()` | JSON-safe summary (used by external state managers) |
+
+`year_snapshot(result, year)` returns the per-year view consumed by the timeline
+slider and the map.
+
+## 8. Tests
+
+```
+pytest tests -q              # 42 tests, < 10 s
+pytest tests -q --runslow    # adds the legacy ScenarioRunner golden regression
+```
+
+| File | Covers |
+|---|---|
+| `test_emitter_model.py` | staggered onboarding, ramp/decline, capture limits, validation |
+| `test_edge_model.py` | truck→pipeline switch, tariff switch, lead time, mass trigger, marine/road capacity |
+| `test_routing.py` | undersized edge, mid-run upgrade, offshore bottleneck, multi-hop tariff, sink exhaustion |
+| `test_scenario_model.py` | graph validation, duplicate ids, price paths, cash-flow config mapping |
+| `test_solver.py` | physics equivalence with the legacy model, end-to-end run, timeline snapshot, example JSON |
+| `test_app_layer.py` | UI data functions only (no Streamlit import) |
+| `test_legacy_oracle.py` | golden regression of `services.ScenarioRunner` (slow) |
+
+## 9. What is deliberately not done yet
+
+* monthly resolution (the solver is yearly; `ScenarioConfig.step` accepts `monthly`
+  but no solver consumes it yet);
+* transient thermal breakthrough in the annual geothermal estimate;
+* stochastic weather downtime (deterministic availability factor only);
+* offshore injection wells and their BHP limits (the offshore sink is capacity-only
+  until a reservoir is attached);
+* a full UI rewrite of `app.py`: the legacy app remains the reference UI, the new
+  `streamlit_app/` is the target.

@@ -651,4 +651,53 @@ način povećanja protoka tijekom radnih sati i zajednički raspored opreme.
 | `CoolProp` | Thermophysical fluid properties |
 | `matplotlib` | Visualisation |
 | `openpyxl` | Excel read/write |
+| `pydantic` | Data models and JSON validation of `ccus_core` |
+| `pytest` | Core test suite |
 | `streamlit` | Web korisničko sučelje |
+
+---
+
+## `ccus_core` – UI-agnosticni engine (grana `feat/ccus-core`)
+
+`ccus_core` je novi, samostalni Python paket koji razdvaja fiziku, rutiranje i
+financije od prezentacijskog sloja. Ne ovisi o `streamlit`, `matplotlib`,
+`tkinter` ni `xlwings`; može ga koristiti Streamlit, desktop aplikacija, Excel
+dodatak ili Jupyter.
+
+```
+ccus_core/
+├── models/       # Pydantic modeli: ScenarioConfig, Emitter, TransportEdge, StorageSink, GeothermalSystem
+├── network/      # time-dependent graf, multimodalno rutiranje, kapaciteti
+├── simulation/   # kronološki solver, promjenljivi dovod CO2, geotermalna kopulacija
+├── finance/      # CAPEX/OPEX, NPV/IRR (koristi postojeći CashFlowRunner)
+└── engine.py     # ScenarioEngine: config u JSON-u → SimulationResult
+streamlit_app/    # samo UI: vremenska os, karta mreže, obrasci
+tests/            # pytest (uključujući golden regresiju legacy ScenarioRunnera)
+```
+
+### Pokretanje
+
+```powershell
+# novi engine + UI
+python -m streamlit run streamlit_app/app.py
+
+# testovi jezgre
+python -m pytest tests -q
+
+# testovi + golden regresija legacy rada (~45 s)
+python -m pytest tests -q --runslow
+```
+
+### Primjer scenarija
+
+`inputs/examples/ccus_cluster_v1.json` opisuje tri emitera s odmaknutim
+početkom rada (NEXE 2028., Plomin 2031., Sisak 2035.), kamionsku dionicu koja se
+2031. nadograđuje u cjevovod, željezničku i pomorsku dionicu te dvije lokacije
+skladištenja (Poljana s ležištem, Jugo bez ležišnog modela).
+
+Referentni rezultat na tom scenariju: 9.634.400 t usmjereno i pohranjeno,
+0.27 mlrd EUR transportnog troška, NPV −1.32 mlrd EUR. U 2028.–2030. kamionska
+dionica propušta 280.000 t/god, a nakon 2043. usko grlo je pomorska dionica
+(81.600 t/god zbog kapaciteta brodova i vremenskih uvjeta).
+
+Detalji: `docs/ARCHITECTURE_ccus_core.md`.

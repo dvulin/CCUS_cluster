@@ -3,5 +3,7 @@ matplotlib
 numpy
 openpyxl
 pandas
+pydantic>=2.0
+pytest
 scipy
 streamlit
