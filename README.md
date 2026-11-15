@@ -702,6 +702,22 @@ dionica propušta 280.000 t/god, a nakon 2043. usko grlo je pomorska dionica
 
 Detalji: `docs/ARCHITECTURE_ccus_core.md`.
 
+### Streamlit aplikacija
+
+```powershell
+C:\Users\dvulin\anaconda3\python.exe -m streamlit run streamlit_app/app.py
+# → http://localhost:8501
+```
+
+Kartica **Ulazi** sadrži uređive tablice za sve dionike: emitere (id, naziv, početna
+godina, vjerojatnost implementacije, krivulja emisija, capture kapacitet/CAPEX/OPEX),
+pristupe emiter → skladište (način, udaljenost, kapacitet, CAPEX, OPEX, početna
+godina), skladišta (kapacitet, dubina, poroznost, propusnost, CAPEX/OPEX, monitoring)
+i geotermalne sustave. Nove emitere, pristupe i skladišta dodaje se retkom na dnu
+tablice; klik na „Primijeni i pokreni" validira i pokreće cijelu vremensku os.
+Kartice *Sažetak*, *Mreža*, *Skladište*, *Ekonomika* i *Tablice* prikazuju rezultate,
+a slider „Vremenska os" mijenja prikaz po godini.
+
 ### Whitepaper
 
 `docs/whitepaper/build_whitepaper.py` regenerates the 3-page technical
