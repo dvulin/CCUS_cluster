@@ -253,6 +253,19 @@ solver/UI ensures a doublet exists for that site (a default one is created when 
 explicit ``GeothermalSystem`` is defined), so the storage pressure produced by CO2
 injection drives the geothermal balance in the same year.
 
+### 9.9 Named scenarios and geothermal start year
+
+`ccus_core.io.scenario_repository` stores whole scenarios as ``<name>.json`` in
+``inputs/scenarios`` (overridable with ``GT_CCS_SCENARIO_DIRECTORY``):
+``next_default_name()`` proposes ``scenario_001``, ``scenario_002``, …, names are
+validated, writes are atomic and an existing name is never overwritten unless
+``overwrite=True``.
+
+Every storage sink can declare ``geothermal_coupled`` **and**
+``geothermal_start_year``; when the flag is set without an explicit geothermal
+system, a default doublet is created from that year onwards.  The coupling is
+evaluated once per year against that year's storage pressure (see §5).
+
 ## 10. What is deliberately not done yet
 
 * monthly resolution (the solver is yearly; `ScenarioConfig.step` accepts `monthly`

@@ -112,6 +112,10 @@ class StorageSink(CoreModel):
         default=False,
         description="True when the site hosts a geothermal doublet in parallel with CO2 injection.",
     )
+    geothermal_start_year: int | None = Field(
+        default=None,
+        description="First year of geothermal operation; defaults to the commissioning year.",
+    )
     max_injection_rate_t_per_year: float | None = Field(
         default=None,
         gt=0.0,

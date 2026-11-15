@@ -63,6 +63,18 @@ def _integer(value, default: int = 0) -> int:
     return int(round(_number(value, float(default))))
 
 
+def _optional_year(value, default: int):
+    """Return an int for a year cell, or ``None`` when the cell is empty."""
+
+    if value is None:
+        return None
+    if isinstance(value, float) and math.isnan(value):
+        return None
+    if isinstance(value, str) and value.strip().lower() in {"", "nan", "none"}:
+        return None
+    return int(round(float(value)))
+
+
 def _text(value, default: str = "") -> str:
     if value is None:
         return default
@@ -171,6 +183,7 @@ SINK_COLUMNS = [
     "name",
     "type",
     "geothermal_coupled",
+    "geothermal_start_year",
     "capacity_t",
     "depth_m",
     "porosity",
@@ -251,6 +264,7 @@ def scenario_to_frames(scenario: ScenarioConfig) -> dict[str, "object"]:
                 "name": sink.name,
                 "type": sink.storage_type.value,
                 "geothermal_coupled": sink.geothermal_coupled,
+                "geothermal_start_year": sink.geothermal_start_year,
                 "capacity_t": sink.capacity_t,
                 "depth_m": reservoir.top_depth_m if reservoir else None,
                 "porosity": reservoir.porosity if reservoir else None,
@@ -388,6 +402,9 @@ def frames_to_scenario(base: ScenarioConfig, frames: dict) -> ScenarioConfig:
                 name=_text(row.get("name"), sink_id),
                 storage_type=StorageType(_text(row.get("type"), "DSA").upper()),
                 geothermal_coupled=bool(row.get("geothermal_coupled") or False),
+                geothermal_start_year=_optional_year(
+                    row.get("geothermal_start_year"), start_year
+                ),
                 capacity_t=_number(row.get("capacity_t"), 1.0),
                 reservoir=reservoir,
                 commissioning_year=_integer(row.get("commissioning_year"), start_year),
@@ -473,7 +490,9 @@ def frames_to_scenario(base: ScenarioConfig, frames: dict) -> ScenarioConfig:
                 rw_injection_m=0.15,
                 h_ref_production_m=sink.reservoir.top_depth_m if sink.reservoir else 1500.0,
                 h_ref_injection_m=sink.reservoir.top_depth_m if sink.reservoir else 1500.0,
-                operation_start_year=_integer(sink.commissioning_year, start_year),
+                operation_start_year=int(
+                    sink.geothermal_start_year or sink.commissioning_year or start_year
+                ),
                 operation_end_year=end_year,
                 capex_eur=50_000_000.0,
                 fixed_opex_eur_per_year=1_500_000.0,
@@ -695,6 +714,65 @@ def main() -> None:
             st.session_state["base"] = base_scenario.model_dump()
             st.session_state.pop("result", None)
             st.rerun()
+
+
+    with st.sidebar:
+        from ccus_core.io import (
+            delete_scenario,
+            list_scenarios,
+            load_scenario_file,
+            next_default_name,
+            save_scenario,
+        )
+
+        st.subheader(t["save_section"])
+        default_name = st.session_state.get("scenario_name") or next_default_name()
+        name = st.text_input(t["save_name"], value=default_name, key="scenario_name")
+
+        scenario_to_save = None
+        if st.session_state.get("frames") is not None:
+            try:
+                scenario_to_save = frames_to_scenario(base_scenario, st.session_state["frames"])
+            except Exception:  # noqa: BLE001 - the editor may be mid-edit
+                scenario_to_save = None
+        if scenario_to_save is None:
+            scenario_to_save = base_scenario
+
+        if st.button(t["btn_save"]):
+            try:
+                path = save_scenario(scenario_to_save, name)
+                st.session_state["scenario_name"] = path.stem
+                st.success(t["saved_ok"].format(name=path.stem))
+            except Exception as exc:  # noqa: BLE001 - surfaced to the user
+                st.error(t["save_failed"].format(error=exc))
+
+        saved = list_scenarios()
+        if saved:
+            choice = st.selectbox(
+                t["select_saved"],
+                [record.name for record in saved],
+                key="saved_choice",
+            )
+            if st.button(t["btn_load"]):
+                try:
+                    loaded = load_scenario_file(choice)
+                    st.session_state["frames"] = scenario_to_frames(loaded)
+                    st.session_state["base"] = loaded.model_dump()
+                    st.session_state.pop("result", None)
+                    st.success(t["loaded_ok"].format(name=choice))
+                    st.rerun()
+                except Exception as exc:  # noqa: BLE001 - surfaced to the user
+                    st.error(t["save_failed"].format(error=exc))
+            if st.checkbox(t["confirm_delete"], key="confirm_delete"):
+                if st.button(t["btn_delete"]):
+                    try:
+                        delete_scenario(choice)
+                        st.success(t["deleted_ok"].format(name=choice))
+                        st.rerun()
+                    except Exception as exc:  # noqa: BLE001 - surfaced to the user
+                        st.error(t["save_failed"].format(error=exc))
+        else:
+            st.caption(t["no_saved"])
 
     frames = st.session_state.get("frames")
     if frames is None:
