@@ -228,6 +228,31 @@ sites: **porosity 0.20, permeability 100 mD (1e-13 m²), depth 1500 m**, with
 fracture gradient.  Every sink without explicit `reservoir` gets this model, so
 pressure, BHP and the injection limit exist for any DSA/DHF the user adds.
 
+### 9.7 Per-stakeholder economics
+
+`ccus_core.finance.stakeholders` splits the same physical flows into per-party
+statements (emitter, transport operator, storage operator, geothermal operator):
+
+* the emitter pays the transport tariff of every arc it uses and the injection
+  tariff of its sink;
+* the transport operator collects the transport tariffs and carries the edge
+  CAPEX/OPEX;
+* the storage operator collects the injection tariffs and carries CAPEX/OPEX and
+  monitoring;
+* the geothermal operator carries CAPEX/OPEX and earns the net electricity result.
+
+Tariffs are cost-reflective by default (no margin), so every transfer cancels on
+consolidation and the sum of the stakeholder statements reconciles with the
+consolidated cash flow. ``stakeholder_summary()`` returns ``year × stakeholder →
+net_cash_flow_eur``.
+
+### 9.8 Simultaneous geothermal and CO2 storage
+
+Every storage sink carries ``geothermal_coupled``.  When the flag is set, the
+solver/UI ensures a doublet exists for that site (a default one is created when no
+explicit ``GeothermalSystem`` is defined), so the storage pressure produced by CO2
+injection drives the geothermal balance in the same year.
+
 ## 10. What is deliberately not done yet
 
 * monthly resolution (the solver is yearly; `ScenarioConfig.step` accepts `monthly`

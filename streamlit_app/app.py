@@ -170,6 +170,7 @@ SINK_COLUMNS = [
     "id",
     "name",
     "type",
+    "geothermal_coupled",
     "capacity_t",
     "depth_m",
     "porosity",
@@ -249,6 +250,7 @@ def scenario_to_frames(scenario: ScenarioConfig) -> dict[str, "object"]:
                 "id": sink.id,
                 "name": sink.name,
                 "type": sink.storage_type.value,
+                "geothermal_coupled": sink.geothermal_coupled,
                 "capacity_t": sink.capacity_t,
                 "depth_m": reservoir.top_depth_m if reservoir else None,
                 "porosity": reservoir.porosity if reservoir else None,
@@ -385,6 +387,7 @@ def frames_to_scenario(base: ScenarioConfig, frames: dict) -> ScenarioConfig:
                 node_id=node_id,
                 name=_text(row.get("name"), sink_id),
                 storage_type=StorageType(_text(row.get("type"), "DSA").upper()),
+                geothermal_coupled=bool(row.get("geothermal_coupled") or False),
                 capacity_t=_number(row.get("capacity_t"), 1.0),
                 reservoir=reservoir,
                 commissioning_year=_integer(row.get("commissioning_year"), start_year),
@@ -450,6 +453,33 @@ def frames_to_scenario(base: ScenarioConfig, frames: dict) -> ScenarioConfig:
             )
         )
 
+    # every coupled sink must end up with a geothermal doublet, even if the user only
+    # ticked the box in the storage table
+    covered = {system.node_id for system in geothermal}
+    for sink in sinks:
+        if not sink.geothermal_coupled or sink.node_id in covered:
+            continue
+        geothermal.append(
+            GeothermalSystem(
+                id=f"{sink.id}-doublet",
+                node_id=sink.node_id,
+                name=f"{sink.name} doublet",
+                d_doublet_m=1500.0,
+                reservoir_temperature_c=sink.reservoir.temperature_c if sink.reservoir else 150.0,
+                eta_orc=0.20,
+                p_out_bar=10.0,
+                t_out_c=35.0,
+                rw_production_m=0.15,
+                rw_injection_m=0.15,
+                h_ref_production_m=sink.reservoir.top_depth_m if sink.reservoir else 1500.0,
+                h_ref_injection_m=sink.reservoir.top_depth_m if sink.reservoir else 1500.0,
+                operation_start_year=_integer(sink.commissioning_year, start_year),
+                operation_end_year=end_year,
+                capex_eur=50_000_000.0,
+                fixed_opex_eur_per_year=1_500_000.0,
+            )
+        )
+
     economics = base.economics
     payload = {
         "id": base.id,
@@ -471,63 +501,135 @@ def frames_to_scenario(base: ScenarioConfig, frames: dict) -> ScenarioConfig:
 
 # --------------------------------------------------------------------- charts
 def build_map_figure(snapshot, scenario: ScenarioConfig):
-    """Draw the transport graph of one year (nodes, edges, flow width)."""
+    """Draw a schematic of the transport network for one year.
 
-    # Croatian diacritics must render: DejaVu Sans covers the full Latin-Extended
-    # set, and a proper minus sign avoids the "missing glyph" box for negative axes
+    The layout is layered by graph distance (emitters on the left, storage on the
+    right) so the figure reads as a network rather than a scatter plot.  This is a
+    schematic: coordinates come from the scenario when present, otherwise from the
+    layered layout.  Line width encodes the routed mass, the arrow the direction.
+    """
+
     plt.rcParams["font.family"] = ["DejaVu Sans", "Arial", "sans-serif"]
     plt.rcParams["axes.unicode_minus"] = False
 
+    # ---------------------------------------------------------------- layers
+    emitter_nodes = {emitter.node_id for emitter in scenario.emitters}
+    sink_nodes = {sink.node_id for sink in scenario.storage_sinks}
+    adjacency: dict[str, list[str]] = {}
+    for edge in snapshot.edges:
+        adjacency.setdefault(edge["from_node"], []).append(edge["to_node"])
+        if edge.get("bidirectional"):
+            adjacency.setdefault(edge["to_node"], []).append(edge["from_node"])
+
+    layer: dict[str, int] = {node: 0 for node in emitter_nodes}
+    queue = list(emitter_nodes)
+    while queue:
+        current = queue.pop(0)
+        for neighbour in adjacency.get(current, []):
+            if neighbour not in layer:
+                layer[neighbour] = layer[current] + 1
+                queue.append(neighbour)
+    for node_id in scenario.nodes and [node.id for node in scenario.nodes] or []:
+        layer.setdefault(node_id, max(layer.values(), default=0) + 1)
+
+    grouped: dict[int, list[str]] = {}
+    for node_id, depth in layer.items():
+        grouped.setdefault(depth, []).append(node_id)
+
     positions: dict[str, tuple[float, float]] = {}
-    for node in scenario.nodes:
-        if node.location.latitude is not None and node.location.longitude is not None:
-            positions[node.id] = (float(node.location.longitude), float(node.location.latitude))
+    for depth in sorted(grouped):
+        members = sorted(grouped[depth])
+        for index, node_id in enumerate(members):
+            node = next((item for item in scenario.nodes if item.id == node_id), None)
+            latitude = node.location.latitude if node else None
+            longitude = node.location.longitude if node else None
+            if latitude is not None and longitude is not None:
+                positions[node_id] = (float(longitude), float(latitude))
+            else:
+                offset = (index - (len(members) - 1) / 2.0) * 0.9
+                positions[node_id] = (float(depth), offset)
 
-    missing = [node.id for node in scenario.nodes if node.id not in positions]
-    for index, node_id in enumerate(missing):
-        positions[node_id] = (16.0 + 0.35 * index, 45.6 - 0.35 * index)
+    # ---------------------------------------------------------------- edges
+    figure, axis = plt.subplots(figsize=(8.6, 4.8))
+    max_flow = max([float(edge["flow_t"]) for edge in snapshot.edges] or [1.0])
 
-    figure, axis = plt.subplots(figsize=(8.2, 5.6))
     for edge in snapshot.edges:
         start = positions.get(edge["from_node"])
         end = positions.get(edge["to_node"])
         if start is None or end is None:
             continue
-        width = 1.0 + 4.0 * min(1.0, float(edge["flow_t"]) / 500_000.0)
-        axis.plot(
-            [start[0], end[0]],
-            [start[1], end[1]],
-            color=MODE_COLOURS.get(edge["mode"] or "", "#999999"),
-            linewidth=width,
-            alpha=0.35 if not edge["active"] else 0.9,
-            zorder=1,
-        )
-
-    for node in scenario.nodes:
-        longitude, latitude = positions[node.id]
-        sink = next((item for item in snapshot.sinks if item["node_id"] == node.id), None)
-        emitter = next((item for item in snapshot.emitters if item["node_id"] == node.id), None)
-        if sink is not None:
-            marker, size, colour = "s", 130.0, "#d62728"
-        elif emitter is not None:
-            marker, size, colour = "o", 90.0, "#333333"
+        flow = float(edge["flow_t"])
+        width = 0.8 + 3.2 * (flow / max_flow if max_flow else 0.0)
+        colour = MODE_COLOURS.get(edge["mode"] or "", "#999999")
+        if edge["active"]:
+            axis.annotate(
+                "",
+                xy=(end[0], end[1]),
+                xytext=(start[0], start[1]),
+                arrowprops=dict(
+                    arrowstyle="-|>",
+                    color=colour,
+                    linewidth=width,
+                    alpha=0.9,
+                    shrinkA=6,
+                    shrinkB=6,
+                ),
+            )
         else:
-            marker, size, colour = "^", 70.0, "#7f7f7f"
-        axis.scatter([longitude], [latitude], marker=marker, s=size, color=colour, edgecolor="white", linewidth=0.8, zorder=2)
-        axis.annotate(node.name, (longitude, latitude), fontsize=7, xytext=(4, 4), textcoords="offset points")
+            axis.plot(
+                [start[0], end[0]],
+                [start[1], end[1]],
+                color=colour,
+                linewidth=0.8,
+                alpha=0.25,
+                linestyle="--",
+            )
+        if flow > 0.0:
+            axis.text(
+                (start[0] + end[0]) / 2.0,
+                (start[1] + end[1]) / 2.0,
+                f"{flow / 1000.0:,.0f} kt",
+                fontsize=6,
+                color="#222222",
+                ha="center",
+                va="bottom",
+                bbox=dict(boxstyle="round,pad=0.15", facecolor="white", edgecolor="none", alpha=0.75),
+            )
+
+    # ---------------------------------------------------------------- nodes
+    for node in scenario.nodes:
+        if node.id not in positions:
+            continue
+        x, y = positions[node.id]
+        is_sink = node.id in sink_nodes
+        is_port = node.kind.value in {"port", "offshore_terminal"}
+        if is_sink:
+            marker, size, colour = "s", 120.0, "#c0392b"
+        elif is_port:
+            marker, size, colour = "^", 90.0, "#2980b9"
+        elif node.id in emitter_nodes:
+            marker, size, colour = "o", 80.0, "#2c3e50"
+        else:
+            marker, size, colour = "D", 60.0, "#7f8c8d"
+        axis.scatter([x], [y], marker=marker, s=size, color=colour, edgecolor="white", linewidth=0.8, zorder=3)
+        axis.annotate(node.name, (x, y), fontsize=6.8, xytext=(5, 5), textcoords="offset points")
 
     handles = [
-        plt.Line2D([0], [0], color=colour, linewidth=3, label=label)
+        plt.Line2D([0], [0], color=colour, linewidth=3, label=MODE_LABELS.get(mode, mode))
         for mode, colour in MODE_COLOURS.items()
         if any(edge["mode"] == mode for edge in snapshot.edges)
-        for label in [MODE_LABELS.get(mode, mode)]
+    ]
+    handles += [
+        plt.Line2D([0], [0], marker="o", color="none", markerfacecolor="#2c3e50", markersize=7, label="Emiter"),
+        plt.Line2D([0], [0], marker="s", color="none", markerfacecolor="#c0392b", markersize=7, label="Skladište"),
+        plt.Line2D([0], [0], marker="^", color="none", markerfacecolor="#2980b9", markersize=7, label="Luka"),
     ]
     if handles:
-        axis.legend(handles=handles, fontsize=7, loc="lower left", frameon=False)
-    axis.set_xlabel("Geografska duĹľina")
-    axis.set_ylabel("Geografska Ĺˇirina")
-    axis.set_title(f"Transportna mreĹľa, {snapshot.year}.")
-    axis.grid(alpha=0.2)
+        axis.legend(handles=handles, fontsize=6.5, loc="lower left", frameon=False, ncol=2)
+    axis.set_xlabel("Sloj u mreži (0 = emiteri)")
+    axis.set_ylabel("Pozicija unutar sloja")
+    axis.set_title(f"Transportna mreža, {snapshot.year}.")
+    axis.grid(alpha=0.18, linewidth=0.4)
     figure.tight_layout()
     return figure
 
@@ -625,6 +727,8 @@ def main() -> None:
             column_config=_column_config(st, t["col_emitters"], frames["emitters"].columns, number=True, text={"id", "name"}),
         )
 
+        _column_help(st, t["col_help"], t["col_emitters"], frames["emitters"].columns)
+
         st.markdown(f"#### {t['sec_connections']}")
         frames["connections"] = st.data_editor(
             frames["connections"],
@@ -641,6 +745,8 @@ def main() -> None:
             ),
         )
 
+        _column_help(st, t["col_help"], t["col_connections"], frames["connections"].columns)
+
         st.markdown(f"#### {t['sec_sinks']}")
         frames["sinks"] = st.data_editor(
             frames["sinks"],
@@ -654,8 +760,11 @@ def main() -> None:
                 number=True,
                 text={"id", "name"},
                 select={"type": ["DSA", "DHF"]},
+                checkbox={"geothermal_coupled"},
             ),
         )
+
+        _column_help(st, t["col_help"], t["col_sinks"], frames["sinks"].columns)
 
         st.markdown(f"#### {t['sec_geothermal']}")
         frames["geothermal"] = st.data_editor(
@@ -671,6 +780,8 @@ def main() -> None:
                 text={"id", "name", "sink_id"},
             ),
         )
+
+        _column_help(st, t["col_help"], t["col_geothermal"], frames["geothermal"].columns)
 
         st.markdown(f"#### {t['sec_economics']}")
         column_a, column_b, column_c, column_d = st.columns(4)
@@ -726,6 +837,7 @@ def main() -> None:
     active_scenario = st.session_state.get("scenario", base_scenario)
     years = active_scenario.years()
     year = st.slider(t["slider_time"], min(years), max(years), min(years), step=1)
+    st.caption(t["slider_help"])
     snapshot = year_snapshot(result, year)
 
     with overview:
@@ -741,6 +853,7 @@ def main() -> None:
 
     with network:
         st.pyplot(build_map_figure(snapshot, active_scenario), width="stretch")
+        st.caption(t["net_help"])
         st.markdown(f"#### {t['sec_edges']}")
         st.dataframe(snapshot_frame(snapshot.edges), width="stretch")
 
@@ -760,6 +873,18 @@ def main() -> None:
             st.line_chart(result.cash_flow.set_index("year")[["net_cash_flow", "cumulative_npv"]])
             st.dataframe(result.cash_flow, width="stretch")
 
+        from ccus_core.finance import build_stakeholder_table, stakeholder_summary
+
+        st.markdown(f"#### {t['sec_stakeholders']}")
+        st.caption(t["stakeholders_help"])
+        table = build_stakeholder_table(active_scenario, result)
+        summary = stakeholder_summary(table)
+        st.dataframe(summary, width="stretch")
+        if not summary.empty:
+            st.bar_chart(summary.pivot(index="year", columns="stakeholder", values="net_cash_flow_eur"))
+        with st.expander(t["stakeholders_detail"], expanded=False):
+            st.dataframe(table, width="stretch")
+
     with tables:
         st.markdown(f"#### {t['sec_routes']}")
         st.dataframe(result.routing_frame(), width="stretch")
@@ -771,14 +896,27 @@ def main() -> None:
         )
 
 
-def _column_config(st, labels: dict, columns, *, number: bool, text: set[str], select: dict | None = None):
+def _column_help(st, title: str, labels: dict, columns) -> None:
+    """Expandable list of column descriptions, so the headers can stay short."""
+
+    rows = "\n".join(
+        f"| `{column}` | {labels.get(column, (column, ''))[1] or '–'} |" for column in columns
+    )
+    with st.expander(title, expanded=False):
+        st.markdown(f"| Stupac | Opis |\n|---|---|\n{rows}")
+
+
+def _column_config(st, labels: dict, columns, *, number: bool, text: set[str], select: dict | None = None, checkbox: set[str] | None = None):
     """Build a ``column_config`` mapping from the translation table."""
 
     select = select or {}
+    checkbox = checkbox or {}
     config = {}
     for column in columns:
         label, help_text = labels.get(column, (column, ""))
-        if column in select:
+        if column in checkbox:
+            config[column] = st.column_config.CheckboxColumn(label, help=help_text or None)
+        elif column in select:
             config[column] = st.column_config.SelectboxColumn(label, options=select[column], help=help_text or None)
         elif column in text:
             config[column] = st.column_config.TextColumn(label, help=help_text or None)

@@ -108,6 +108,10 @@ class StorageSink(CoreModel):
     name: str = Field(min_length=1)
     storage_type: StorageType = StorageType.DSA
     capacity_t: float = Field(gt=0.0)
+    geothermal_coupled: bool = Field(
+        default=False,
+        description="True when the site hosts a geothermal doublet in parallel with CO2 injection.",
+    )
     max_injection_rate_t_per_year: float | None = Field(
         default=None,
         gt=0.0,

@@ -37,11 +37,15 @@ HR: dict[str, Any] = {
     "scenario_invalid_short": "Scenarij nije valjan: {error}",
     "info_start": "Uredi tablice i klikni 'Primijeni i pokreni', ili pokreni postojeći scenarij.",
     "slider_time": "Vremenska os",
+    "slider_help": (
+        "Odabir godine mijenja samo prikaz (mapu, tablice, tlakove); proračun se izvrši jednom "
+        "za cijelu vremensku os."
+    ),
     "econ_start": "Početna godina",
     "econ_end": "Završna godina",
     "econ_discount": "Diskontna stopa",
     "econ_inflation": "Inflacija",
-    "metric_captured": "Usječeno CO₂ (t)",
+    "metric_captured": "Uhvaćeno CO₂ (t)",
     "metric_routed": "Rutirano (t)",
     "metric_injected": "Utisnuto (t)",
     "metric_stored": "Pohranjeno ukupno (t)",
@@ -54,11 +58,22 @@ HR: dict[str, Any] = {
     "sec_sinks": "Skladišta (DSA / DHF)",
     "sec_geothermal": "Geotermalni sustavi",
     "sec_economics": "Ekonomika",
-    "sec_ledger": "Godišnji tehnički bilten",
+    "sec_ledger": "Godišnji tehnički sažetak",
     "sec_edges": "Usmjerenja u odabranoj godini",
     "sec_sink_detail": "Skladište",
     "sec_routes": "Rute",
-    "download_ledger": "Preuzmi tehnički bilten (CSV)",
+    "col_help": "Opis stupaca",
+    "net_help": (
+        "Šematski prikaz mreže (TODO: prave koordinate i stvarna povezanost); debljina linije = "
+        "protok, strelica = smjer toka."
+    ),
+    "sec_stakeholders": "Ekonomika po sudionicima",
+    "stakeholders_help": (
+        "Tarife su po principu potpunog odražavanja troškova (bez marže): emiter plaća prijevoz i "
+        "utiskivanje, a operateri ih naplaćuju – stoga se prijenosi poništavaju pri konsolidaciji."
+    ),
+    "stakeholders_detail": "Pojedinosti po stavkama (CAPEX, OPEX, tarife, prihod)",
+    "download_ledger": "Preuzmi tehnički sažetak (CSV)",
     "file_ledger": "ccus_ledger.csv",
     "col_emitters": {
         "id": ("id", "slug: mala slova, bez razmaka"),
@@ -90,6 +105,7 @@ HR: dict[str, Any] = {
         "id": ("id", ""),
         "name": ("naziv", ""),
         "type": ("tip", ""),
+        "geothermal_coupled": ("geotermalni dublet", "istovremeni CCS i geotermalni rad na istom skladištu"),
         "capacity_t": ("kapacitet (t)", ""),
         "depth_m": ("dubina (m)", "default 1500 m"),
         "porosity": ("poroznost", "default 0,20"),
@@ -144,11 +160,15 @@ EN: dict[str, Any] = {
     "scenario_invalid_short": "Scenario is invalid: {error}",
     "info_start": "Edit the tables and click 'Apply and run', or run the existing scenario.",
     "slider_time": "Timeline",
+    "slider_help": (
+        "The slider only changes the view (map, tables, pressures); the run is computed once "
+        "for the whole horizon."
+    ),
     "econ_start": "Start year",
     "econ_end": "End year",
     "econ_discount": "Discount rate",
     "econ_inflation": "Inflation",
-    "metric_captured": "Captured CO₂ (t)",
+    "metric_captured": "Captured CO2 (t)",
     "metric_routed": "Routed (t)",
     "metric_injected": "Injected (t)",
     "metric_stored": "Stored total (t)",
@@ -161,11 +181,22 @@ EN: dict[str, Any] = {
     "sec_sinks": "Storage sites (DSA / DHF)",
     "sec_geothermal": "Geothermal systems",
     "sec_economics": "Economics",
-    "sec_ledger": "Annual technical ledger",
+    "sec_ledger": "Annual technical summary",
     "sec_edges": "Movements in the selected year",
     "sec_sink_detail": "Storage site",
     "sec_routes": "Routes",
-    "download_ledger": "Download technical ledger (CSV)",
+    "col_help": "Column descriptions",
+    "net_help": (
+        "Schematic view (TODO: real coordinates and true connectivity); line width = flow, "
+        "arrow = direction."
+    ),
+    "sec_stakeholders": "Economics by stakeholder",
+    "stakeholders_help": (
+        "Tariffs are cost-reflective (no margin): emitters pay transport and injection, operators "
+        "collect them, so transfers cancel on consolidation."
+    ),
+    "stakeholders_detail": "Line-item detail (CAPEX, OPEX, tariffs, revenue)",
+    "download_ledger": "Download technical summary (CSV)",
     "file_ledger": "ccus_ledger.csv",
     "col_emitters": {
         "id": ("id", "slug: lower case, no spaces"),
@@ -197,6 +228,7 @@ EN: dict[str, Any] = {
         "id": ("id", ""),
         "name": ("name", ""),
         "type": ("type", ""),
+        "geothermal_coupled": ("geothermal doublet", "run geothermal and CO2 storage at the same site"),
         "capacity_t": ("capacity (t)", ""),
         "depth_m": ("depth (m)", "default 1500 m"),
         "porosity": ("porosity", "default 0.20"),
