@@ -1,12 +1,12 @@
-﻿"""Streamlit presentation layer for the CCUS cluster engine.
+"""Streamlit presentation layer for the CCUS cluster engine.
 
 The UI is deliberately thin: it imports :mod:`ccus_core` and nothing else from the
 project.  All physics, routing and financial logic lives in the engine, so this
 module can be replaced (desktop app, Excel add-in, notebook) without touching the
 model code.
 
-The configuration tab edits the whole stakeholder set â€” emitters, their emission
-curves, every emitterâ†’sink access and every storage site â€” through editable
+The configuration tab edits the whole stakeholder set — emitters, their emission
+curves, every emitter→sink access and every storage site — through editable
 tables, so the UI stays as expressive as the JSON without asking the user to edit
 JSON by hand.
 
@@ -558,7 +558,7 @@ def main() -> None:
             base_scenario = load_scenario(payload)
             st.success(f"Scenarij: {base_scenario.name}")
         except Exception as exc:  # noqa: BLE001 - surfaced to the user
-            st.error(f"NevrjeÄ‘an scenarij: {exc}")
+            st.error(f"Nevrjeđan scenarij: {exc}")
             return
 
         if st.button("UÄŤitaj scenarij"):
@@ -589,24 +589,81 @@ def main() -> None:
             num_rows="dynamic",
             width="stretch",
             key="editor_emitters",
+            column_config={
+                "id": st.column_config.TextColumn("id", help="slug: mala slova, bez razmaka"),
+                "name": st.column_config.TextColumn("naziv"),
+                "activation_year": st.column_config.NumberColumn("početak", help="prva godina doprinosa"),
+                "implementation_probability": st.column_config.NumberColumn(
+                    "vjerojatnost", min_value=0.0, max_value=1.0, step=0.1,
+                    help="1.0 = 2026., 0.5 = 2028., 0.1 = 2033.",
+                ),
+                "curve": st.column_config.SelectboxColumn("krivulja", options=["constant", "power_law", "piecewise_linear"]),
+                "e0_t_per_year": st.column_config.NumberColumn("E0 (t/god)", help="emisija u referentnoj godini"),
+                "a": st.column_config.NumberColumn("a", help="linearni pad, npr. -0,03"),
+                "c": st.column_config.NumberColumn("c", help="potencijski eksponent, npr. 1,5"),
+                "constant_t_per_year": st.column_config.NumberColumn("konstantno (t/god)"),
+                "capture_capacity_t_per_year": st.column_config.NumberColumn("capture kapacitet (t/god)", help="0 = bez ograničenja"),
+                "capture_capex_eur": st.column_config.NumberColumn("capture CAPEX (EUR)"),
+                "capture_opex_eur_per_t": st.column_config.NumberColumn("capture OPEX (EUR/t)"),
+            },
         )
         frames["connections"] = st.data_editor(
             frames["connections"],
             num_rows="dynamic",
             width="stretch",
             key="editor_connections",
+            column_config={
+                "emitter_id": st.column_config.TextColumn("emiter", help="id iz tablice Emiteri"),
+                "sink_id": st.column_config.TextColumn("skladište", help="id iz tablice Skladišta"),
+                "start_year": st.column_config.NumberColumn("od godine", help="nezavisno po paru"),
+                "end_year": st.column_config.NumberColumn("do godine", help="prazno = do kraja"),
+                "mode": st.column_config.SelectboxColumn("način", options=["pipeline", "truck", "rail", "marine"]),
+                "distance_km": st.column_config.NumberColumn("L (km)"),
+                "capacity_t_per_year": st.column_config.NumberColumn("kapacitet (t/god)"),
+                "capex_eur": st.column_config.NumberColumn("CAPEX (EUR)", help="naplaćuje se u startnoj godini"),
+                "opex_eur_per_t": st.column_config.NumberColumn("OPEX (EUR/t)"),
+                "opex_eur_per_tkm": st.column_config.NumberColumn("OPEX (EUR/t·km)"),
+            },
         )
         frames["sinks"] = st.data_editor(
             frames["sinks"],
             num_rows="dynamic",
             width="stretch",
             key="editor_sinks",
+            column_config={
+                "id": st.column_config.TextColumn("id"),
+                "name": st.column_config.TextColumn("naziv"),
+                "type": st.column_config.SelectboxColumn("tip", options=["DSA", "DHF"]),
+                "capacity_t": st.column_config.NumberColumn("kapacitet (t)"),
+                "depth_m": st.column_config.NumberColumn("dubina (m)", help="default 1500 m"),
+                "porosity": st.column_config.NumberColumn("poroznost", min_value=0.0, max_value=1.0, step=0.01, help="default 0,20"),
+                "permeability_m2": st.column_config.NumberColumn("propusnost (m²)", help="default 100 mD = 1e-13 m²"),
+                "commissioning_year": st.column_config.NumberColumn("od godine"),
+                "capex_eur": st.column_config.NumberColumn("CAPEX (EUR)"),
+                "opex_eur_per_t": st.column_config.NumberColumn("OPEX (EUR/t)"),
+                "monitoring_cost_during_injection_eur_per_year": st.column_config.NumberColumn("monitoring (EUR/god) – injekcija"),
+                "monitoring_cost_after_injection_eur_per_year": st.column_config.NumberColumn("monitoring (EUR/god) – nakon"),
+            },
         )
         frames["geothermal"] = st.data_editor(
             frames["geothermal"],
             num_rows="dynamic",
             width="stretch",
             key="editor_geothermal",
+            column_config={
+                "id": st.column_config.TextColumn("id"),
+                "name": st.column_config.TextColumn("naziv"),
+                "sink_id": st.column_config.TextColumn("skladište", help="dublet na tom skladištu"),
+                "d_doublet_m": st.column_config.NumberColumn("razmak para (m)"),
+                "reservoir_temperature_c": st.column_config.NumberColumn("T ležišta (°C)"),
+                "eta_orc": st.column_config.NumberColumn("η ORC", min_value=0.0, max_value=1.0, step=0.01),
+                "p_out_bar": st.column_config.NumberColumn("p izlaza ORC (bar)"),
+                "t_out_c": st.column_config.NumberColumn("T izlaza ORC (°C)"),
+                "operation_start_year": st.column_config.NumberColumn("od godine"),
+                "operation_end_year": st.column_config.NumberColumn("do godine"),
+                "capex_eur": st.column_config.NumberColumn("CAPEX (EUR)"),
+                "fixed_opex_eur_per_year": st.column_config.NumberColumn("OPEX (EUR/god)"),
+            },
         )
 
         st.markdown("#### Ekonomika")
@@ -645,7 +702,7 @@ def main() -> None:
 
     result = st.session_state.get("result")
     if result is None:
-        st.info("Uredi tablice i klikni 'Primijeni i pokreni', ili pokreni postojeÄ‡i scenarij.")
+        st.info("Uredi tablice i klikni 'Primijeni i pokreni', ili pokreni postojeći scenarij.")
         return
 
     active_scenario = st.session_state.get("scenario", base_scenario)

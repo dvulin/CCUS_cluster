@@ -7,8 +7,8 @@ engine must respect for the years in which it is active.
 
 Two mechanisms express change over time:
 
-* ``states`` â€“ a planned, year-based timeline (the deterministic upgrade case);
-* ``upgrades`` â€“ a conditional trigger (``year`` and/or ``cumulative_mass``) that
+* ``states`` – a planned, year-based timeline (the deterministic upgrade case);
+* ``upgrades`` – a conditional trigger (``year`` and/or ``cumulative_mass``) that
   supersedes the timeline once it fires (the "build a pipeline when more than
   X Mt has been shipped" case).  Because a mass trigger can only be evaluated
   chronologically, the solver records the firing year and feeds it back through
