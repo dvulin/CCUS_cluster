@@ -1,0 +1,2946 @@
+{
+  "schema": "ccus-cluster/2.0",
+  "scenario": {
+    "schema_version": {
+      "value": "1.0"
+    },
+    "id": {
+      "value": "croatia_cluster",
+      "comment": "stable identifier used by the solver and the UI"
+    },
+    "name": {
+      "value": "Croatian coastal and central CCS cluster (workbook import)",
+      "comment": "human readable scenario name"
+    },
+    "start_year": {
+      "value": 2025,
+      "unit": "year",
+      "comment": "first year of the simulation horizon"
+    },
+    "end_year": {
+      "value": 2050,
+      "unit": "year",
+      "comment": "last year of the simulation horizon"
+    },
+    "step": {
+      "value": "yearly",
+      "comment": "solver step: yearly (monthly is not implemented yet)"
+    },
+    "nodes": [
+      {
+        "id": {
+          "value": "te-plomin-gate"
+        },
+        "name": {
+          "value": "TE PLOMIN"
+        },
+        "kind": {
+          "value": "emitter"
+        },
+        "location": {
+          "onshore": {
+            "value": true
+          }
+        }
+      },
+      {
+        "id": {
+          "value": "ivanic-site"
+        },
+        "name": {
+          "value": "Ivanić"
+        },
+        "kind": {
+          "value": "storage"
+        },
+        "location": {
+          "onshore": {
+            "value": true
+          }
+        }
+      },
+      {
+        "id": {
+          "value": "te-to-zagreb-gate"
+        },
+        "name": {
+          "value": "TE-TO ZAGREB"
+        },
+        "kind": {
+          "value": "emitter"
+        },
+        "location": {
+          "onshore": {
+            "value": true
+          }
+        }
+      },
+      {
+        "id": {
+          "value": "nexe-gate"
+        },
+        "name": {
+          "value": "NEXE"
+        },
+        "kind": {
+          "value": "emitter"
+        },
+        "location": {
+          "onshore": {
+            "value": true
+          }
+        }
+      },
+      {
+        "id": {
+          "value": "boksic-site"
+        },
+        "name": {
+          "value": "Boksić"
+        },
+        "kind": {
+          "value": "storage"
+        },
+        "location": {
+          "onshore": {
+            "value": true
+          }
+        }
+      },
+      {
+        "id": {
+          "value": "rafinerija-nafte-rijeka-gate"
+        },
+        "name": {
+          "value": "Rafinerija nafte Rijeka"
+        },
+        "kind": {
+          "value": "emitter"
+        },
+        "location": {
+          "onshore": {
+            "value": true
+          }
+        }
+      },
+      {
+        "id": {
+          "value": "tvornica-cementa-sv-juraj-gate"
+        },
+        "name": {
+          "value": "TVORNICA CEMENTA SV. Juraj"
+        },
+        "kind": {
+          "value": "emitter"
+        },
+        "location": {
+          "onshore": {
+            "value": true
+          }
+        }
+      },
+      {
+        "id": {
+          "value": "te-to-sisak-gate"
+        },
+        "name": {
+          "value": "TE-TO SISAK"
+        },
+        "kind": {
+          "value": "emitter"
+        },
+        "location": {
+          "onshore": {
+            "value": true
+          }
+        }
+      },
+      {
+        "id": {
+          "value": "struzec-site"
+        },
+        "name": {
+          "value": "Stružec"
+        },
+        "kind": {
+          "value": "storage"
+        },
+        "location": {
+          "onshore": {
+            "value": true
+          }
+        }
+      },
+      {
+        "id": {
+          "value": "proizvodnja-cemanta-koroman-no-gate"
+        },
+        "name": {
+          "value": "PROIZVODNJA CEMANTA KOROMANČNO"
+        },
+        "kind": {
+          "value": "emitter"
+        },
+        "location": {
+          "onshore": {
+            "value": true
+          }
+        }
+      },
+      {
+        "id": {
+          "value": "objekti-prerade-plina-molve-gate"
+        },
+        "name": {
+          "value": "Objekti prerade plina Molve"
+        },
+        "kind": {
+          "value": "emitter"
+        },
+        "location": {
+          "onshore": {
+            "value": true
+          }
+        }
+      },
+      {
+        "id": {
+          "value": "el-to-zagreb-gate"
+        },
+        "name": {
+          "value": "EL-TO Zagreb"
+        },
+        "kind": {
+          "value": "emitter"
+        },
+        "location": {
+          "onshore": {
+            "value": true
+          }
+        }
+      },
+      {
+        "id": {
+          "value": "proizvodnja-aluminatnog-cementa-gate"
+        },
+        "name": {
+          "value": "Proizvodnja aluminatnog cementa"
+        },
+        "kind": {
+          "value": "emitter"
+        },
+        "location": {
+          "onshore": {
+            "value": true
+          }
+        }
+      },
+      {
+        "id": {
+          "value": "ina-d-d-istr-i-proizv-nip-regija-sredisnja-hrvat-gate"
+        },
+        "name": {
+          "value": "INA d.d. Istr. i proizv. NiP, Regija središnja Hrvatska, Objekti frakcionacije Ivanić Grad"
+        },
+        "kind": {
+          "value": "emitter"
+        },
+        "location": {
+          "onshore": {
+            "value": true
+          }
+        }
+      },
+      {
+        "id": {
+          "value": "petrokemija-proizvodnja-gnojiva-gate"
+        },
+        "name": {
+          "value": "Petrokemija- proizvodnja gnojiva"
+        },
+        "kind": {
+          "value": "emitter"
+        },
+        "location": {
+          "onshore": {
+            "value": true
+          }
+        }
+      },
+      {
+        "id": {
+          "value": "vetropack-straza-d-d-gate"
+        },
+        "name": {
+          "value": "Vetropack Straža d.d."
+        },
+        "kind": {
+          "value": "emitter"
+        },
+        "location": {
+          "onshore": {
+            "value": true
+          }
+        }
+      },
+      {
+        "id": {
+          "value": "kogeneracijsko-postrojenje-viridas-biomass-gate"
+        },
+        "name": {
+          "value": "Kogeneracijsko postrojenje Viridas Biomass"
+        },
+        "kind": {
+          "value": "emitter"
+        },
+        "location": {
+          "onshore": {
+            "value": true
+          }
+        }
+      }
+    ],
+    "emitters": [
+      {
+        "id": {
+          "value": "te-plomin"
+        },
+        "name": {
+          "value": "TE PLOMIN"
+        },
+        "node_id": {
+          "value": "te-plomin-gate"
+        },
+        "activation_year": {
+          "value": 2028
+        },
+        "implementation_probability": {
+          "value": 0.5
+        },
+        "gross_emissions": {
+          "kind": {
+            "value": "power_law"
+          },
+          "polynomial_a": {
+            "value": 0.0
+          },
+          "polynomial_c": {
+            "value": 1.0
+          },
+          "reference_year": {
+            "value": 2025
+          },
+          "zero_outside_points": {
+            "value": true
+          },
+          "e0_t_per_year": {
+            "value": 1118203.087
+          },
+          "a": {
+            "value": -0.03
+          },
+          "b": {
+            "value": -33546.09261
+          },
+          "c": {
+            "value": 1.5
+          }
+        }
+      },
+      {
+        "id": {
+          "value": "te-to-zagreb"
+        },
+        "name": {
+          "value": "TE-TO ZAGREB"
+        },
+        "node_id": {
+          "value": "te-to-zagreb-gate"
+        },
+        "activation_year": {
+          "value": 2028
+        },
+        "implementation_probability": {
+          "value": 0.5
+        },
+        "gross_emissions": {
+          "kind": {
+            "value": "power_law"
+          },
+          "polynomial_a": {
+            "value": 0.0
+          },
+          "polynomial_c": {
+            "value": 1.0
+          },
+          "reference_year": {
+            "value": 2025
+          },
+          "zero_outside_points": {
+            "value": true
+          },
+          "e0_t_per_year": {
+            "value": 908701.9990000001
+          },
+          "a": {
+            "value": -0.025
+          },
+          "b": {
+            "value": -22717.549975
+          },
+          "c": {
+            "value": 1.5
+          }
+        }
+      },
+      {
+        "id": {
+          "value": "nexe"
+        },
+        "name": {
+          "value": "NEXE"
+        },
+        "node_id": {
+          "value": "nexe-gate"
+        },
+        "activation_year": {
+          "value": 2026
+        },
+        "implementation_probability": {
+          "value": 1.0
+        },
+        "gross_emissions": {
+          "kind": {
+            "value": "power_law"
+          },
+          "polynomial_a": {
+            "value": 0.0
+          },
+          "polynomial_c": {
+            "value": 1.0
+          },
+          "reference_year": {
+            "value": 2025
+          },
+          "zero_outside_points": {
+            "value": true
+          },
+          "e0_t_per_year": {
+            "value": 656178.2482
+          },
+          "a": {
+            "value": -0.03
+          },
+          "b": {
+            "value": -19685.347446
+          },
+          "c": {
+            "value": 1.5
+          }
+        }
+      },
+      {
+        "id": {
+          "value": "rafinerija-nafte-rijeka"
+        },
+        "name": {
+          "value": "Rafinerija nafte Rijeka"
+        },
+        "node_id": {
+          "value": "rafinerija-nafte-rijeka-gate"
+        },
+        "activation_year": {
+          "value": 2033
+        },
+        "implementation_probability": {
+          "value": 0.1
+        },
+        "gross_emissions": {
+          "kind": {
+            "value": "power_law"
+          },
+          "polynomial_a": {
+            "value": 0.0
+          },
+          "polynomial_c": {
+            "value": 1.0
+          },
+          "reference_year": {
+            "value": 2025
+          },
+          "zero_outside_points": {
+            "value": true
+          },
+          "e0_t_per_year": {
+            "value": 678317.9386
+          },
+          "a": {
+            "value": -0.025
+          },
+          "b": {
+            "value": -16957.948465
+          },
+          "c": {
+            "value": 1.5
+          }
+        }
+      },
+      {
+        "id": {
+          "value": "tvornica-cementa-sv-juraj"
+        },
+        "name": {
+          "value": "TVORNICA CEMENTA SV. Juraj"
+        },
+        "node_id": {
+          "value": "tvornica-cementa-sv-juraj-gate"
+        },
+        "activation_year": {
+          "value": 2028
+        },
+        "implementation_probability": {
+          "value": 0.5
+        },
+        "gross_emissions": {
+          "kind": {
+            "value": "power_law"
+          },
+          "polynomial_a": {
+            "value": 0.0
+          },
+          "polynomial_c": {
+            "value": 1.0
+          },
+          "reference_year": {
+            "value": 2025
+          },
+          "zero_outside_points": {
+            "value": true
+          },
+          "e0_t_per_year": {
+            "value": 583364.8
+          },
+          "a": {
+            "value": -0.02
+          },
+          "b": {
+            "value": -11667.296
+          },
+          "c": {
+            "value": 1.5
+          }
+        }
+      },
+      {
+        "id": {
+          "value": "te-to-sisak"
+        },
+        "name": {
+          "value": "TE-TO SISAK"
+        },
+        "node_id": {
+          "value": "te-to-sisak-gate"
+        },
+        "activation_year": {
+          "value": 2033
+        },
+        "implementation_probability": {
+          "value": 0.1
+        },
+        "gross_emissions": {
+          "kind": {
+            "value": "power_law"
+          },
+          "polynomial_a": {
+            "value": 0.0
+          },
+          "polynomial_c": {
+            "value": 1.0
+          },
+          "reference_year": {
+            "value": 2025
+          },
+          "zero_outside_points": {
+            "value": true
+          },
+          "e0_t_per_year": {
+            "value": 576051.933
+          },
+          "a": {
+            "value": -0.025
+          },
+          "b": {
+            "value": -14401.298325
+          },
+          "c": {
+            "value": 1.5
+          }
+        }
+      },
+      {
+        "id": {
+          "value": "proizvodnja-cemanta-koroman-no"
+        },
+        "name": {
+          "value": "PROIZVODNJA CEMANTA KOROMANČNO"
+        },
+        "node_id": {
+          "value": "proizvodnja-cemanta-koroman-no-gate"
+        },
+        "activation_year": {
+          "value": 2028
+        },
+        "implementation_probability": {
+          "value": 0.5
+        },
+        "gross_emissions": {
+          "kind": {
+            "value": "power_law"
+          },
+          "polynomial_a": {
+            "value": 0.0
+          },
+          "polynomial_c": {
+            "value": 1.0
+          },
+          "reference_year": {
+            "value": 2025
+          },
+          "zero_outside_points": {
+            "value": true
+          },
+          "e0_t_per_year": {
+            "value": 313118.716
+          },
+          "a": {
+            "value": -0.03
+          },
+          "b": {
+            "value": -9393.56148
+          },
+          "c": {
+            "value": 1.5
+          }
+        }
+      },
+      {
+        "id": {
+          "value": "objekti-prerade-plina-molve"
+        },
+        "name": {
+          "value": "Objekti prerade plina Molve"
+        },
+        "node_id": {
+          "value": "objekti-prerade-plina-molve-gate"
+        },
+        "activation_year": {
+          "value": 2028
+        },
+        "implementation_probability": {
+          "value": 0.5
+        },
+        "gross_emissions": {
+          "kind": {
+            "value": "power_law"
+          },
+          "polynomial_a": {
+            "value": 0.0
+          },
+          "polynomial_c": {
+            "value": 1.0
+          },
+          "reference_year": {
+            "value": 2025
+          },
+          "zero_outside_points": {
+            "value": true
+          },
+          "e0_t_per_year": {
+            "value": 272408.719
+          },
+          "a": {
+            "value": -0.025
+          },
+          "b": {
+            "value": -6810.217975
+          },
+          "c": {
+            "value": 1.5
+          }
+        }
+      },
+      {
+        "id": {
+          "value": "el-to-zagreb"
+        },
+        "name": {
+          "value": "EL-TO Zagreb"
+        },
+        "node_id": {
+          "value": "el-to-zagreb-gate"
+        },
+        "activation_year": {
+          "value": 2033
+        },
+        "implementation_probability": {
+          "value": 0.1
+        },
+        "gross_emissions": {
+          "kind": {
+            "value": "power_law"
+          },
+          "polynomial_a": {
+            "value": 0.0
+          },
+          "polynomial_c": {
+            "value": 1.0
+          },
+          "reference_year": {
+            "value": 2025
+          },
+          "zero_outside_points": {
+            "value": true
+          },
+          "e0_t_per_year": {
+            "value": 197798.0
+          },
+          "a": {
+            "value": -0.025
+          },
+          "b": {
+            "value": -4944.950000000001
+          },
+          "c": {
+            "value": 1.5
+          }
+        }
+      },
+      {
+        "id": {
+          "value": "proizvodnja-aluminatnog-cementa"
+        },
+        "name": {
+          "value": "Proizvodnja aluminatnog cementa"
+        },
+        "node_id": {
+          "value": "proizvodnja-aluminatnog-cementa-gate"
+        },
+        "activation_year": {
+          "value": 2028
+        },
+        "implementation_probability": {
+          "value": 0.5
+        },
+        "gross_emissions": {
+          "kind": {
+            "value": "power_law"
+          },
+          "polynomial_a": {
+            "value": 0.0
+          },
+          "polynomial_c": {
+            "value": 1.0
+          },
+          "reference_year": {
+            "value": 2025
+          },
+          "zero_outside_points": {
+            "value": true
+          },
+          "e0_t_per_year": {
+            "value": 127438.049
+          },
+          "a": {
+            "value": -0.025
+          },
+          "b": {
+            "value": -3185.9512250000002
+          },
+          "c": {
+            "value": 1.5
+          }
+        }
+      },
+      {
+        "id": {
+          "value": "ina-d-d-istr-i-proizv-nip-regija-sredisnja-hrvat"
+        },
+        "name": {
+          "value": "INA d.d. Istr. i proizv. NiP, Regija središnja Hrvatska, Objekti frakcionacije Ivanić Grad"
+        },
+        "node_id": {
+          "value": "ina-d-d-istr-i-proizv-nip-regija-sredisnja-hrvat-gate"
+        },
+        "activation_year": {
+          "value": 2028
+        },
+        "implementation_probability": {
+          "value": 0.5
+        },
+        "gross_emissions": {
+          "kind": {
+            "value": "power_law"
+          },
+          "polynomial_a": {
+            "value": 0.0
+          },
+          "polynomial_c": {
+            "value": 1.0
+          },
+          "reference_year": {
+            "value": 2025
+          },
+          "zero_outside_points": {
+            "value": true
+          },
+          "e0_t_per_year": {
+            "value": 117787.9372
+          },
+          "a": {
+            "value": -0.025
+          },
+          "b": {
+            "value": -2944.6984300000004
+          },
+          "c": {
+            "value": 1.5
+          }
+        }
+      },
+      {
+        "id": {
+          "value": "petrokemija-proizvodnja-gnojiva"
+        },
+        "name": {
+          "value": "Petrokemija- proizvodnja gnojiva"
+        },
+        "node_id": {
+          "value": "petrokemija-proizvodnja-gnojiva-gate"
+        },
+        "activation_year": {
+          "value": 2026
+        },
+        "implementation_probability": {
+          "value": 1.0
+        },
+        "gross_emissions": {
+          "kind": {
+            "value": "power_law"
+          },
+          "polynomial_a": {
+            "value": 0.0
+          },
+          "polynomial_c": {
+            "value": 1.0
+          },
+          "reference_year": {
+            "value": 2025
+          },
+          "zero_outside_points": {
+            "value": true
+          },
+          "e0_t_per_year": {
+            "value": 257582.1869
+          },
+          "a": {
+            "value": -0.02
+          },
+          "b": {
+            "value": -5151.643738
+          },
+          "c": {
+            "value": 1.5
+          }
+        }
+      },
+      {
+        "id": {
+          "value": "vetropack-straza-d-d"
+        },
+        "name": {
+          "value": "Vetropack Straža d.d."
+        },
+        "node_id": {
+          "value": "vetropack-straza-d-d-gate"
+        },
+        "activation_year": {
+          "value": 2033
+        },
+        "implementation_probability": {
+          "value": 0.1
+        },
+        "gross_emissions": {
+          "kind": {
+            "value": "power_law"
+          },
+          "polynomial_a": {
+            "value": 0.0
+          },
+          "polynomial_c": {
+            "value": 1.0
+          },
+          "reference_year": {
+            "value": 2025
+          },
+          "zero_outside_points": {
+            "value": true
+          },
+          "e0_t_per_year": {
+            "value": 117737.6943
+          },
+          "a": {
+            "value": -0.02
+          },
+          "b": {
+            "value": -2354.753886
+          },
+          "c": {
+            "value": 1.5
+          }
+        }
+      },
+      {
+        "id": {
+          "value": "kogeneracijsko-postrojenje-viridas-biomass"
+        },
+        "name": {
+          "value": "Kogeneracijsko postrojenje Viridas Biomass"
+        },
+        "node_id": {
+          "value": "kogeneracijsko-postrojenje-viridas-biomass-gate"
+        },
+        "activation_year": {
+          "value": 2033
+        },
+        "implementation_probability": {
+          "value": 0.1
+        },
+        "gross_emissions": {
+          "kind": {
+            "value": "power_law"
+          },
+          "polynomial_a": {
+            "value": 0.0
+          },
+          "polynomial_c": {
+            "value": 1.0
+          },
+          "reference_year": {
+            "value": 2025
+          },
+          "zero_outside_points": {
+            "value": true
+          },
+          "e0_t_per_year": {
+            "value": 101566.498
+          },
+          "a": {
+            "value": -0.025
+          },
+          "b": {
+            "value": -2539.1624500000003
+          },
+          "c": {
+            "value": 1.5
+          }
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": {
+          "value": "te-plomin-to-ivanic"
+        },
+        "name": {
+          "value": "TE PLOMIN → Ivanić"
+        },
+        "from_node": {
+          "value": "te-plomin-gate"
+        },
+        "to_node": {
+          "value": "ivanic-site"
+        },
+        "bidirectional": {
+          "value": false
+        },
+        "states": [
+          {
+            "mode": {
+              "value": "pipeline"
+            },
+            "valid_from_year": {
+              "value": 2025
+            },
+            "capacity_t_per_year": {
+              "value": 1118203.087
+            },
+            "distance_km": {
+              "value": 221.0
+            },
+            "capex_eur": {
+              "value": 172986017.5589
+            },
+            "opex_eur_per_t": {
+              "value": 38.759579433390556
+            },
+            "opex_eur_per_tkm": {
+              "value": 0.0
+            },
+            "availability": {
+              "value": 1.0
+            },
+            "pipeline": {
+              "inner_diameter_m": {
+                "value": 0.3
+              },
+              "roughness_m": {
+                "value": 4.5e-05
+              },
+              "elbows_90_count": {
+                "value": 0
+              },
+              "elbows_45_count": {
+                "value": 0
+              },
+              "elbows_30_count": {
+                "value": 0
+              },
+              "inlet_pressure_bar": {
+                "value": 150.0
+              },
+              "inlet_temperature_c": {
+                "value": 20.0
+              },
+              "environment_type": {
+                "value": "soil"
+              },
+              "ambient_temperature_c": {
+                "value": 12.0
+              },
+              "burial_depth_m": {
+                "value": 1.0
+              },
+              "wall_thickness_m": {
+                "value": 0.01
+              },
+              "wall_thermal_conductivity_w_m_k": {
+                "value": 45.0
+              },
+              "insulation_thickness_m": {
+                "value": 0.05
+              },
+              "insulation_thermal_conductivity_w_m_k": {
+                "value": 0.035
+              },
+              "external_heat_transfer_coefficient_w_m2_k": {
+                "value": 10.0
+              },
+              "environment_thermal_conductivity_w_m_k": {
+                "value": 1.5
+              },
+              "environment_volumetric_heat_capacity_j_m3_k": {
+                "value": 2000000.0
+              }
+            }
+          }
+        ],
+        "upgrades": []
+      },
+      {
+        "id": {
+          "value": "te-to-zagreb-to-ivanic"
+        },
+        "name": {
+          "value": "TE-TO ZAGREB → Ivanić"
+        },
+        "from_node": {
+          "value": "te-to-zagreb-gate"
+        },
+        "to_node": {
+          "value": "ivanic-site"
+        },
+        "bidirectional": {
+          "value": false
+        },
+        "states": [
+          {
+            "mode": {
+              "value": "pipeline"
+            },
+            "valid_from_year": {
+              "value": 2025
+            },
+            "capacity_t_per_year": {
+              "value": 908701.9990000001
+            },
+            "distance_km": {
+              "value": 33.0
+            },
+            "capex_eur": {
+              "value": 20991016.176900003
+            },
+            "opex_eur_per_t": {
+              "value": 15.0
+            },
+            "opex_eur_per_tkm": {
+              "value": 0.0
+            },
+            "availability": {
+              "value": 1.0
+            },
+            "pipeline": {
+              "inner_diameter_m": {
+                "value": 0.3
+              },
+              "roughness_m": {
+                "value": 4.5e-05
+              },
+              "elbows_90_count": {
+                "value": 0
+              },
+              "elbows_45_count": {
+                "value": 0
+              },
+              "elbows_30_count": {
+                "value": 0
+              },
+              "inlet_pressure_bar": {
+                "value": 150.0
+              },
+              "inlet_temperature_c": {
+                "value": 20.0
+              },
+              "environment_type": {
+                "value": "soil"
+              },
+              "ambient_temperature_c": {
+                "value": 12.0
+              },
+              "burial_depth_m": {
+                "value": 1.0
+              },
+              "wall_thickness_m": {
+                "value": 0.01
+              },
+              "wall_thermal_conductivity_w_m_k": {
+                "value": 45.0
+              },
+              "insulation_thickness_m": {
+                "value": 0.05
+              },
+              "insulation_thermal_conductivity_w_m_k": {
+                "value": 0.035
+              },
+              "external_heat_transfer_coefficient_w_m2_k": {
+                "value": 10.0
+              },
+              "environment_thermal_conductivity_w_m_k": {
+                "value": 1.5
+              },
+              "environment_volumetric_heat_capacity_j_m3_k": {
+                "value": 2000000.0
+              }
+            }
+          }
+        ],
+        "upgrades": []
+      },
+      {
+        "id": {
+          "value": "nexe-to-boksic"
+        },
+        "name": {
+          "value": "NEXE → Boksić"
+        },
+        "from_node": {
+          "value": "nexe-gate"
+        },
+        "to_node": {
+          "value": "boksic-site"
+        },
+        "bidirectional": {
+          "value": false
+        },
+        "states": [
+          {
+            "mode": {
+              "value": "pipeline"
+            },
+            "valid_from_year": {
+              "value": 2025
+            },
+            "capacity_t_per_year": {
+              "value": 656178.2482
+            },
+            "distance_km": {
+              "value": 20.0
+            },
+            "capex_eur": {
+              "value": 9186495.4748
+            },
+            "opex_eur_per_t": {
+              "value": 15.0
+            },
+            "opex_eur_per_tkm": {
+              "value": 0.0
+            },
+            "availability": {
+              "value": 1.0
+            },
+            "pipeline": {
+              "inner_diameter_m": {
+                "value": 0.3
+              },
+              "roughness_m": {
+                "value": 4.5e-05
+              },
+              "elbows_90_count": {
+                "value": 0
+              },
+              "elbows_45_count": {
+                "value": 0
+              },
+              "elbows_30_count": {
+                "value": 0
+              },
+              "inlet_pressure_bar": {
+                "value": 150.0
+              },
+              "inlet_temperature_c": {
+                "value": 20.0
+              },
+              "environment_type": {
+                "value": "soil"
+              },
+              "ambient_temperature_c": {
+                "value": 12.0
+              },
+              "burial_depth_m": {
+                "value": 1.0
+              },
+              "wall_thickness_m": {
+                "value": 0.01
+              },
+              "wall_thermal_conductivity_w_m_k": {
+                "value": 45.0
+              },
+              "insulation_thickness_m": {
+                "value": 0.05
+              },
+              "insulation_thermal_conductivity_w_m_k": {
+                "value": 0.035
+              },
+              "external_heat_transfer_coefficient_w_m2_k": {
+                "value": 10.0
+              },
+              "environment_thermal_conductivity_w_m_k": {
+                "value": 1.5
+              },
+              "environment_volumetric_heat_capacity_j_m3_k": {
+                "value": 2000000.0
+              }
+            }
+          }
+        ],
+        "upgrades": []
+      },
+      {
+        "id": {
+          "value": "rafinerija-nafte-rijeka-to-ivanic"
+        },
+        "name": {
+          "value": "Rafinerija nafte Rijeka → Ivanić"
+        },
+        "from_node": {
+          "value": "rafinerija-nafte-rijeka-gate"
+        },
+        "to_node": {
+          "value": "ivanic-site"
+        },
+        "bidirectional": {
+          "value": false
+        },
+        "states": [
+          {
+            "mode": {
+              "value": "pipeline"
+            },
+            "valid_from_year": {
+              "value": 2025
+            },
+            "capacity_t_per_year": {
+              "value": 678317.9386
+            },
+            "distance_km": {
+              "value": 178.0
+            },
+            "capex_eur": {
+              "value": 84518415.14955999
+            },
+            "opex_eur_per_t": {
+              "value": 33.99923810642588
+            },
+            "opex_eur_per_tkm": {
+              "value": 0.0
+            },
+            "availability": {
+              "value": 1.0
+            },
+            "pipeline": {
+              "inner_diameter_m": {
+                "value": 0.3
+              },
+              "roughness_m": {
+                "value": 4.5e-05
+              },
+              "elbows_90_count": {
+                "value": 0
+              },
+              "elbows_45_count": {
+                "value": 0
+              },
+              "elbows_30_count": {
+                "value": 0
+              },
+              "inlet_pressure_bar": {
+                "value": 150.0
+              },
+              "inlet_temperature_c": {
+                "value": 20.0
+              },
+              "environment_type": {
+                "value": "soil"
+              },
+              "ambient_temperature_c": {
+                "value": 12.0
+              },
+              "burial_depth_m": {
+                "value": 1.0
+              },
+              "wall_thickness_m": {
+                "value": 0.01
+              },
+              "wall_thermal_conductivity_w_m_k": {
+                "value": 45.0
+              },
+              "insulation_thickness_m": {
+                "value": 0.05
+              },
+              "insulation_thermal_conductivity_w_m_k": {
+                "value": 0.035
+              },
+              "external_heat_transfer_coefficient_w_m2_k": {
+                "value": 10.0
+              },
+              "environment_thermal_conductivity_w_m_k": {
+                "value": 1.5
+              },
+              "environment_volumetric_heat_capacity_j_m3_k": {
+                "value": 2000000.0
+              }
+            }
+          }
+        ],
+        "upgrades": []
+      },
+      {
+        "id": {
+          "value": "tvornica-cementa-sv-juraj-to-ivanic"
+        },
+        "name": {
+          "value": "TVORNICA CEMENTA SV. Juraj → Ivanić"
+        },
+        "from_node": {
+          "value": "tvornica-cementa-sv-juraj-gate"
+        },
+        "to_node": {
+          "value": "ivanic-site"
+        },
+        "bidirectional": {
+          "value": false
+        },
+        "states": [
+          {
+            "mode": {
+              "value": "pipeline"
+            },
+            "valid_from_year": {
+              "value": 2025
+            },
+            "capacity_t_per_year": {
+              "value": 583364.8
+            },
+            "distance_km": {
+              "value": 380.0
+            },
+            "capex_eur": {
+              "value": 155175036.79999998
+            },
+            "opex_eur_per_t": {
+              "value": 50.683767559849485
+            },
+            "opex_eur_per_tkm": {
+              "value": 0.0
+            },
+            "availability": {
+              "value": 1.0
+            },
+            "pipeline": {
+              "inner_diameter_m": {
+                "value": 0.3
+              },
+              "roughness_m": {
+                "value": 4.5e-05
+              },
+              "elbows_90_count": {
+                "value": 0
+              },
+              "elbows_45_count": {
+                "value": 0
+              },
+              "elbows_30_count": {
+                "value": 0
+              },
+              "inlet_pressure_bar": {
+                "value": 150.0
+              },
+              "inlet_temperature_c": {
+                "value": 20.0
+              },
+              "environment_type": {
+                "value": "soil"
+              },
+              "ambient_temperature_c": {
+                "value": 12.0
+              },
+              "burial_depth_m": {
+                "value": 1.0
+              },
+              "wall_thickness_m": {
+                "value": 0.01
+              },
+              "wall_thermal_conductivity_w_m_k": {
+                "value": 45.0
+              },
+              "insulation_thickness_m": {
+                "value": 0.05
+              },
+              "insulation_thermal_conductivity_w_m_k": {
+                "value": 0.035
+              },
+              "external_heat_transfer_coefficient_w_m2_k": {
+                "value": 10.0
+              },
+              "environment_thermal_conductivity_w_m_k": {
+                "value": 1.5
+              },
+              "environment_volumetric_heat_capacity_j_m3_k": {
+                "value": 2000000.0
+              }
+            }
+          }
+        ],
+        "upgrades": []
+      },
+      {
+        "id": {
+          "value": "te-to-sisak-to-struzec"
+        },
+        "name": {
+          "value": "TE-TO SISAK → Stružec"
+        },
+        "from_node": {
+          "value": "te-to-sisak-gate"
+        },
+        "to_node": {
+          "value": "struzec-site"
+        },
+        "bidirectional": {
+          "value": false
+        },
+        "states": [
+          {
+            "mode": {
+              "value": "pipeline"
+            },
+            "valid_from_year": {
+              "value": 2025
+            },
+            "capacity_t_per_year": {
+              "value": 576051.933
+            },
+            "distance_km": {
+              "value": 14.4
+            },
+            "capex_eur": {
+              "value": 5806603.484639999
+            },
+            "opex_eur_per_t": {
+              "value": 15.0
+            },
+            "opex_eur_per_tkm": {
+              "value": 0.0
+            },
+            "availability": {
+              "value": 1.0
+            },
+            "pipeline": {
+              "inner_diameter_m": {
+                "value": 0.3
+              },
+              "roughness_m": {
+                "value": 4.5e-05
+              },
+              "elbows_90_count": {
+                "value": 0
+              },
+              "elbows_45_count": {
+                "value": 0
+              },
+              "elbows_30_count": {
+                "value": 0
+              },
+              "inlet_pressure_bar": {
+                "value": 150.0
+              },
+              "inlet_temperature_c": {
+                "value": 20.0
+              },
+              "environment_type": {
+                "value": "soil"
+              },
+              "ambient_temperature_c": {
+                "value": 12.0
+              },
+              "burial_depth_m": {
+                "value": 1.0
+              },
+              "wall_thickness_m": {
+                "value": 0.01
+              },
+              "wall_thermal_conductivity_w_m_k": {
+                "value": 45.0
+              },
+              "insulation_thickness_m": {
+                "value": 0.05
+              },
+              "insulation_thermal_conductivity_w_m_k": {
+                "value": 0.035
+              },
+              "external_heat_transfer_coefficient_w_m2_k": {
+                "value": 10.0
+              },
+              "environment_thermal_conductivity_w_m_k": {
+                "value": 1.5
+              },
+              "environment_volumetric_heat_capacity_j_m3_k": {
+                "value": 2000000.0
+              }
+            }
+          }
+        ],
+        "upgrades": []
+      },
+      {
+        "id": {
+          "value": "proizvodnja-cemanta-koroman-no-to-ivanic"
+        },
+        "name": {
+          "value": "PROIZVODNJA CEMANTA KOROMANČNO → Ivanić"
+        },
+        "from_node": {
+          "value": "proizvodnja-cemanta-koroman-no-gate"
+        },
+        "to_node": {
+          "value": "ivanic-site"
+        },
+        "bidirectional": {
+          "value": false
+        },
+        "states": [
+          {
+            "mode": {
+              "value": "pipeline"
+            },
+            "valid_from_year": {
+              "value": 2025
+            },
+            "capacity_t_per_year": {
+              "value": 313118.716
+            },
+            "distance_km": {
+              "value": 238.0
+            },
+            "capex_eur": {
+              "value": 52165578.0856
+            },
+            "opex_eur_per_t": {
+              "value": 40.389954820772445
+            },
+            "opex_eur_per_tkm": {
+              "value": 0.0
+            },
+            "availability": {
+              "value": 1.0
+            },
+            "pipeline": {
+              "inner_diameter_m": {
+                "value": 0.3
+              },
+              "roughness_m": {
+                "value": 4.5e-05
+              },
+              "elbows_90_count": {
+                "value": 0
+              },
+              "elbows_45_count": {
+                "value": 0
+              },
+              "elbows_30_count": {
+                "value": 0
+              },
+              "inlet_pressure_bar": {
+                "value": 150.0
+              },
+              "inlet_temperature_c": {
+                "value": 20.0
+              },
+              "environment_type": {
+                "value": "soil"
+              },
+              "ambient_temperature_c": {
+                "value": 12.0
+              },
+              "burial_depth_m": {
+                "value": 1.0
+              },
+              "wall_thickness_m": {
+                "value": 0.01
+              },
+              "wall_thermal_conductivity_w_m_k": {
+                "value": 45.0
+              },
+              "insulation_thickness_m": {
+                "value": 0.05
+              },
+              "insulation_thermal_conductivity_w_m_k": {
+                "value": 0.035
+              },
+              "external_heat_transfer_coefficient_w_m2_k": {
+                "value": 10.0
+              },
+              "environment_thermal_conductivity_w_m_k": {
+                "value": 1.5
+              },
+              "environment_volumetric_heat_capacity_j_m3_k": {
+                "value": 2000000.0
+              }
+            }
+          }
+        ],
+        "upgrades": []
+      },
+      {
+        "id": {
+          "value": "objekti-prerade-plina-molve-to-ivanic"
+        },
+        "name": {
+          "value": "Objekti prerade plina Molve → Ivanić"
+        },
+        "from_node": {
+          "value": "objekti-prerade-plina-molve-gate"
+        },
+        "to_node": {
+          "value": "ivanic-site"
+        },
+        "bidirectional": {
+          "value": false
+        },
+        "states": [
+          {
+            "mode": {
+              "value": "pipeline"
+            },
+            "valid_from_year": {
+              "value": 2025
+            },
+            "capacity_t_per_year": {
+              "value": 272408.719
+            },
+            "distance_km": {
+              "value": 88.0
+            },
+            "capex_eur": {
+              "value": 16780377.0904
+            },
+            "opex_eur_per_t": {
+              "value": 18.50140991852055
+            },
+            "opex_eur_per_tkm": {
+              "value": 0.0
+            },
+            "availability": {
+              "value": 1.0
+            },
+            "pipeline": {
+              "inner_diameter_m": {
+                "value": 0.3
+              },
+              "roughness_m": {
+                "value": 4.5e-05
+              },
+              "elbows_90_count": {
+                "value": 0
+              },
+              "elbows_45_count": {
+                "value": 0
+              },
+              "elbows_30_count": {
+                "value": 0
+              },
+              "inlet_pressure_bar": {
+                "value": 150.0
+              },
+              "inlet_temperature_c": {
+                "value": 20.0
+              },
+              "environment_type": {
+                "value": "soil"
+              },
+              "ambient_temperature_c": {
+                "value": 12.0
+              },
+              "burial_depth_m": {
+                "value": 1.0
+              },
+              "wall_thickness_m": {
+                "value": 0.01
+              },
+              "wall_thermal_conductivity_w_m_k": {
+                "value": 45.0
+              },
+              "insulation_thickness_m": {
+                "value": 0.05
+              },
+              "insulation_thermal_conductivity_w_m_k": {
+                "value": 0.035
+              },
+              "external_heat_transfer_coefficient_w_m2_k": {
+                "value": 10.0
+              },
+              "environment_thermal_conductivity_w_m_k": {
+                "value": 1.5
+              },
+              "environment_volumetric_heat_capacity_j_m3_k": {
+                "value": 2000000.0
+              }
+            }
+          }
+        ],
+        "upgrades": []
+      },
+      {
+        "id": {
+          "value": "el-to-zagreb-to-ivanic"
+        },
+        "name": {
+          "value": "EL-TO Zagreb → Ivanić"
+        },
+        "from_node": {
+          "value": "el-to-zagreb-gate"
+        },
+        "to_node": {
+          "value": "ivanic-site"
+        },
+        "bidirectional": {
+          "value": false
+        },
+        "states": [
+          {
+            "mode": {
+              "value": "pipeline"
+            },
+            "valid_from_year": {
+              "value": 2025
+            },
+            "capacity_t_per_year": {
+              "value": 197798.0
+            },
+            "distance_km": {
+              "value": 37.6
+            },
+            "capex_eur": {
+              "value": 5206043.359999999
+            },
+            "opex_eur_per_t": {
+              "value": 15.0
+            },
+            "opex_eur_per_tkm": {
+              "value": 0.0
+            },
+            "availability": {
+              "value": 1.0
+            },
+            "pipeline": {
+              "inner_diameter_m": {
+                "value": 0.3
+              },
+              "roughness_m": {
+                "value": 4.5e-05
+              },
+              "elbows_90_count": {
+                "value": 0
+              },
+              "elbows_45_count": {
+                "value": 0
+              },
+              "elbows_30_count": {
+                "value": 0
+              },
+              "inlet_pressure_bar": {
+                "value": 150.0
+              },
+              "inlet_temperature_c": {
+                "value": 20.0
+              },
+              "environment_type": {
+                "value": "soil"
+              },
+              "ambient_temperature_c": {
+                "value": 12.0
+              },
+              "burial_depth_m": {
+                "value": 1.0
+              },
+              "wall_thickness_m": {
+                "value": 0.01
+              },
+              "wall_thermal_conductivity_w_m_k": {
+                "value": 45.0
+              },
+              "insulation_thickness_m": {
+                "value": 0.05
+              },
+              "insulation_thermal_conductivity_w_m_k": {
+                "value": 0.035
+              },
+              "external_heat_transfer_coefficient_w_m2_k": {
+                "value": 10.0
+              },
+              "environment_thermal_conductivity_w_m_k": {
+                "value": 1.5
+              },
+              "environment_volumetric_heat_capacity_j_m3_k": {
+                "value": 2000000.0
+              }
+            }
+          }
+        ],
+        "upgrades": []
+      },
+      {
+        "id": {
+          "value": "proizvodnja-aluminatnog-cementa-to-ivanic"
+        },
+        "name": {
+          "value": "Proizvodnja aluminatnog cementa → Ivanić"
+        },
+        "from_node": {
+          "value": "proizvodnja-aluminatnog-cementa-gate"
+        },
+        "to_node": {
+          "value": "ivanic-site"
+        },
+        "bidirectional": {
+          "value": false
+        },
+        "states": [
+          {
+            "mode": {
+              "value": "pipeline"
+            },
+            "valid_from_year": {
+              "value": 2025
+            },
+            "capacity_t_per_year": {
+              "value": 127438.049
+            },
+            "distance_km": {
+              "value": 258.0
+            },
+            "capex_eur": {
+              "value": 23015311.649399996
+            },
+            "opex_eur_per_t": {
+              "value": 42.165110868275576
+            },
+            "opex_eur_per_tkm": {
+              "value": 0.0
+            },
+            "availability": {
+              "value": 1.0
+            },
+            "pipeline": {
+              "inner_diameter_m": {
+                "value": 0.3
+              },
+              "roughness_m": {
+                "value": 4.5e-05
+              },
+              "elbows_90_count": {
+                "value": 0
+              },
+              "elbows_45_count": {
+                "value": 0
+              },
+              "elbows_30_count": {
+                "value": 0
+              },
+              "inlet_pressure_bar": {
+                "value": 150.0
+              },
+              "inlet_temperature_c": {
+                "value": 20.0
+              },
+              "environment_type": {
+                "value": "soil"
+              },
+              "ambient_temperature_c": {
+                "value": 12.0
+              },
+              "burial_depth_m": {
+                "value": 1.0
+              },
+              "wall_thickness_m": {
+                "value": 0.01
+              },
+              "wall_thermal_conductivity_w_m_k": {
+                "value": 45.0
+              },
+              "insulation_thickness_m": {
+                "value": 0.05
+              },
+              "insulation_thermal_conductivity_w_m_k": {
+                "value": 0.035
+              },
+              "external_heat_transfer_coefficient_w_m2_k": {
+                "value": 10.0
+              },
+              "environment_thermal_conductivity_w_m_k": {
+                "value": 1.5
+              },
+              "environment_volumetric_heat_capacity_j_m3_k": {
+                "value": 2000000.0
+              }
+            }
+          }
+        ],
+        "upgrades": []
+      },
+      {
+        "id": {
+          "value": "ina-d-d-istr-i-proizv-nip-regija-sredisnja-hrvat-to-ivanic"
+        },
+        "name": {
+          "value": "INA d.d. Istr. i proizv. NiP, Regija središnja Hrvatska, Objekti frakcionacije Ivanić Grad → Ivanić"
+        },
+        "from_node": {
+          "value": "ina-d-d-istr-i-proizv-nip-regija-sredisnja-hrvat-gate"
+        },
+        "to_node": {
+          "value": "ivanic-site"
+        },
+        "bidirectional": {
+          "value": false
+        },
+        "states": [
+          {
+            "mode": {
+              "value": "pipeline"
+            },
+            "valid_from_year": {
+              "value": 2025
+            },
+            "capacity_t_per_year": {
+              "value": 117787.9372
+            },
+            "distance_km": {
+              "value": 6.0
+            },
+            "capex_eur": {
+              "value": 494709.33624
+            },
+            "opex_eur_per_t": {
+              "value": 15.0
+            },
+            "opex_eur_per_tkm": {
+              "value": 0.0
+            },
+            "availability": {
+              "value": 1.0
+            },
+            "pipeline": {
+              "inner_diameter_m": {
+                "value": 0.3
+              },
+              "roughness_m": {
+                "value": 4.5e-05
+              },
+              "elbows_90_count": {
+                "value": 0
+              },
+              "elbows_45_count": {
+                "value": 0
+              },
+              "elbows_30_count": {
+                "value": 0
+              },
+              "inlet_pressure_bar": {
+                "value": 150.0
+              },
+              "inlet_temperature_c": {
+                "value": 20.0
+              },
+              "environment_type": {
+                "value": "soil"
+              },
+              "ambient_temperature_c": {
+                "value": 12.0
+              },
+              "burial_depth_m": {
+                "value": 1.0
+              },
+              "wall_thickness_m": {
+                "value": 0.01
+              },
+              "wall_thermal_conductivity_w_m_k": {
+                "value": 45.0
+              },
+              "insulation_thickness_m": {
+                "value": 0.05
+              },
+              "insulation_thermal_conductivity_w_m_k": {
+                "value": 0.035
+              },
+              "external_heat_transfer_coefficient_w_m2_k": {
+                "value": 10.0
+              },
+              "environment_thermal_conductivity_w_m_k": {
+                "value": 1.5
+              },
+              "environment_volumetric_heat_capacity_j_m3_k": {
+                "value": 2000000.0
+              }
+            }
+          }
+        ],
+        "upgrades": []
+      },
+      {
+        "id": {
+          "value": "petrokemija-proizvodnja-gnojiva-to-ivanic"
+        },
+        "name": {
+          "value": "Petrokemija- proizvodnja gnojiva → Ivanić"
+        },
+        "from_node": {
+          "value": "petrokemija-proizvodnja-gnojiva-gate"
+        },
+        "to_node": {
+          "value": "ivanic-site"
+        },
+        "bidirectional": {
+          "value": false
+        },
+        "states": [
+          {
+            "mode": {
+              "value": "pipeline"
+            },
+            "valid_from_year": {
+              "value": 2025
+            },
+            "capacity_t_per_year": {
+              "value": 257582.1869
+            },
+            "distance_km": {
+              "value": 41.0
+            },
+            "capex_eur": {
+              "value": 7392608.76403
+            },
+            "opex_eur_per_t": {
+              "value": 15.0
+            },
+            "opex_eur_per_tkm": {
+              "value": 0.0
+            },
+            "availability": {
+              "value": 1.0
+            },
+            "pipeline": {
+              "inner_diameter_m": {
+                "value": 0.3
+              },
+              "roughness_m": {
+                "value": 4.5e-05
+              },
+              "elbows_90_count": {
+                "value": 0
+              },
+              "elbows_45_count": {
+                "value": 0
+              },
+              "elbows_30_count": {
+                "value": 0
+              },
+              "inlet_pressure_bar": {
+                "value": 150.0
+              },
+              "inlet_temperature_c": {
+                "value": 20.0
+              },
+              "environment_type": {
+                "value": "soil"
+              },
+              "ambient_temperature_c": {
+                "value": 12.0
+              },
+              "burial_depth_m": {
+                "value": 1.0
+              },
+              "wall_thickness_m": {
+                "value": 0.01
+              },
+              "wall_thermal_conductivity_w_m_k": {
+                "value": 45.0
+              },
+              "insulation_thickness_m": {
+                "value": 0.05
+              },
+              "insulation_thermal_conductivity_w_m_k": {
+                "value": 0.035
+              },
+              "external_heat_transfer_coefficient_w_m2_k": {
+                "value": 10.0
+              },
+              "environment_thermal_conductivity_w_m_k": {
+                "value": 1.5
+              },
+              "environment_volumetric_heat_capacity_j_m3_k": {
+                "value": 2000000.0
+              }
+            }
+          }
+        ],
+        "upgrades": []
+      },
+      {
+        "id": {
+          "value": "vetropack-straza-d-d-to-ivanic"
+        },
+        "name": {
+          "value": "Vetropack Straža d.d. → Ivanić"
+        },
+        "from_node": {
+          "value": "vetropack-straza-d-d-gate"
+        },
+        "to_node": {
+          "value": "ivanic-site"
+        },
+        "bidirectional": {
+          "value": false
+        },
+        "states": [
+          {
+            "mode": {
+              "value": "pipeline"
+            },
+            "valid_from_year": {
+              "value": 2025
+            },
+            "capacity_t_per_year": {
+              "value": 117737.6943
+            },
+            "distance_km": {
+              "value": 102.0
+            },
+            "capex_eur": {
+              "value": 8406471.37302
+            },
+            "opex_eur_per_t": {
+              "value": 21.749401892253957
+            },
+            "opex_eur_per_tkm": {
+              "value": 0.0
+            },
+            "availability": {
+              "value": 1.0
+            },
+            "pipeline": {
+              "inner_diameter_m": {
+                "value": 0.3
+              },
+              "roughness_m": {
+                "value": 4.5e-05
+              },
+              "elbows_90_count": {
+                "value": 0
+              },
+              "elbows_45_count": {
+                "value": 0
+              },
+              "elbows_30_count": {
+                "value": 0
+              },
+              "inlet_pressure_bar": {
+                "value": 150.0
+              },
+              "inlet_temperature_c": {
+                "value": 20.0
+              },
+              "environment_type": {
+                "value": "soil"
+              },
+              "ambient_temperature_c": {
+                "value": 12.0
+              },
+              "burial_depth_m": {
+                "value": 1.0
+              },
+              "wall_thickness_m": {
+                "value": 0.01
+              },
+              "wall_thermal_conductivity_w_m_k": {
+                "value": 45.0
+              },
+              "insulation_thickness_m": {
+                "value": 0.05
+              },
+              "insulation_thermal_conductivity_w_m_k": {
+                "value": 0.035
+              },
+              "external_heat_transfer_coefficient_w_m2_k": {
+                "value": 10.0
+              },
+              "environment_thermal_conductivity_w_m_k": {
+                "value": 1.5
+              },
+              "environment_volumetric_heat_capacity_j_m3_k": {
+                "value": 2000000.0
+              }
+            }
+          }
+        ],
+        "upgrades": []
+      },
+      {
+        "id": {
+          "value": "kogeneracijsko-postrojenje-viridas-biomass-to-ivanic"
+        },
+        "name": {
+          "value": "Kogeneracijsko postrojenje Viridas Biomass → Ivanić"
+        },
+        "from_node": {
+          "value": "kogeneracijsko-postrojenje-viridas-biomass-gate"
+        },
+        "to_node": {
+          "value": "ivanic-site"
+        },
+        "bidirectional": {
+          "value": false
+        },
+        "states": [
+          {
+            "mode": {
+              "value": "pipeline"
+            },
+            "valid_from_year": {
+              "value": 2025
+            },
+            "capacity_t_per_year": {
+              "value": 101566.498
+            },
+            "distance_km": {
+              "value": 100.2
+            },
+            "capex_eur": {
+              "value": 7123874.16972
+            },
+            "opex_eur_per_t": {
+              "value": 21.357700150316816
+            },
+            "opex_eur_per_tkm": {
+              "value": 0.0
+            },
+            "availability": {
+              "value": 1.0
+            },
+            "pipeline": {
+              "inner_diameter_m": {
+                "value": 0.3
+              },
+              "roughness_m": {
+                "value": 4.5e-05
+              },
+              "elbows_90_count": {
+                "value": 0
+              },
+              "elbows_45_count": {
+                "value": 0
+              },
+              "elbows_30_count": {
+                "value": 0
+              },
+              "inlet_pressure_bar": {
+                "value": 150.0
+              },
+              "inlet_temperature_c": {
+                "value": 20.0
+              },
+              "environment_type": {
+                "value": "soil"
+              },
+              "ambient_temperature_c": {
+                "value": 12.0
+              },
+              "burial_depth_m": {
+                "value": 1.0
+              },
+              "wall_thickness_m": {
+                "value": 0.01
+              },
+              "wall_thermal_conductivity_w_m_k": {
+                "value": 45.0
+              },
+              "insulation_thickness_m": {
+                "value": 0.05
+              },
+              "insulation_thermal_conductivity_w_m_k": {
+                "value": 0.035
+              },
+              "external_heat_transfer_coefficient_w_m2_k": {
+                "value": 10.0
+              },
+              "environment_thermal_conductivity_w_m_k": {
+                "value": 1.5
+              },
+              "environment_volumetric_heat_capacity_j_m3_k": {
+                "value": 2000000.0
+              }
+            }
+          }
+        ],
+        "upgrades": []
+      }
+    ],
+    "storage_sinks": [
+      {
+        "id": {
+          "value": "ivanic"
+        },
+        "node_id": {
+          "value": "ivanic-site"
+        },
+        "name": {
+          "value": "Ivanić"
+        },
+        "storage_type": {
+          "value": "DHF"
+        },
+        "capacity_t": {
+          "value": 5500000.0
+        },
+        "commissioning_year": {
+          "value": 2026
+        },
+        "capex_eur": {
+          "value": 0.0
+        },
+        "opex_eur_per_t": {
+          "value": 10.0
+        },
+        "monitoring_cost_during_injection_eur_per_year": {
+          "value": 0.0
+        },
+        "monitoring_cost_after_injection_eur_per_year": {
+          "value": 0.0
+        },
+        "compressor_inlet_pressure_bar": {
+          "value": 25.0
+        },
+        "compressor_inlet_temperature_c": {
+          "value": 20.0
+        },
+        "eta_orc": {
+          "value": 0.2
+        },
+        "eta_gt_injection_pump": {
+          "value": 0.9
+        },
+        "eta_co2_compressor_isentropic": {
+          "value": 0.75
+        },
+        "eta_co2_dense_phase_pump": {
+          "value": 0.9
+        },
+        "notes": {
+          "value": "capacity-only: reservoir properties are not part of the workbook"
+        }
+      },
+      {
+        "id": {
+          "value": "boksic"
+        },
+        "node_id": {
+          "value": "boksic-site"
+        },
+        "name": {
+          "value": "Boksić"
+        },
+        "storage_type": {
+          "value": "DHF"
+        },
+        "capacity_t": {
+          "value": 13700000.0
+        },
+        "commissioning_year": {
+          "value": 2026
+        },
+        "capex_eur": {
+          "value": 0.0
+        },
+        "opex_eur_per_t": {
+          "value": 10.0
+        },
+        "monitoring_cost_during_injection_eur_per_year": {
+          "value": 0.0
+        },
+        "monitoring_cost_after_injection_eur_per_year": {
+          "value": 0.0
+        },
+        "compressor_inlet_pressure_bar": {
+          "value": 25.0
+        },
+        "compressor_inlet_temperature_c": {
+          "value": 20.0
+        },
+        "eta_orc": {
+          "value": 0.2
+        },
+        "eta_gt_injection_pump": {
+          "value": 0.9
+        },
+        "eta_co2_compressor_isentropic": {
+          "value": 0.75
+        },
+        "eta_co2_dense_phase_pump": {
+          "value": 0.9
+        },
+        "notes": {
+          "value": "capacity-only: reservoir properties are not part of the workbook"
+        }
+      },
+      {
+        "id": {
+          "value": "struzec"
+        },
+        "node_id": {
+          "value": "struzec-site"
+        },
+        "name": {
+          "value": "Stružec"
+        },
+        "storage_type": {
+          "value": "DHF"
+        },
+        "capacity_t": {
+          "value": 1700000.0
+        },
+        "commissioning_year": {
+          "value": 2026
+        },
+        "capex_eur": {
+          "value": 0.0
+        },
+        "opex_eur_per_t": {
+          "value": 10.0
+        },
+        "monitoring_cost_during_injection_eur_per_year": {
+          "value": 0.0
+        },
+        "monitoring_cost_after_injection_eur_per_year": {
+          "value": 0.0
+        },
+        "compressor_inlet_pressure_bar": {
+          "value": 25.0
+        },
+        "compressor_inlet_temperature_c": {
+          "value": 20.0
+        },
+        "eta_orc": {
+          "value": 0.2
+        },
+        "eta_gt_injection_pump": {
+          "value": 0.9
+        },
+        "eta_co2_compressor_isentropic": {
+          "value": 0.75
+        },
+        "eta_co2_dense_phase_pump": {
+          "value": 0.9
+        },
+        "notes": {
+          "value": "capacity-only: reservoir properties are not part of the workbook"
+        }
+      }
+    ],
+    "geothermal_systems": [],
+    "policy": {
+      "ets": {
+        "steps": [
+          {
+            "year": {
+              "value": 2025
+            },
+            "free_allowance_share": {
+              "value": 0.5
+            }
+          },
+          {
+            "year": {
+              "value": 2026
+            },
+            "free_allowance_share": {
+              "value": 0.475
+            }
+          },
+          {
+            "year": {
+              "value": 2027
+            },
+            "free_allowance_share": {
+              "value": 0.425
+            }
+          },
+          {
+            "year": {
+              "value": 2028
+            },
+            "free_allowance_share": {
+              "value": 0.325
+            }
+          },
+          {
+            "year": {
+              "value": 2029
+            },
+            "free_allowance_share": {
+              "value": 0.175
+            }
+          },
+          {
+            "year": {
+              "value": 2030
+            },
+            "free_allowance_share": {
+              "value": 0.0
+            }
+          }
+        ]
+      },
+      "prices": {
+        "optimistic": {
+          "name": {
+            "value": "optimistic"
+          },
+          "start_year": {
+            "value": 2025
+          },
+          "values_eur_per_t": [
+            {
+              "value": 63.64125
+            },
+            {
+              "value": 93.9989389639
+            },
+            {
+              "value": 104.5330178819
+            },
+            {
+              "value": 114.7252192969
+            },
+            {
+              "value": 121.8575041324
+            },
+            {
+              "value": 128.8701257457
+            },
+            {
+              "value": 131.4420849198
+            },
+            {
+              "value": 135.2770703217
+            },
+            {
+              "value": 139.5674992013
+            },
+            {
+              "value": 143.5154598031
+            },
+            {
+              "value": 143.8802745846
+            },
+            {
+              "value": 145.4765368955
+            },
+            {
+              "value": 145.8286805579
+            },
+            {
+              "value": 148.7786672176
+            },
+            {
+              "value": 150.3842612788
+            },
+            {
+              "value": 151.3829339417
+            },
+            {
+              "value": 153.0747719889
+            },
+            {
+              "value": 154.3161703381
+            },
+            {
+              "value": 157.2202312381
+            },
+            {
+              "value": 156.9866612705
+            },
+            {
+              "value": 160.2513312822
+            },
+            {
+              "value": 162.9810068616
+            },
+            {
+              "value": 166.0418107222
+            },
+            {
+              "value": 169.8703824812
+            },
+            {
+              "value": 173.3818774629
+            },
+            {
+              "value": 183.6171867123
+            }
+          ]
+        },
+        "conservative": {
+          "name": {
+            "value": "conservative"
+          },
+          "start_year": {
+            "value": 2025
+          },
+          "values_eur_per_t": [
+            {
+              "value": 63.64125
+            },
+            {
+              "value": 68.0799844366
+            },
+            {
+              "value": 71.0221120429
+            },
+            {
+              "value": 74.8772202337
+            },
+            {
+              "value": 78.6593594661
+            },
+            {
+              "value": 81.5764253094
+            },
+            {
+              "value": 83.4879060918
+            },
+            {
+              "value": 86.9188945306
+            },
+            {
+              "value": 89.3276842646
+            },
+            {
+              "value": 91.641158565
+            },
+            {
+              "value": 93.3246865461
+            },
+            {
+              "value": 95.1836144885
+            },
+            {
+              "value": 96.5695555426
+            },
+            {
+              "value": 98.8017618951
+            },
+            {
+              "value": 100.2582639075
+            },
+            {
+              "value": 103.3552666886
+            },
+            {
+              "value": 105.4016800043
+            },
+            {
+              "value": 107.3412987849
+            },
+            {
+              "value": 110.9172515922
+            },
+            {
+              "value": 113.8398068496
+            },
+            {
+              "value": 118.164894326
+            },
+            {
+              "value": 121.9698448297
+            },
+            {
+              "value": 125.2849336901
+            },
+            {
+              "value": 130.0779628804
+            },
+            {
+              "value": 135.6697911905
+            },
+            {
+              "value": 143.5425492336
+            }
+          ]
+        },
+        "pessimistic": {
+          "name": {
+            "value": "pessimistic"
+          },
+          "start_year": {
+            "value": 2025
+          },
+          "values_eur_per_t": [
+            {
+              "value": 63.64125
+            },
+            {
+              "value": 42.5929744459
+            },
+            {
+              "value": 39.6550949199
+            },
+            {
+              "value": 38.5337419996
+            },
+            {
+              "value": 40.4280396868
+            },
+            {
+              "value": 41.5174722122
+            },
+            {
+              "value": 42.7922895782
+            },
+            {
+              "value": 43.7667235317
+            },
+            {
+              "value": 44.9863720163
+            },
+            {
+              "value": 46.5039525677
+            },
+            {
+              "value": 45.8905973719
+            },
+            {
+              "value": 48.3380841987
+            },
+            {
+              "value": 50.1629217792
+            },
+            {
+              "value": 51.9976024655
+            },
+            {
+              "value": 53.2469070731
+            },
+            {
+              "value": 55.2670276039
+            },
+            {
+              "value": 59.2080385316
+            },
+            {
+              "value": 59.3206653386
+            },
+            {
+              "value": 58.0416829189
+            },
+            {
+              "value": 62.3662428829
+            },
+            {
+              "value": 66.7897478691
+            },
+            {
+              "value": 67.5430470143
+            },
+            {
+              "value": 70.3499097126
+            },
+            {
+              "value": 75.7168497702
+            },
+            {
+              "value": 78.0843158606
+            },
+            {
+              "value": 82.4954618056
+            }
+          ]
+        }
+      },
+      "capture": {
+        "capex_eur_per_t": {
+          "PI": {
+            "value": 100.0
+          },
+          "NI": {
+            "value": 75.0
+          },
+          "OXY": {
+            "value": 90.0
+          }
+        },
+        "opex_eur_per_t": {
+          "PI": {
+            "value": 30.0
+          },
+          "NI": {
+            "value": 40.0
+          },
+          "OXY": {
+            "value": 25.0
+          },
+          "DEFAULT": {
+            "value": 20.0
+          }
+        },
+        "oxygen_plant_capex_eur": {
+          "value": 15000000.0
+        }
+      },
+      "transport": {
+        "capex_eur_per_t_km": {
+          "value": 0.7
+        },
+        "opex_eur_per_t_short": {
+          "value": 15.0
+        },
+        "opex_short_length_threshold_km": {
+          "value": 45.0
+        },
+        "opex_log_a": {
+          "value": 22.0
+        },
+        "opex_log_b": {
+          "value": -80.0
+        }
+      },
+      "storage": {
+        "capex_eur_per_t": {
+          "value": 20.0
+        },
+        "opex_eur_per_t": {
+          "value": 10.0
+        }
+      },
+      "financial": {
+        "real_rate": {
+          "value": 0.06
+        },
+        "inflation_rate": {
+          "value": 0.06
+        }
+      },
+      "selected_price_scenario": {
+        "value": "conservative"
+      }
+    },
+    "economics": {
+      "start_year": {
+        "value": 2025
+      },
+      "end_year": {
+        "value": 2050
+      },
+      "capex_start_year": {
+        "value": 2026
+      },
+      "discount_rate": {
+        "value": 0.06
+      },
+      "inflation_rate": {
+        "value": 0.06
+      },
+      "electricity_sell_price_eur_per_mwh": {
+        "value": 0.0
+      },
+      "electricity_buy_price_eur_per_mwh": {
+        "value": 0.0
+      },
+      "price_path": {
+        "mode": {
+          "value": "custom"
+        },
+        "start_year": {
+          "value": 2025
+        },
+        "custom": {
+          "function": {
+            "value": "linear"
+          },
+          "p0_eur_per_t": {
+            "value": 63.64
+          },
+          "linear_growth_eur_per_t_per_year": {
+            "value": 3.0
+          },
+          "log_amplitude_eur_per_t": {
+            "value": 30.0
+          },
+          "log_rate_per_year": {
+            "value": 0.1
+          },
+          "power_coefficient_eur_per_t": {
+            "value": 1.0
+          },
+          "power_exponent": {
+            "value": 1.5
+          }
+        }
+      },
+      "cost_treatment": {
+        "value": "base_year_escalated_then_discounted"
+      }
+    },
+    "notes": {
+      "value": "Imported from the cluster workbook. Costs follow the thesis unit rates; edges are single-leg placeholders until the multi-modal network is edited."
+    }
+  }
+}

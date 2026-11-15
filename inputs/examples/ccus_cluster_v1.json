@@ -1,0 +1,199 @@
+{
+  "schema_version": "1.0",
+  "id": "adriatic_cluster",
+  "name": "Adriatic GT-CCS cluster demo",
+  "start_year": 2027,
+  "end_year": 2045,
+  "step": "yearly",
+  "nodes": [
+    {"id": "plant_nexe", "name": "NEXE", "kind": "emitter", "location": {"onshore": true, "latitude": 45.79, "longitude": 15.87}},
+    {"id": "plant_plomin", "name": "Plomin", "kind": "emitter", "location": {"onshore": true, "latitude": 45.14, "longitude": 14.18}},
+    {"id": "plant_sisak", "name": "Sisak", "kind": "emitter", "location": {"onshore": true, "latitude": 45.48, "longitude": 16.38}},
+    {"id": "hub_central", "name": "Central hub", "kind": "junction", "location": {"onshore": true, "latitude": 45.33, "longitude": 14.44}},
+    {"id": "port_rijeka", "name": "Rijeka port", "kind": "port", "location": {"onshore": false, "latitude": 45.33, "longitude": 14.44},
+     "port": {"name": "Rijeka CO2 terminal", "berths": 2, "max_throughput_t_per_year": 600000.0, "load_rate_t_per_day": 2000.0, "storage_capacity_t": 20000.0, "weather_availability": 0.9}},
+    {"id": "offshore_jugo", "name": "Offshore sink Jugo", "kind": "offshore_terminal", "location": {"onshore": false, "latitude": 42.4, "longitude": 16.2}},
+    {"id": "sink_poljana", "name": "Poljana DSA", "kind": "storage", "location": {"onshore": true}}
+  ],
+  "emitters": [
+    {
+      "id": "nexe",
+      "name": "NEXE",
+      "node_id": "plant_nexe",
+      "activation_year": 2028,
+      "gross_emissions": {"kind": "constant", "constant_t_per_year": 400000.0},
+      "capture": {"name": "NEXE capture", "technology": "OXY", "capacity_t_per_year": 400000.0, "capex_eur": 447245393.63, "opex_eur_per_t": 25.0, "commissioning_year": 2028}
+    },
+    {
+      "id": "plomin",
+      "name": "Plomin",
+      "node_id": "plant_plomin",
+      "activation_year": 2031,
+      "gross_emissions": {"kind": "piecewise_linear", "points": {"2030": 0.0, "2031": 100000.0, "2033": 300000.0, "2040": 300000.0, "2045": 50000.0}},
+      "capture": {"name": "Plomin capture", "technology": "PI", "capacity_t_per_year": 300000.0, "capex_eur": 120000000.0, "opex_eur_per_t": 20.0, "commissioning_year": 2031}
+    },
+    {
+      "id": "sisak",
+      "name": "Sisak",
+      "node_id": "plant_sisak",
+      "activation_year": 2035,
+      "gross_emissions": {"kind": "constant", "constant_t_per_year": 150000.0}
+    }
+  ],
+  "edges": [
+    {
+      "id": "nexe_hub",
+      "name": "NEXE to hub",
+      "from_node": "plant_nexe",
+      "to_node": "hub_central",
+      "states": [
+        {"mode": "truck", "valid_from_year": 2027, "valid_until_year": 2030, "capacity_t_per_year": 120000.0, "distance_km": 25.0, "capex_eur": 1500000.0, "opex_eur_per_t": 8.0, "opex_eur_per_tkm": 0.35,
+         "road": {"vehicle_capacity_t": 25.0, "trips_per_vehicle_per_day": 2.0, "working_days_per_year": 250.0, "fleet_size": 10}},
+        {"mode": "pipeline", "valid_from_year": 2031, "capacity_t_per_year": 600000.0, "distance_km": 40.0, "capex_eur": 25000000.0, "opex_eur_per_t": 15.0,
+         "pipeline": {"inner_diameter_m": 0.3, "inlet_pressure_bar": 150.0, "inlet_temperature_c": 20.0}}
+      ],
+      "upgrades": [
+        {"id": "truck_to_pipeline", "trigger": {"kind": "year", "year": 2031}, "lead_time_years": 0,
+         "new_state": {"mode": "pipeline", "valid_from_year": 2031, "capacity_t_per_year": 600000.0, "distance_km": 40.0, "capex_eur": 25000000.0, "opex_eur_per_t": 15.0,
+                       "pipeline": {"inner_diameter_m": 0.3, "inlet_pressure_bar": 150.0, "inlet_temperature_c": 20.0}}}
+      ]
+    },
+    {
+      "id": "plomin_hub",
+      "name": "Plomin to hub",
+      "from_node": "plant_plomin",
+      "to_node": "hub_central",
+      "states": [
+        {"mode": "pipeline", "valid_from_year": 2031, "capacity_t_per_year": 300000.0, "distance_km": 60.0, "capex_eur": 18000000.0, "opex_eur_per_t": 14.0,
+         "pipeline": {"inner_diameter_m": 0.25, "inlet_pressure_bar": 150.0, "inlet_temperature_c": 20.0}}
+      ]
+    },
+    {
+      "id": "sisak_hub",
+      "name": "Sisak to hub",
+      "from_node": "plant_sisak",
+      "to_node": "hub_central",
+      "states": [
+        {"mode": "rail", "valid_from_year": 2035, "capacity_t_per_year": 150000.0, "distance_km": 90.0, "capex_eur": 6000000.0, "opex_eur_per_t": 6.0, "opex_eur_per_tkm": 0.12,
+         "road": {"vehicle_capacity_t": 60.0, "trips_per_vehicle_per_day": 1.0, "working_days_per_year": 300.0, "fleet_size": 9}}
+      ]
+    },
+    {
+      "id": "hub_poljana",
+      "name": "Hub to Poljana",
+      "from_node": "hub_central",
+      "to_node": "sink_poljana",
+      "states": [
+        {"mode": "pipeline", "valid_from_year": 2028, "capacity_t_per_year": 900000.0, "distance_km": 120.0, "capex_eur": 60000000.0, "opex_eur_per_t": 12.0,
+         "pipeline": {"inner_diameter_m": 0.35, "inlet_pressure_bar": 150.0, "inlet_temperature_c": 20.0}}
+      ]
+    },
+    {
+      "id": "hub_port",
+      "name": "Hub to port",
+      "from_node": "hub_central",
+      "to_node": "port_rijeka",
+      "states": [
+        {"mode": "pipeline", "valid_from_year": 2027, "capacity_t_per_year": 700000.0, "distance_km": 100.0, "capex_eur": 50000000.0, "opex_eur_per_t": 13.0,
+         "pipeline": {"inner_diameter_m": 0.3, "inlet_pressure_bar": 150.0, "inlet_temperature_c": 20.0}}
+      ]
+    },
+    {
+      "id": "port_offshore",
+      "name": "Rijeka to offshore",
+      "from_node": "port_rijeka",
+      "to_node": "offshore_jugo",
+      "states": [
+        {"mode": "marine", "valid_from_year": 2027, "capacity_t_per_year": 400000.0, "distance_km": 180.0, "capex_eur": 8000000.0, "opex_eur_per_t": 22.0,
+         "marine": {"vessel_capacity_t": 8000.0, "voyages_per_vessel_per_year": 6.0, "vessels": 2, "port_node_id": "port_rijeka", "weather_availability": 0.85}}
+      ]
+    }
+  ],
+  "storage_sinks": [
+    {
+      "id": "poljana",
+      "node_id": "sink_poljana",
+      "name": "Poljana",
+      "storage_type": "DSA",
+      "capacity_t": 9308000.0,
+      "commissioning_year": 2028,
+      "capex_eur": 150000000.0,
+      "opex_eur_per_t": 10.0,
+      "monitoring_cost_during_injection_eur_per_year": 250000.0,
+      "monitoring_cost_after_injection_eur_per_year": 120000.0,
+      "monitoring_end_year": 2045,
+      "compressor_inlet_pressure_bar": 25.0,
+      "compressor_inlet_temperature_c": 20.0,
+      "reservoir": {
+        "area_m2": 225000000.0,
+        "effective_thickness_m": 155.0,
+        "porosity": 0.15,
+        "top_depth_m": 2000.0,
+        "temperature_c": 150.0,
+        "reference_pressure_bar": 200.0,
+        "pressure_step_bar": 0.5,
+        "pore_compressibility_per_bar": 0.00005,
+        "salinity_g_per_l": 0.913,
+        "permeability_m2": 5e-14,
+        "irreducible_water_saturation": 0.25,
+        "storage_efficiency": 0.02,
+        "plume_core_saturation": 0.2,
+        "krw_max": 1.0,
+        "krg_max": 0.5,
+        "nw": 3.0,
+        "ng": 4.5,
+        "krw_min": 0.05,
+        "krg_min": 0.05,
+        "fracture_pressure_gradient_bar_per_m": 0.18
+      },
+      "injection_well": {"radius_m": 0.15, "depth_m": 2075.0, "roughness_m": 0.0005}
+    },
+    {
+      "id": "jugo",
+      "node_id": "offshore_jugo",
+      "name": "Jugo offshore",
+      "storage_type": "DSA",
+      "capacity_t": 5000000.0,
+      "commissioning_year": 2030,
+      "capex_eur": 220000000.0,
+      "opex_eur_per_t": 14.0
+    }
+  ],
+  "geothermal_systems": [
+    {
+      "id": "poljana_doublet",
+      "node_id": "sink_poljana",
+      "name": "Poljana doublet",
+      "d_doublet_m": 1500.0,
+      "reservoir_temperature_c": 150.0,
+      "bhp_dp_bar": 10.0,
+      "eta_orc": 0.2,
+      "p_out_bar": 10.0,
+      "t_out_c": 35.0,
+      "rw_production_m": 0.15,
+      "rw_injection_m": 0.15,
+      "h_ref_production_m": 2075.0,
+      "h_ref_injection_m": 2075.0,
+      "roughness_m": 0.0005,
+      "operation_start_year": 2028,
+      "operation_end_year": 2045,
+      "capex_eur": 50000000.0,
+      "fixed_opex_eur_per_year": 1500000.0,
+      "variable_opex_eur_per_mwh": 5.0
+    }
+  ],
+  "economics": {
+    "start_year": 2027,
+    "end_year": 2045,
+    "capex_start_year": 2028,
+    "discount_rate": 0.05,
+    "inflation_rate": 0.05,
+    "electricity_sell_price_eur_per_mwh": 80.0,
+    "electricity_buy_price_eur_per_mwh": 100.0,
+    "price_path": {
+      "mode": "conservative",
+      "start_year": 2025,
+      "values_eur_per_t": [64, 68, 71, 75, 79, 82, 83, 87, 89, 92, 93, 95, 97, 99, 100, 103, 105, 107, 111, 114, 118]
+    }
+  }
+}
