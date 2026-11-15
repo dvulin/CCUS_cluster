@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from .base import MODEL_VERSION, CoreModel, Slug, interp_year, series_from_profile, year_axis
+from .connection import EmitterSinkConnection
 from .economics import CustomPricePath, EconomicsConfig, PricePath
 from .edge import (
     EdgeState,
@@ -33,6 +34,7 @@ from .sink import (
     GeothermalSystem,
     InjectionWellProperties,
     MonitoringPlan,
+    ReservoirDefaults,
     ReservoirProperties,
     StorageSink,
     StorageType,
@@ -60,6 +62,7 @@ __all__ = [
     "CaptureUnit",
     "EmissionCurve",
     "Emitter",
+    "EmitterSinkConnection",
     "GeoLocation",
     "Node",
     "NodeKind",
@@ -79,6 +82,7 @@ __all__ = [
     "GeothermalSystem",
     "InjectionWellProperties",
     "MonitoringPlan",
+    "ReservoirDefaults",
     "ReservoirProperties",
     "StorageSink",
     "StorageType",

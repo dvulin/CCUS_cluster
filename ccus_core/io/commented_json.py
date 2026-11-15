@@ -50,6 +50,19 @@ FIELD_METADATA: dict[str, tuple[str | None, str | None]] = {
     "emitters[].capture.capex_eur": ("EUR", "capture CAPEX"),
     "emitters[].capture.opex_eur_per_t": ("EUR/t CO2", "capture OPEX per tonne"),
     "emitters[].capture.commissioning_year": ("year", "capture plant commissioning year"),
+    "connections[].emitter_id": (None, "emitter that wants CO2 transport"),
+    "connections[].sink_id": (None, "storage site it can reach"),
+    "connections[].start_year": ("year", "first year this access may be used (independent per pair)"),
+    "connections[].end_year": ("year", "last year this access may be used"),
+    "connections[].mode": (None, "pipeline | truck | rail | marine"),
+    "connections[].distance_km": ("km", "route length"),
+    "connections[].capacity_t_per_year": ("t CO2/year", "design capacity of this access"),
+    "connections[].capex_eur": ("EUR", "CAPEX charged in start_year"),
+    "connections[].opex_eur_per_t": ("EUR/t CO2", "flat tariff"),
+    "connections[].opex_eur_per_tkm": ("EUR/(t CO2 km)", "distance tariff"),
+    "storage_defaults.porosity": ("-", "default porosity for new DSA/DHF sites (0.20)"),
+    "storage_defaults.permeability_m2": ("m2", "default permeability (100 mD = 1e-13 m2)"),
+    "storage_defaults.top_depth_m": ("m", "default reservoir depth (1500 m)"),
     "edges[].id": (None, "slug"),
     "edges[].from_node": (None, "start node id"),
     "edges[].to_node": (None, "end node id"),
@@ -113,7 +126,7 @@ def _lift_document(payload: dict) -> dict:
 
     if "scenario" in payload and isinstance(payload["scenario"], dict):
         flat = dict(payload["scenario"])
-        for section in ("emitters", "edges", "nodes", "storage_sinks", "geothermal_systems", "economics", "policy", "onboarding_years"):
+        for section in ("emitters", "edges", "connections", "nodes", "storage_sinks", "geothermal_systems", "economics", "policy", "onboarding_years"):
             if section in payload:
                 flat[section] = payload[section]
         payload = flat

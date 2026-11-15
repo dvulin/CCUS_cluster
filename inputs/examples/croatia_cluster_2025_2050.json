@@ -303,23 +303,31 @@
     "emitters": [
       {
         "id": {
-          "value": "te-plomin"
+          "value": "te-plomin",
+          "comment": "slug: lower-case, no spaces"
         },
         "name": {
-          "value": "TE PLOMIN"
+          "value": "TE PLOMIN",
+          "comment": "emitter name as printed in the reports"
         },
         "node_id": {
-          "value": "te-plomin-gate"
+          "value": "te-plomin-gate",
+          "comment": "network node where the captured CO2 enters the graph"
         },
         "activation_year": {
-          "value": 2028
+          "value": 2028,
+          "unit": "year",
+          "comment": "first year with a contribution; derived from the probability when omitted"
         },
         "implementation_probability": {
-          "value": 0.5
+          "value": 0.5,
+          "unit": "-",
+          "comment": "CCS implementation probability: 1.0, 0.9, 0.5, 0.1 ..."
         },
         "gross_emissions": {
           "kind": {
-            "value": "power_law"
+            "value": "power_law",
+            "comment": "constant | piecewise_linear | polynomial | power_law"
           },
           "polynomial_a": {
             "value": 0.0
@@ -328,44 +336,62 @@
             "value": 1.0
           },
           "reference_year": {
-            "value": 2025
+            "value": 2025,
+            "unit": "year",
+            "comment": "E(0) reference year and x = 0 point"
           },
           "zero_outside_points": {
             "value": true
           },
           "e0_t_per_year": {
-            "value": 1118203.087
+            "value": 1118203.087,
+            "unit": "t CO2/year",
+            "comment": "E(0): emission at the reference year (power_law)"
           },
           "a": {
-            "value": -0.03
+            "value": -0.03,
+            "unit": "-",
+            "comment": "linear decline rate (thesis: -0.02 ... -0.05)"
           },
           "b": {
-            "value": -33546.09261
+            "value": -33546.09261,
+            "unit": "t CO2/year",
+            "comment": "b = a * E(0) when omitted"
           },
           "c": {
-            "value": 1.5
+            "value": 1.5,
+            "unit": "-",
+            "comment": "power-law exponent (thesis: 1.5)"
           }
         }
       },
       {
         "id": {
-          "value": "te-to-zagreb"
+          "value": "te-to-zagreb",
+          "comment": "slug: lower-case, no spaces"
         },
         "name": {
-          "value": "TE-TO ZAGREB"
+          "value": "TE-TO ZAGREB",
+          "comment": "emitter name as printed in the reports"
         },
         "node_id": {
-          "value": "te-to-zagreb-gate"
+          "value": "te-to-zagreb-gate",
+          "comment": "network node where the captured CO2 enters the graph"
         },
         "activation_year": {
-          "value": 2028
+          "value": 2028,
+          "unit": "year",
+          "comment": "first year with a contribution; derived from the probability when omitted"
         },
         "implementation_probability": {
-          "value": 0.5
+          "value": 0.5,
+          "unit": "-",
+          "comment": "CCS implementation probability: 1.0, 0.9, 0.5, 0.1 ..."
         },
         "gross_emissions": {
           "kind": {
-            "value": "power_law"
+            "value": "power_law",
+            "comment": "constant | piecewise_linear | polynomial | power_law"
           },
           "polynomial_a": {
             "value": 0.0
@@ -374,44 +400,62 @@
             "value": 1.0
           },
           "reference_year": {
-            "value": 2025
+            "value": 2025,
+            "unit": "year",
+            "comment": "E(0) reference year and x = 0 point"
           },
           "zero_outside_points": {
             "value": true
           },
           "e0_t_per_year": {
-            "value": 908701.9990000001
+            "value": 908701.9990000001,
+            "unit": "t CO2/year",
+            "comment": "E(0): emission at the reference year (power_law)"
           },
           "a": {
-            "value": -0.025
+            "value": -0.025,
+            "unit": "-",
+            "comment": "linear decline rate (thesis: -0.02 ... -0.05)"
           },
           "b": {
-            "value": -22717.549975
+            "value": -22717.549975,
+            "unit": "t CO2/year",
+            "comment": "b = a * E(0) when omitted"
           },
           "c": {
-            "value": 1.5
+            "value": 1.5,
+            "unit": "-",
+            "comment": "power-law exponent (thesis: 1.5)"
           }
         }
       },
       {
         "id": {
-          "value": "nexe"
+          "value": "nexe",
+          "comment": "slug: lower-case, no spaces"
         },
         "name": {
-          "value": "NEXE"
+          "value": "NEXE",
+          "comment": "emitter name as printed in the reports"
         },
         "node_id": {
-          "value": "nexe-gate"
+          "value": "nexe-gate",
+          "comment": "network node where the captured CO2 enters the graph"
         },
         "activation_year": {
-          "value": 2026
+          "value": 2026,
+          "unit": "year",
+          "comment": "first year with a contribution; derived from the probability when omitted"
         },
         "implementation_probability": {
-          "value": 1.0
+          "value": 1.0,
+          "unit": "-",
+          "comment": "CCS implementation probability: 1.0, 0.9, 0.5, 0.1 ..."
         },
         "gross_emissions": {
           "kind": {
-            "value": "power_law"
+            "value": "power_law",
+            "comment": "constant | piecewise_linear | polynomial | power_law"
           },
           "polynomial_a": {
             "value": 0.0
@@ -420,44 +464,62 @@
             "value": 1.0
           },
           "reference_year": {
-            "value": 2025
+            "value": 2025,
+            "unit": "year",
+            "comment": "E(0) reference year and x = 0 point"
           },
           "zero_outside_points": {
             "value": true
           },
           "e0_t_per_year": {
-            "value": 656178.2482
+            "value": 656178.2482,
+            "unit": "t CO2/year",
+            "comment": "E(0): emission at the reference year (power_law)"
           },
           "a": {
-            "value": -0.03
+            "value": -0.03,
+            "unit": "-",
+            "comment": "linear decline rate (thesis: -0.02 ... -0.05)"
           },
           "b": {
-            "value": -19685.347446
+            "value": -19685.347446,
+            "unit": "t CO2/year",
+            "comment": "b = a * E(0) when omitted"
           },
           "c": {
-            "value": 1.5
+            "value": 1.5,
+            "unit": "-",
+            "comment": "power-law exponent (thesis: 1.5)"
           }
         }
       },
       {
         "id": {
-          "value": "rafinerija-nafte-rijeka"
+          "value": "rafinerija-nafte-rijeka",
+          "comment": "slug: lower-case, no spaces"
         },
         "name": {
-          "value": "Rafinerija nafte Rijeka"
+          "value": "Rafinerija nafte Rijeka",
+          "comment": "emitter name as printed in the reports"
         },
         "node_id": {
-          "value": "rafinerija-nafte-rijeka-gate"
+          "value": "rafinerija-nafte-rijeka-gate",
+          "comment": "network node where the captured CO2 enters the graph"
         },
         "activation_year": {
-          "value": 2033
+          "value": 2033,
+          "unit": "year",
+          "comment": "first year with a contribution; derived from the probability when omitted"
         },
         "implementation_probability": {
-          "value": 0.1
+          "value": 0.1,
+          "unit": "-",
+          "comment": "CCS implementation probability: 1.0, 0.9, 0.5, 0.1 ..."
         },
         "gross_emissions": {
           "kind": {
-            "value": "power_law"
+            "value": "power_law",
+            "comment": "constant | piecewise_linear | polynomial | power_law"
           },
           "polynomial_a": {
             "value": 0.0
@@ -466,44 +528,62 @@
             "value": 1.0
           },
           "reference_year": {
-            "value": 2025
+            "value": 2025,
+            "unit": "year",
+            "comment": "E(0) reference year and x = 0 point"
           },
           "zero_outside_points": {
             "value": true
           },
           "e0_t_per_year": {
-            "value": 678317.9386
+            "value": 678317.9386,
+            "unit": "t CO2/year",
+            "comment": "E(0): emission at the reference year (power_law)"
           },
           "a": {
-            "value": -0.025
+            "value": -0.025,
+            "unit": "-",
+            "comment": "linear decline rate (thesis: -0.02 ... -0.05)"
           },
           "b": {
-            "value": -16957.948465
+            "value": -16957.948465,
+            "unit": "t CO2/year",
+            "comment": "b = a * E(0) when omitted"
           },
           "c": {
-            "value": 1.5
+            "value": 1.5,
+            "unit": "-",
+            "comment": "power-law exponent (thesis: 1.5)"
           }
         }
       },
       {
         "id": {
-          "value": "tvornica-cementa-sv-juraj"
+          "value": "tvornica-cementa-sv-juraj",
+          "comment": "slug: lower-case, no spaces"
         },
         "name": {
-          "value": "TVORNICA CEMENTA SV. Juraj"
+          "value": "TVORNICA CEMENTA SV. Juraj",
+          "comment": "emitter name as printed in the reports"
         },
         "node_id": {
-          "value": "tvornica-cementa-sv-juraj-gate"
+          "value": "tvornica-cementa-sv-juraj-gate",
+          "comment": "network node where the captured CO2 enters the graph"
         },
         "activation_year": {
-          "value": 2028
+          "value": 2028,
+          "unit": "year",
+          "comment": "first year with a contribution; derived from the probability when omitted"
         },
         "implementation_probability": {
-          "value": 0.5
+          "value": 0.5,
+          "unit": "-",
+          "comment": "CCS implementation probability: 1.0, 0.9, 0.5, 0.1 ..."
         },
         "gross_emissions": {
           "kind": {
-            "value": "power_law"
+            "value": "power_law",
+            "comment": "constant | piecewise_linear | polynomial | power_law"
           },
           "polynomial_a": {
             "value": 0.0
@@ -512,44 +592,62 @@
             "value": 1.0
           },
           "reference_year": {
-            "value": 2025
+            "value": 2025,
+            "unit": "year",
+            "comment": "E(0) reference year and x = 0 point"
           },
           "zero_outside_points": {
             "value": true
           },
           "e0_t_per_year": {
-            "value": 583364.8
+            "value": 583364.8,
+            "unit": "t CO2/year",
+            "comment": "E(0): emission at the reference year (power_law)"
           },
           "a": {
-            "value": -0.02
+            "value": -0.02,
+            "unit": "-",
+            "comment": "linear decline rate (thesis: -0.02 ... -0.05)"
           },
           "b": {
-            "value": -11667.296
+            "value": -11667.296,
+            "unit": "t CO2/year",
+            "comment": "b = a * E(0) when omitted"
           },
           "c": {
-            "value": 1.5
+            "value": 1.5,
+            "unit": "-",
+            "comment": "power-law exponent (thesis: 1.5)"
           }
         }
       },
       {
         "id": {
-          "value": "te-to-sisak"
+          "value": "te-to-sisak",
+          "comment": "slug: lower-case, no spaces"
         },
         "name": {
-          "value": "TE-TO SISAK"
+          "value": "TE-TO SISAK",
+          "comment": "emitter name as printed in the reports"
         },
         "node_id": {
-          "value": "te-to-sisak-gate"
+          "value": "te-to-sisak-gate",
+          "comment": "network node where the captured CO2 enters the graph"
         },
         "activation_year": {
-          "value": 2033
+          "value": 2033,
+          "unit": "year",
+          "comment": "first year with a contribution; derived from the probability when omitted"
         },
         "implementation_probability": {
-          "value": 0.1
+          "value": 0.1,
+          "unit": "-",
+          "comment": "CCS implementation probability: 1.0, 0.9, 0.5, 0.1 ..."
         },
         "gross_emissions": {
           "kind": {
-            "value": "power_law"
+            "value": "power_law",
+            "comment": "constant | piecewise_linear | polynomial | power_law"
           },
           "polynomial_a": {
             "value": 0.0
@@ -558,44 +656,62 @@
             "value": 1.0
           },
           "reference_year": {
-            "value": 2025
+            "value": 2025,
+            "unit": "year",
+            "comment": "E(0) reference year and x = 0 point"
           },
           "zero_outside_points": {
             "value": true
           },
           "e0_t_per_year": {
-            "value": 576051.933
+            "value": 576051.933,
+            "unit": "t CO2/year",
+            "comment": "E(0): emission at the reference year (power_law)"
           },
           "a": {
-            "value": -0.025
+            "value": -0.025,
+            "unit": "-",
+            "comment": "linear decline rate (thesis: -0.02 ... -0.05)"
           },
           "b": {
-            "value": -14401.298325
+            "value": -14401.298325,
+            "unit": "t CO2/year",
+            "comment": "b = a * E(0) when omitted"
           },
           "c": {
-            "value": 1.5
+            "value": 1.5,
+            "unit": "-",
+            "comment": "power-law exponent (thesis: 1.5)"
           }
         }
       },
       {
         "id": {
-          "value": "proizvodnja-cemanta-koroman-no"
+          "value": "proizvodnja-cemanta-koroman-no",
+          "comment": "slug: lower-case, no spaces"
         },
         "name": {
-          "value": "PROIZVODNJA CEMANTA KOROMANČNO"
+          "value": "PROIZVODNJA CEMANTA KOROMANČNO",
+          "comment": "emitter name as printed in the reports"
         },
         "node_id": {
-          "value": "proizvodnja-cemanta-koroman-no-gate"
+          "value": "proizvodnja-cemanta-koroman-no-gate",
+          "comment": "network node where the captured CO2 enters the graph"
         },
         "activation_year": {
-          "value": 2028
+          "value": 2028,
+          "unit": "year",
+          "comment": "first year with a contribution; derived from the probability when omitted"
         },
         "implementation_probability": {
-          "value": 0.5
+          "value": 0.5,
+          "unit": "-",
+          "comment": "CCS implementation probability: 1.0, 0.9, 0.5, 0.1 ..."
         },
         "gross_emissions": {
           "kind": {
-            "value": "power_law"
+            "value": "power_law",
+            "comment": "constant | piecewise_linear | polynomial | power_law"
           },
           "polynomial_a": {
             "value": 0.0
@@ -604,44 +720,62 @@
             "value": 1.0
           },
           "reference_year": {
-            "value": 2025
+            "value": 2025,
+            "unit": "year",
+            "comment": "E(0) reference year and x = 0 point"
           },
           "zero_outside_points": {
             "value": true
           },
           "e0_t_per_year": {
-            "value": 313118.716
+            "value": 313118.716,
+            "unit": "t CO2/year",
+            "comment": "E(0): emission at the reference year (power_law)"
           },
           "a": {
-            "value": -0.03
+            "value": -0.03,
+            "unit": "-",
+            "comment": "linear decline rate (thesis: -0.02 ... -0.05)"
           },
           "b": {
-            "value": -9393.56148
+            "value": -9393.56148,
+            "unit": "t CO2/year",
+            "comment": "b = a * E(0) when omitted"
           },
           "c": {
-            "value": 1.5
+            "value": 1.5,
+            "unit": "-",
+            "comment": "power-law exponent (thesis: 1.5)"
           }
         }
       },
       {
         "id": {
-          "value": "objekti-prerade-plina-molve"
+          "value": "objekti-prerade-plina-molve",
+          "comment": "slug: lower-case, no spaces"
         },
         "name": {
-          "value": "Objekti prerade plina Molve"
+          "value": "Objekti prerade plina Molve",
+          "comment": "emitter name as printed in the reports"
         },
         "node_id": {
-          "value": "objekti-prerade-plina-molve-gate"
+          "value": "objekti-prerade-plina-molve-gate",
+          "comment": "network node where the captured CO2 enters the graph"
         },
         "activation_year": {
-          "value": 2028
+          "value": 2028,
+          "unit": "year",
+          "comment": "first year with a contribution; derived from the probability when omitted"
         },
         "implementation_probability": {
-          "value": 0.5
+          "value": 0.5,
+          "unit": "-",
+          "comment": "CCS implementation probability: 1.0, 0.9, 0.5, 0.1 ..."
         },
         "gross_emissions": {
           "kind": {
-            "value": "power_law"
+            "value": "power_law",
+            "comment": "constant | piecewise_linear | polynomial | power_law"
           },
           "polynomial_a": {
             "value": 0.0
@@ -650,44 +784,62 @@
             "value": 1.0
           },
           "reference_year": {
-            "value": 2025
+            "value": 2025,
+            "unit": "year",
+            "comment": "E(0) reference year and x = 0 point"
           },
           "zero_outside_points": {
             "value": true
           },
           "e0_t_per_year": {
-            "value": 272408.719
+            "value": 272408.719,
+            "unit": "t CO2/year",
+            "comment": "E(0): emission at the reference year (power_law)"
           },
           "a": {
-            "value": -0.025
+            "value": -0.025,
+            "unit": "-",
+            "comment": "linear decline rate (thesis: -0.02 ... -0.05)"
           },
           "b": {
-            "value": -6810.217975
+            "value": -6810.217975,
+            "unit": "t CO2/year",
+            "comment": "b = a * E(0) when omitted"
           },
           "c": {
-            "value": 1.5
+            "value": 1.5,
+            "unit": "-",
+            "comment": "power-law exponent (thesis: 1.5)"
           }
         }
       },
       {
         "id": {
-          "value": "el-to-zagreb"
+          "value": "el-to-zagreb",
+          "comment": "slug: lower-case, no spaces"
         },
         "name": {
-          "value": "EL-TO Zagreb"
+          "value": "EL-TO Zagreb",
+          "comment": "emitter name as printed in the reports"
         },
         "node_id": {
-          "value": "el-to-zagreb-gate"
+          "value": "el-to-zagreb-gate",
+          "comment": "network node where the captured CO2 enters the graph"
         },
         "activation_year": {
-          "value": 2033
+          "value": 2033,
+          "unit": "year",
+          "comment": "first year with a contribution; derived from the probability when omitted"
         },
         "implementation_probability": {
-          "value": 0.1
+          "value": 0.1,
+          "unit": "-",
+          "comment": "CCS implementation probability: 1.0, 0.9, 0.5, 0.1 ..."
         },
         "gross_emissions": {
           "kind": {
-            "value": "power_law"
+            "value": "power_law",
+            "comment": "constant | piecewise_linear | polynomial | power_law"
           },
           "polynomial_a": {
             "value": 0.0
@@ -696,44 +848,62 @@
             "value": 1.0
           },
           "reference_year": {
-            "value": 2025
+            "value": 2025,
+            "unit": "year",
+            "comment": "E(0) reference year and x = 0 point"
           },
           "zero_outside_points": {
             "value": true
           },
           "e0_t_per_year": {
-            "value": 197798.0
+            "value": 197798.0,
+            "unit": "t CO2/year",
+            "comment": "E(0): emission at the reference year (power_law)"
           },
           "a": {
-            "value": -0.025
+            "value": -0.025,
+            "unit": "-",
+            "comment": "linear decline rate (thesis: -0.02 ... -0.05)"
           },
           "b": {
-            "value": -4944.950000000001
+            "value": -4944.950000000001,
+            "unit": "t CO2/year",
+            "comment": "b = a * E(0) when omitted"
           },
           "c": {
-            "value": 1.5
+            "value": 1.5,
+            "unit": "-",
+            "comment": "power-law exponent (thesis: 1.5)"
           }
         }
       },
       {
         "id": {
-          "value": "proizvodnja-aluminatnog-cementa"
+          "value": "proizvodnja-aluminatnog-cementa",
+          "comment": "slug: lower-case, no spaces"
         },
         "name": {
-          "value": "Proizvodnja aluminatnog cementa"
+          "value": "Proizvodnja aluminatnog cementa",
+          "comment": "emitter name as printed in the reports"
         },
         "node_id": {
-          "value": "proizvodnja-aluminatnog-cementa-gate"
+          "value": "proizvodnja-aluminatnog-cementa-gate",
+          "comment": "network node where the captured CO2 enters the graph"
         },
         "activation_year": {
-          "value": 2028
+          "value": 2028,
+          "unit": "year",
+          "comment": "first year with a contribution; derived from the probability when omitted"
         },
         "implementation_probability": {
-          "value": 0.5
+          "value": 0.5,
+          "unit": "-",
+          "comment": "CCS implementation probability: 1.0, 0.9, 0.5, 0.1 ..."
         },
         "gross_emissions": {
           "kind": {
-            "value": "power_law"
+            "value": "power_law",
+            "comment": "constant | piecewise_linear | polynomial | power_law"
           },
           "polynomial_a": {
             "value": 0.0
@@ -742,44 +912,62 @@
             "value": 1.0
           },
           "reference_year": {
-            "value": 2025
+            "value": 2025,
+            "unit": "year",
+            "comment": "E(0) reference year and x = 0 point"
           },
           "zero_outside_points": {
             "value": true
           },
           "e0_t_per_year": {
-            "value": 127438.049
+            "value": 127438.049,
+            "unit": "t CO2/year",
+            "comment": "E(0): emission at the reference year (power_law)"
           },
           "a": {
-            "value": -0.025
+            "value": -0.025,
+            "unit": "-",
+            "comment": "linear decline rate (thesis: -0.02 ... -0.05)"
           },
           "b": {
-            "value": -3185.9512250000002
+            "value": -3185.9512250000002,
+            "unit": "t CO2/year",
+            "comment": "b = a * E(0) when omitted"
           },
           "c": {
-            "value": 1.5
+            "value": 1.5,
+            "unit": "-",
+            "comment": "power-law exponent (thesis: 1.5)"
           }
         }
       },
       {
         "id": {
-          "value": "ina-d-d-istr-i-proizv-nip-regija-sredisnja-hrvat"
+          "value": "ina-d-d-istr-i-proizv-nip-regija-sredisnja-hrvat",
+          "comment": "slug: lower-case, no spaces"
         },
         "name": {
-          "value": "INA d.d. Istr. i proizv. NiP, Regija središnja Hrvatska, Objekti frakcionacije Ivanić Grad"
+          "value": "INA d.d. Istr. i proizv. NiP, Regija središnja Hrvatska, Objekti frakcionacije Ivanić Grad",
+          "comment": "emitter name as printed in the reports"
         },
         "node_id": {
-          "value": "ina-d-d-istr-i-proizv-nip-regija-sredisnja-hrvat-gate"
+          "value": "ina-d-d-istr-i-proizv-nip-regija-sredisnja-hrvat-gate",
+          "comment": "network node where the captured CO2 enters the graph"
         },
         "activation_year": {
-          "value": 2028
+          "value": 2028,
+          "unit": "year",
+          "comment": "first year with a contribution; derived from the probability when omitted"
         },
         "implementation_probability": {
-          "value": 0.5
+          "value": 0.5,
+          "unit": "-",
+          "comment": "CCS implementation probability: 1.0, 0.9, 0.5, 0.1 ..."
         },
         "gross_emissions": {
           "kind": {
-            "value": "power_law"
+            "value": "power_law",
+            "comment": "constant | piecewise_linear | polynomial | power_law"
           },
           "polynomial_a": {
             "value": 0.0
@@ -788,44 +976,62 @@
             "value": 1.0
           },
           "reference_year": {
-            "value": 2025
+            "value": 2025,
+            "unit": "year",
+            "comment": "E(0) reference year and x = 0 point"
           },
           "zero_outside_points": {
             "value": true
           },
           "e0_t_per_year": {
-            "value": 117787.9372
+            "value": 117787.9372,
+            "unit": "t CO2/year",
+            "comment": "E(0): emission at the reference year (power_law)"
           },
           "a": {
-            "value": -0.025
+            "value": -0.025,
+            "unit": "-",
+            "comment": "linear decline rate (thesis: -0.02 ... -0.05)"
           },
           "b": {
-            "value": -2944.6984300000004
+            "value": -2944.6984300000004,
+            "unit": "t CO2/year",
+            "comment": "b = a * E(0) when omitted"
           },
           "c": {
-            "value": 1.5
+            "value": 1.5,
+            "unit": "-",
+            "comment": "power-law exponent (thesis: 1.5)"
           }
         }
       },
       {
         "id": {
-          "value": "petrokemija-proizvodnja-gnojiva"
+          "value": "petrokemija-proizvodnja-gnojiva",
+          "comment": "slug: lower-case, no spaces"
         },
         "name": {
-          "value": "Petrokemija- proizvodnja gnojiva"
+          "value": "Petrokemija- proizvodnja gnojiva",
+          "comment": "emitter name as printed in the reports"
         },
         "node_id": {
-          "value": "petrokemija-proizvodnja-gnojiva-gate"
+          "value": "petrokemija-proizvodnja-gnojiva-gate",
+          "comment": "network node where the captured CO2 enters the graph"
         },
         "activation_year": {
-          "value": 2026
+          "value": 2026,
+          "unit": "year",
+          "comment": "first year with a contribution; derived from the probability when omitted"
         },
         "implementation_probability": {
-          "value": 1.0
+          "value": 1.0,
+          "unit": "-",
+          "comment": "CCS implementation probability: 1.0, 0.9, 0.5, 0.1 ..."
         },
         "gross_emissions": {
           "kind": {
-            "value": "power_law"
+            "value": "power_law",
+            "comment": "constant | piecewise_linear | polynomial | power_law"
           },
           "polynomial_a": {
             "value": 0.0
@@ -834,44 +1040,62 @@
             "value": 1.0
           },
           "reference_year": {
-            "value": 2025
+            "value": 2025,
+            "unit": "year",
+            "comment": "E(0) reference year and x = 0 point"
           },
           "zero_outside_points": {
             "value": true
           },
           "e0_t_per_year": {
-            "value": 257582.1869
+            "value": 257582.1869,
+            "unit": "t CO2/year",
+            "comment": "E(0): emission at the reference year (power_law)"
           },
           "a": {
-            "value": -0.02
+            "value": -0.02,
+            "unit": "-",
+            "comment": "linear decline rate (thesis: -0.02 ... -0.05)"
           },
           "b": {
-            "value": -5151.643738
+            "value": -5151.643738,
+            "unit": "t CO2/year",
+            "comment": "b = a * E(0) when omitted"
           },
           "c": {
-            "value": 1.5
+            "value": 1.5,
+            "unit": "-",
+            "comment": "power-law exponent (thesis: 1.5)"
           }
         }
       },
       {
         "id": {
-          "value": "vetropack-straza-d-d"
+          "value": "vetropack-straza-d-d",
+          "comment": "slug: lower-case, no spaces"
         },
         "name": {
-          "value": "Vetropack Straža d.d."
+          "value": "Vetropack Straža d.d.",
+          "comment": "emitter name as printed in the reports"
         },
         "node_id": {
-          "value": "vetropack-straza-d-d-gate"
+          "value": "vetropack-straza-d-d-gate",
+          "comment": "network node where the captured CO2 enters the graph"
         },
         "activation_year": {
-          "value": 2033
+          "value": 2033,
+          "unit": "year",
+          "comment": "first year with a contribution; derived from the probability when omitted"
         },
         "implementation_probability": {
-          "value": 0.1
+          "value": 0.1,
+          "unit": "-",
+          "comment": "CCS implementation probability: 1.0, 0.9, 0.5, 0.1 ..."
         },
         "gross_emissions": {
           "kind": {
-            "value": "power_law"
+            "value": "power_law",
+            "comment": "constant | piecewise_linear | polynomial | power_law"
           },
           "polynomial_a": {
             "value": 0.0
@@ -880,44 +1104,62 @@
             "value": 1.0
           },
           "reference_year": {
-            "value": 2025
+            "value": 2025,
+            "unit": "year",
+            "comment": "E(0) reference year and x = 0 point"
           },
           "zero_outside_points": {
             "value": true
           },
           "e0_t_per_year": {
-            "value": 117737.6943
+            "value": 117737.6943,
+            "unit": "t CO2/year",
+            "comment": "E(0): emission at the reference year (power_law)"
           },
           "a": {
-            "value": -0.02
+            "value": -0.02,
+            "unit": "-",
+            "comment": "linear decline rate (thesis: -0.02 ... -0.05)"
           },
           "b": {
-            "value": -2354.753886
+            "value": -2354.753886,
+            "unit": "t CO2/year",
+            "comment": "b = a * E(0) when omitted"
           },
           "c": {
-            "value": 1.5
+            "value": 1.5,
+            "unit": "-",
+            "comment": "power-law exponent (thesis: 1.5)"
           }
         }
       },
       {
         "id": {
-          "value": "kogeneracijsko-postrojenje-viridas-biomass"
+          "value": "kogeneracijsko-postrojenje-viridas-biomass",
+          "comment": "slug: lower-case, no spaces"
         },
         "name": {
-          "value": "Kogeneracijsko postrojenje Viridas Biomass"
+          "value": "Kogeneracijsko postrojenje Viridas Biomass",
+          "comment": "emitter name as printed in the reports"
         },
         "node_id": {
-          "value": "kogeneracijsko-postrojenje-viridas-biomass-gate"
+          "value": "kogeneracijsko-postrojenje-viridas-biomass-gate",
+          "comment": "network node where the captured CO2 enters the graph"
         },
         "activation_year": {
-          "value": 2033
+          "value": 2033,
+          "unit": "year",
+          "comment": "first year with a contribution; derived from the probability when omitted"
         },
         "implementation_probability": {
-          "value": 0.1
+          "value": 0.1,
+          "unit": "-",
+          "comment": "CCS implementation probability: 1.0, 0.9, 0.5, 0.1 ..."
         },
         "gross_emissions": {
           "kind": {
-            "value": "power_law"
+            "value": "power_law",
+            "comment": "constant | piecewise_linear | polynomial | power_law"
           },
           "polynomial_a": {
             "value": 0.0
@@ -926,22 +1168,32 @@
             "value": 1.0
           },
           "reference_year": {
-            "value": 2025
+            "value": 2025,
+            "unit": "year",
+            "comment": "E(0) reference year and x = 0 point"
           },
           "zero_outside_points": {
             "value": true
           },
           "e0_t_per_year": {
-            "value": 101566.498
+            "value": 101566.498,
+            "unit": "t CO2/year",
+            "comment": "E(0): emission at the reference year (power_law)"
           },
           "a": {
-            "value": -0.025
+            "value": -0.025,
+            "unit": "-",
+            "comment": "linear decline rate (thesis: -0.02 ... -0.05)"
           },
           "b": {
-            "value": -2539.1624500000003
+            "value": -2539.1624500000003,
+            "unit": "t CO2/year",
+            "comment": "b = a * E(0) when omitted"
           },
           "c": {
-            "value": 1.5
+            "value": 1.5,
+            "unit": "-",
+            "comment": "power-law exponent (thesis: 1.5)"
           }
         }
       }
@@ -949,16 +1201,19 @@
     "edges": [
       {
         "id": {
-          "value": "te-plomin-to-ivanic"
+          "value": "te-plomin__to__ivanic",
+          "comment": "slug"
         },
         "name": {
-          "value": "TE PLOMIN → Ivanić"
+          "value": "te-plomin → ivanic"
         },
         "from_node": {
-          "value": "te-plomin-gate"
+          "value": "te-plomin-gate",
+          "comment": "start node id"
         },
         "to_node": {
-          "value": "ivanic-site"
+          "value": "ivanic-site",
+          "comment": "end node id"
         },
         "bidirectional": {
           "value": false
@@ -966,25 +1221,38 @@
         "states": [
           {
             "mode": {
-              "value": "pipeline"
+              "value": "pipeline",
+              "comment": "pipeline | truck | rail | marine"
             },
             "valid_from_year": {
-              "value": 2025
+              "value": 2028,
+              "unit": "year",
+              "comment": "first year of this transport state"
             },
             "capacity_t_per_year": {
-              "value": 1118203.087
+              "value": 1118203.087,
+              "unit": "t CO2/year",
+              "comment": "design capacity"
             },
             "distance_km": {
-              "value": 221.0
+              "value": 221.0,
+              "unit": "km",
+              "comment": "route length"
             },
             "capex_eur": {
-              "value": 172986017.5589
+              "value": 172986017.5589,
+              "unit": "EUR",
+              "comment": "state CAPEX (charged in valid_from_year)"
             },
             "opex_eur_per_t": {
-              "value": 38.759579433390556
+              "value": 38.759579433390556,
+              "unit": "EUR/t CO2",
+              "comment": "flat tariff"
             },
             "opex_eur_per_tkm": {
-              "value": 0.0
+              "value": 0.0,
+              "unit": "EUR/(t CO2 km)",
+              "comment": "distance tariff"
             },
             "availability": {
               "value": 1.0
@@ -1048,16 +1316,19 @@
       },
       {
         "id": {
-          "value": "te-to-zagreb-to-ivanic"
+          "value": "te-to-zagreb__to__ivanic",
+          "comment": "slug"
         },
         "name": {
-          "value": "TE-TO ZAGREB → Ivanić"
+          "value": "te-to-zagreb → ivanic"
         },
         "from_node": {
-          "value": "te-to-zagreb-gate"
+          "value": "te-to-zagreb-gate",
+          "comment": "start node id"
         },
         "to_node": {
-          "value": "ivanic-site"
+          "value": "ivanic-site",
+          "comment": "end node id"
         },
         "bidirectional": {
           "value": false
@@ -1065,25 +1336,38 @@
         "states": [
           {
             "mode": {
-              "value": "pipeline"
+              "value": "pipeline",
+              "comment": "pipeline | truck | rail | marine"
             },
             "valid_from_year": {
-              "value": 2025
+              "value": 2028,
+              "unit": "year",
+              "comment": "first year of this transport state"
             },
             "capacity_t_per_year": {
-              "value": 908701.9990000001
+              "value": 908701.9990000001,
+              "unit": "t CO2/year",
+              "comment": "design capacity"
             },
             "distance_km": {
-              "value": 33.0
+              "value": 33.0,
+              "unit": "km",
+              "comment": "route length"
             },
             "capex_eur": {
-              "value": 20991016.176900003
+              "value": 20991016.176900003,
+              "unit": "EUR",
+              "comment": "state CAPEX (charged in valid_from_year)"
             },
             "opex_eur_per_t": {
-              "value": 15.0
+              "value": 15.0,
+              "unit": "EUR/t CO2",
+              "comment": "flat tariff"
             },
             "opex_eur_per_tkm": {
-              "value": 0.0
+              "value": 0.0,
+              "unit": "EUR/(t CO2 km)",
+              "comment": "distance tariff"
             },
             "availability": {
               "value": 1.0
@@ -1147,16 +1431,19 @@
       },
       {
         "id": {
-          "value": "nexe-to-boksic"
+          "value": "nexe__to__boksic",
+          "comment": "slug"
         },
         "name": {
-          "value": "NEXE → Boksić"
+          "value": "nexe → boksic"
         },
         "from_node": {
-          "value": "nexe-gate"
+          "value": "nexe-gate",
+          "comment": "start node id"
         },
         "to_node": {
-          "value": "boksic-site"
+          "value": "boksic-site",
+          "comment": "end node id"
         },
         "bidirectional": {
           "value": false
@@ -1164,25 +1451,38 @@
         "states": [
           {
             "mode": {
-              "value": "pipeline"
+              "value": "pipeline",
+              "comment": "pipeline | truck | rail | marine"
             },
             "valid_from_year": {
-              "value": 2025
+              "value": 2026,
+              "unit": "year",
+              "comment": "first year of this transport state"
             },
             "capacity_t_per_year": {
-              "value": 656178.2482
+              "value": 656178.2482,
+              "unit": "t CO2/year",
+              "comment": "design capacity"
             },
             "distance_km": {
-              "value": 20.0
+              "value": 20.0,
+              "unit": "km",
+              "comment": "route length"
             },
             "capex_eur": {
-              "value": 9186495.4748
+              "value": 9186495.4748,
+              "unit": "EUR",
+              "comment": "state CAPEX (charged in valid_from_year)"
             },
             "opex_eur_per_t": {
-              "value": 15.0
+              "value": 15.0,
+              "unit": "EUR/t CO2",
+              "comment": "flat tariff"
             },
             "opex_eur_per_tkm": {
-              "value": 0.0
+              "value": 0.0,
+              "unit": "EUR/(t CO2 km)",
+              "comment": "distance tariff"
             },
             "availability": {
               "value": 1.0
@@ -1246,16 +1546,19 @@
       },
       {
         "id": {
-          "value": "rafinerija-nafte-rijeka-to-ivanic"
+          "value": "rafinerija-nafte-rijeka__to__ivanic",
+          "comment": "slug"
         },
         "name": {
-          "value": "Rafinerija nafte Rijeka → Ivanić"
+          "value": "rafinerija-nafte-rijeka → ivanic"
         },
         "from_node": {
-          "value": "rafinerija-nafte-rijeka-gate"
+          "value": "rafinerija-nafte-rijeka-gate",
+          "comment": "start node id"
         },
         "to_node": {
-          "value": "ivanic-site"
+          "value": "ivanic-site",
+          "comment": "end node id"
         },
         "bidirectional": {
           "value": false
@@ -1263,25 +1566,38 @@
         "states": [
           {
             "mode": {
-              "value": "pipeline"
+              "value": "pipeline",
+              "comment": "pipeline | truck | rail | marine"
             },
             "valid_from_year": {
-              "value": 2025
+              "value": 2033,
+              "unit": "year",
+              "comment": "first year of this transport state"
             },
             "capacity_t_per_year": {
-              "value": 678317.9386
+              "value": 678317.9386,
+              "unit": "t CO2/year",
+              "comment": "design capacity"
             },
             "distance_km": {
-              "value": 178.0
+              "value": 178.0,
+              "unit": "km",
+              "comment": "route length"
             },
             "capex_eur": {
-              "value": 84518415.14955999
+              "value": 84518415.14955999,
+              "unit": "EUR",
+              "comment": "state CAPEX (charged in valid_from_year)"
             },
             "opex_eur_per_t": {
-              "value": 33.99923810642588
+              "value": 33.99923810642588,
+              "unit": "EUR/t CO2",
+              "comment": "flat tariff"
             },
             "opex_eur_per_tkm": {
-              "value": 0.0
+              "value": 0.0,
+              "unit": "EUR/(t CO2 km)",
+              "comment": "distance tariff"
             },
             "availability": {
               "value": 1.0
@@ -1345,16 +1661,19 @@
       },
       {
         "id": {
-          "value": "tvornica-cementa-sv-juraj-to-ivanic"
+          "value": "tvornica-cementa-sv-juraj__to__ivanic",
+          "comment": "slug"
         },
         "name": {
-          "value": "TVORNICA CEMENTA SV. Juraj → Ivanić"
+          "value": "tvornica-cementa-sv-juraj → ivanic"
         },
         "from_node": {
-          "value": "tvornica-cementa-sv-juraj-gate"
+          "value": "tvornica-cementa-sv-juraj-gate",
+          "comment": "start node id"
         },
         "to_node": {
-          "value": "ivanic-site"
+          "value": "ivanic-site",
+          "comment": "end node id"
         },
         "bidirectional": {
           "value": false
@@ -1362,25 +1681,38 @@
         "states": [
           {
             "mode": {
-              "value": "pipeline"
+              "value": "pipeline",
+              "comment": "pipeline | truck | rail | marine"
             },
             "valid_from_year": {
-              "value": 2025
+              "value": 2028,
+              "unit": "year",
+              "comment": "first year of this transport state"
             },
             "capacity_t_per_year": {
-              "value": 583364.8
+              "value": 583364.8,
+              "unit": "t CO2/year",
+              "comment": "design capacity"
             },
             "distance_km": {
-              "value": 380.0
+              "value": 380.0,
+              "unit": "km",
+              "comment": "route length"
             },
             "capex_eur": {
-              "value": 155175036.79999998
+              "value": 155175036.79999998,
+              "unit": "EUR",
+              "comment": "state CAPEX (charged in valid_from_year)"
             },
             "opex_eur_per_t": {
-              "value": 50.683767559849485
+              "value": 50.683767559849485,
+              "unit": "EUR/t CO2",
+              "comment": "flat tariff"
             },
             "opex_eur_per_tkm": {
-              "value": 0.0
+              "value": 0.0,
+              "unit": "EUR/(t CO2 km)",
+              "comment": "distance tariff"
             },
             "availability": {
               "value": 1.0
@@ -1444,16 +1776,19 @@
       },
       {
         "id": {
-          "value": "te-to-sisak-to-struzec"
+          "value": "te-to-sisak__to__struzec",
+          "comment": "slug"
         },
         "name": {
-          "value": "TE-TO SISAK → Stružec"
+          "value": "te-to-sisak → struzec"
         },
         "from_node": {
-          "value": "te-to-sisak-gate"
+          "value": "te-to-sisak-gate",
+          "comment": "start node id"
         },
         "to_node": {
-          "value": "struzec-site"
+          "value": "struzec-site",
+          "comment": "end node id"
         },
         "bidirectional": {
           "value": false
@@ -1461,25 +1796,38 @@
         "states": [
           {
             "mode": {
-              "value": "pipeline"
+              "value": "pipeline",
+              "comment": "pipeline | truck | rail | marine"
             },
             "valid_from_year": {
-              "value": 2025
+              "value": 2033,
+              "unit": "year",
+              "comment": "first year of this transport state"
             },
             "capacity_t_per_year": {
-              "value": 576051.933
+              "value": 576051.933,
+              "unit": "t CO2/year",
+              "comment": "design capacity"
             },
             "distance_km": {
-              "value": 14.4
+              "value": 14.4,
+              "unit": "km",
+              "comment": "route length"
             },
             "capex_eur": {
-              "value": 5806603.484639999
+              "value": 5806603.484639999,
+              "unit": "EUR",
+              "comment": "state CAPEX (charged in valid_from_year)"
             },
             "opex_eur_per_t": {
-              "value": 15.0
+              "value": 15.0,
+              "unit": "EUR/t CO2",
+              "comment": "flat tariff"
             },
             "opex_eur_per_tkm": {
-              "value": 0.0
+              "value": 0.0,
+              "unit": "EUR/(t CO2 km)",
+              "comment": "distance tariff"
             },
             "availability": {
               "value": 1.0
@@ -1543,16 +1891,19 @@
       },
       {
         "id": {
-          "value": "proizvodnja-cemanta-koroman-no-to-ivanic"
+          "value": "proizvodnja-cemanta-koroman-no__to__ivanic",
+          "comment": "slug"
         },
         "name": {
-          "value": "PROIZVODNJA CEMANTA KOROMANČNO → Ivanić"
+          "value": "proizvodnja-cemanta-koroman-no → ivanic"
         },
         "from_node": {
-          "value": "proizvodnja-cemanta-koroman-no-gate"
+          "value": "proizvodnja-cemanta-koroman-no-gate",
+          "comment": "start node id"
         },
         "to_node": {
-          "value": "ivanic-site"
+          "value": "ivanic-site",
+          "comment": "end node id"
         },
         "bidirectional": {
           "value": false
@@ -1560,25 +1911,38 @@
         "states": [
           {
             "mode": {
-              "value": "pipeline"
+              "value": "pipeline",
+              "comment": "pipeline | truck | rail | marine"
             },
             "valid_from_year": {
-              "value": 2025
+              "value": 2028,
+              "unit": "year",
+              "comment": "first year of this transport state"
             },
             "capacity_t_per_year": {
-              "value": 313118.716
+              "value": 313118.716,
+              "unit": "t CO2/year",
+              "comment": "design capacity"
             },
             "distance_km": {
-              "value": 238.0
+              "value": 238.0,
+              "unit": "km",
+              "comment": "route length"
             },
             "capex_eur": {
-              "value": 52165578.0856
+              "value": 52165578.0856,
+              "unit": "EUR",
+              "comment": "state CAPEX (charged in valid_from_year)"
             },
             "opex_eur_per_t": {
-              "value": 40.389954820772445
+              "value": 40.389954820772445,
+              "unit": "EUR/t CO2",
+              "comment": "flat tariff"
             },
             "opex_eur_per_tkm": {
-              "value": 0.0
+              "value": 0.0,
+              "unit": "EUR/(t CO2 km)",
+              "comment": "distance tariff"
             },
             "availability": {
               "value": 1.0
@@ -1642,16 +2006,19 @@
       },
       {
         "id": {
-          "value": "objekti-prerade-plina-molve-to-ivanic"
+          "value": "objekti-prerade-plina-molve__to__ivanic",
+          "comment": "slug"
         },
         "name": {
-          "value": "Objekti prerade plina Molve → Ivanić"
+          "value": "objekti-prerade-plina-molve → ivanic"
         },
         "from_node": {
-          "value": "objekti-prerade-plina-molve-gate"
+          "value": "objekti-prerade-plina-molve-gate",
+          "comment": "start node id"
         },
         "to_node": {
-          "value": "ivanic-site"
+          "value": "ivanic-site",
+          "comment": "end node id"
         },
         "bidirectional": {
           "value": false
@@ -1659,25 +2026,38 @@
         "states": [
           {
             "mode": {
-              "value": "pipeline"
+              "value": "pipeline",
+              "comment": "pipeline | truck | rail | marine"
             },
             "valid_from_year": {
-              "value": 2025
+              "value": 2028,
+              "unit": "year",
+              "comment": "first year of this transport state"
             },
             "capacity_t_per_year": {
-              "value": 272408.719
+              "value": 272408.719,
+              "unit": "t CO2/year",
+              "comment": "design capacity"
             },
             "distance_km": {
-              "value": 88.0
+              "value": 88.0,
+              "unit": "km",
+              "comment": "route length"
             },
             "capex_eur": {
-              "value": 16780377.0904
+              "value": 16780377.0904,
+              "unit": "EUR",
+              "comment": "state CAPEX (charged in valid_from_year)"
             },
             "opex_eur_per_t": {
-              "value": 18.50140991852055
+              "value": 18.50140991852055,
+              "unit": "EUR/t CO2",
+              "comment": "flat tariff"
             },
             "opex_eur_per_tkm": {
-              "value": 0.0
+              "value": 0.0,
+              "unit": "EUR/(t CO2 km)",
+              "comment": "distance tariff"
             },
             "availability": {
               "value": 1.0
@@ -1741,16 +2121,19 @@
       },
       {
         "id": {
-          "value": "el-to-zagreb-to-ivanic"
+          "value": "el-to-zagreb__to__ivanic",
+          "comment": "slug"
         },
         "name": {
-          "value": "EL-TO Zagreb → Ivanić"
+          "value": "el-to-zagreb → ivanic"
         },
         "from_node": {
-          "value": "el-to-zagreb-gate"
+          "value": "el-to-zagreb-gate",
+          "comment": "start node id"
         },
         "to_node": {
-          "value": "ivanic-site"
+          "value": "ivanic-site",
+          "comment": "end node id"
         },
         "bidirectional": {
           "value": false
@@ -1758,25 +2141,38 @@
         "states": [
           {
             "mode": {
-              "value": "pipeline"
+              "value": "pipeline",
+              "comment": "pipeline | truck | rail | marine"
             },
             "valid_from_year": {
-              "value": 2025
+              "value": 2033,
+              "unit": "year",
+              "comment": "first year of this transport state"
             },
             "capacity_t_per_year": {
-              "value": 197798.0
+              "value": 197798.0,
+              "unit": "t CO2/year",
+              "comment": "design capacity"
             },
             "distance_km": {
-              "value": 37.6
+              "value": 37.6,
+              "unit": "km",
+              "comment": "route length"
             },
             "capex_eur": {
-              "value": 5206043.359999999
+              "value": 5206043.359999999,
+              "unit": "EUR",
+              "comment": "state CAPEX (charged in valid_from_year)"
             },
             "opex_eur_per_t": {
-              "value": 15.0
+              "value": 15.0,
+              "unit": "EUR/t CO2",
+              "comment": "flat tariff"
             },
             "opex_eur_per_tkm": {
-              "value": 0.0
+              "value": 0.0,
+              "unit": "EUR/(t CO2 km)",
+              "comment": "distance tariff"
             },
             "availability": {
               "value": 1.0
@@ -1840,16 +2236,19 @@
       },
       {
         "id": {
-          "value": "proizvodnja-aluminatnog-cementa-to-ivanic"
+          "value": "proizvodnja-aluminatnog-cementa__to__ivanic",
+          "comment": "slug"
         },
         "name": {
-          "value": "Proizvodnja aluminatnog cementa → Ivanić"
+          "value": "proizvodnja-aluminatnog-cementa → ivanic"
         },
         "from_node": {
-          "value": "proizvodnja-aluminatnog-cementa-gate"
+          "value": "proizvodnja-aluminatnog-cementa-gate",
+          "comment": "start node id"
         },
         "to_node": {
-          "value": "ivanic-site"
+          "value": "ivanic-site",
+          "comment": "end node id"
         },
         "bidirectional": {
           "value": false
@@ -1857,25 +2256,38 @@
         "states": [
           {
             "mode": {
-              "value": "pipeline"
+              "value": "pipeline",
+              "comment": "pipeline | truck | rail | marine"
             },
             "valid_from_year": {
-              "value": 2025
+              "value": 2028,
+              "unit": "year",
+              "comment": "first year of this transport state"
             },
             "capacity_t_per_year": {
-              "value": 127438.049
+              "value": 127438.049,
+              "unit": "t CO2/year",
+              "comment": "design capacity"
             },
             "distance_km": {
-              "value": 258.0
+              "value": 258.0,
+              "unit": "km",
+              "comment": "route length"
             },
             "capex_eur": {
-              "value": 23015311.649399996
+              "value": 23015311.649399996,
+              "unit": "EUR",
+              "comment": "state CAPEX (charged in valid_from_year)"
             },
             "opex_eur_per_t": {
-              "value": 42.165110868275576
+              "value": 42.165110868275576,
+              "unit": "EUR/t CO2",
+              "comment": "flat tariff"
             },
             "opex_eur_per_tkm": {
-              "value": 0.0
+              "value": 0.0,
+              "unit": "EUR/(t CO2 km)",
+              "comment": "distance tariff"
             },
             "availability": {
               "value": 1.0
@@ -1939,16 +2351,19 @@
       },
       {
         "id": {
-          "value": "ina-d-d-istr-i-proizv-nip-regija-sredisnja-hrvat-to-ivanic"
+          "value": "ina-d-d-istr-i-proizv-nip-regija-sredisnja-hrvat__to__ivanic",
+          "comment": "slug"
         },
         "name": {
-          "value": "INA d.d. Istr. i proizv. NiP, Regija središnja Hrvatska, Objekti frakcionacije Ivanić Grad → Ivanić"
+          "value": "ina-d-d-istr-i-proizv-nip-regija-sredisnja-hrvat → ivanic"
         },
         "from_node": {
-          "value": "ina-d-d-istr-i-proizv-nip-regija-sredisnja-hrvat-gate"
+          "value": "ina-d-d-istr-i-proizv-nip-regija-sredisnja-hrvat-gate",
+          "comment": "start node id"
         },
         "to_node": {
-          "value": "ivanic-site"
+          "value": "ivanic-site",
+          "comment": "end node id"
         },
         "bidirectional": {
           "value": false
@@ -1956,25 +2371,38 @@
         "states": [
           {
             "mode": {
-              "value": "pipeline"
+              "value": "pipeline",
+              "comment": "pipeline | truck | rail | marine"
             },
             "valid_from_year": {
-              "value": 2025
+              "value": 2028,
+              "unit": "year",
+              "comment": "first year of this transport state"
             },
             "capacity_t_per_year": {
-              "value": 117787.9372
+              "value": 117787.9372,
+              "unit": "t CO2/year",
+              "comment": "design capacity"
             },
             "distance_km": {
-              "value": 6.0
+              "value": 6.0,
+              "unit": "km",
+              "comment": "route length"
             },
             "capex_eur": {
-              "value": 494709.33624
+              "value": 494709.33624,
+              "unit": "EUR",
+              "comment": "state CAPEX (charged in valid_from_year)"
             },
             "opex_eur_per_t": {
-              "value": 15.0
+              "value": 15.0,
+              "unit": "EUR/t CO2",
+              "comment": "flat tariff"
             },
             "opex_eur_per_tkm": {
-              "value": 0.0
+              "value": 0.0,
+              "unit": "EUR/(t CO2 km)",
+              "comment": "distance tariff"
             },
             "availability": {
               "value": 1.0
@@ -2038,16 +2466,19 @@
       },
       {
         "id": {
-          "value": "petrokemija-proizvodnja-gnojiva-to-ivanic"
+          "value": "petrokemija-proizvodnja-gnojiva__to__ivanic",
+          "comment": "slug"
         },
         "name": {
-          "value": "Petrokemija- proizvodnja gnojiva → Ivanić"
+          "value": "petrokemija-proizvodnja-gnojiva → ivanic"
         },
         "from_node": {
-          "value": "petrokemija-proizvodnja-gnojiva-gate"
+          "value": "petrokemija-proizvodnja-gnojiva-gate",
+          "comment": "start node id"
         },
         "to_node": {
-          "value": "ivanic-site"
+          "value": "ivanic-site",
+          "comment": "end node id"
         },
         "bidirectional": {
           "value": false
@@ -2055,25 +2486,38 @@
         "states": [
           {
             "mode": {
-              "value": "pipeline"
+              "value": "pipeline",
+              "comment": "pipeline | truck | rail | marine"
             },
             "valid_from_year": {
-              "value": 2025
+              "value": 2026,
+              "unit": "year",
+              "comment": "first year of this transport state"
             },
             "capacity_t_per_year": {
-              "value": 257582.1869
+              "value": 257582.1869,
+              "unit": "t CO2/year",
+              "comment": "design capacity"
             },
             "distance_km": {
-              "value": 41.0
+              "value": 41.0,
+              "unit": "km",
+              "comment": "route length"
             },
             "capex_eur": {
-              "value": 7392608.76403
+              "value": 7392608.76403,
+              "unit": "EUR",
+              "comment": "state CAPEX (charged in valid_from_year)"
             },
             "opex_eur_per_t": {
-              "value": 15.0
+              "value": 15.0,
+              "unit": "EUR/t CO2",
+              "comment": "flat tariff"
             },
             "opex_eur_per_tkm": {
-              "value": 0.0
+              "value": 0.0,
+              "unit": "EUR/(t CO2 km)",
+              "comment": "distance tariff"
             },
             "availability": {
               "value": 1.0
@@ -2137,16 +2581,19 @@
       },
       {
         "id": {
-          "value": "vetropack-straza-d-d-to-ivanic"
+          "value": "vetropack-straza-d-d__to__ivanic",
+          "comment": "slug"
         },
         "name": {
-          "value": "Vetropack Straža d.d. → Ivanić"
+          "value": "vetropack-straza-d-d → ivanic"
         },
         "from_node": {
-          "value": "vetropack-straza-d-d-gate"
+          "value": "vetropack-straza-d-d-gate",
+          "comment": "start node id"
         },
         "to_node": {
-          "value": "ivanic-site"
+          "value": "ivanic-site",
+          "comment": "end node id"
         },
         "bidirectional": {
           "value": false
@@ -2154,25 +2601,38 @@
         "states": [
           {
             "mode": {
-              "value": "pipeline"
+              "value": "pipeline",
+              "comment": "pipeline | truck | rail | marine"
             },
             "valid_from_year": {
-              "value": 2025
+              "value": 2033,
+              "unit": "year",
+              "comment": "first year of this transport state"
             },
             "capacity_t_per_year": {
-              "value": 117737.6943
+              "value": 117737.6943,
+              "unit": "t CO2/year",
+              "comment": "design capacity"
             },
             "distance_km": {
-              "value": 102.0
+              "value": 102.0,
+              "unit": "km",
+              "comment": "route length"
             },
             "capex_eur": {
-              "value": 8406471.37302
+              "value": 8406471.37302,
+              "unit": "EUR",
+              "comment": "state CAPEX (charged in valid_from_year)"
             },
             "opex_eur_per_t": {
-              "value": 21.749401892253957
+              "value": 21.749401892253957,
+              "unit": "EUR/t CO2",
+              "comment": "flat tariff"
             },
             "opex_eur_per_tkm": {
-              "value": 0.0
+              "value": 0.0,
+              "unit": "EUR/(t CO2 km)",
+              "comment": "distance tariff"
             },
             "availability": {
               "value": 1.0
@@ -2236,16 +2696,19 @@
       },
       {
         "id": {
-          "value": "kogeneracijsko-postrojenje-viridas-biomass-to-ivanic"
+          "value": "kogeneracijsko-postrojenje-viridas-biomass__to__ivanic",
+          "comment": "slug"
         },
         "name": {
-          "value": "Kogeneracijsko postrojenje Viridas Biomass → Ivanić"
+          "value": "kogeneracijsko-postrojenje-viridas-biomass → ivanic"
         },
         "from_node": {
-          "value": "kogeneracijsko-postrojenje-viridas-biomass-gate"
+          "value": "kogeneracijsko-postrojenje-viridas-biomass-gate",
+          "comment": "start node id"
         },
         "to_node": {
-          "value": "ivanic-site"
+          "value": "ivanic-site",
+          "comment": "end node id"
         },
         "bidirectional": {
           "value": false
@@ -2253,25 +2716,38 @@
         "states": [
           {
             "mode": {
-              "value": "pipeline"
+              "value": "pipeline",
+              "comment": "pipeline | truck | rail | marine"
             },
             "valid_from_year": {
-              "value": 2025
+              "value": 2033,
+              "unit": "year",
+              "comment": "first year of this transport state"
             },
             "capacity_t_per_year": {
-              "value": 101566.498
+              "value": 101566.498,
+              "unit": "t CO2/year",
+              "comment": "design capacity"
             },
             "distance_km": {
-              "value": 100.2
+              "value": 100.2,
+              "unit": "km",
+              "comment": "route length"
             },
             "capex_eur": {
-              "value": 7123874.16972
+              "value": 7123874.16972,
+              "unit": "EUR",
+              "comment": "state CAPEX (charged in valid_from_year)"
             },
             "opex_eur_per_t": {
-              "value": 21.357700150316816
+              "value": 21.357700150316816,
+              "unit": "EUR/t CO2",
+              "comment": "flat tariff"
             },
             "opex_eur_per_tkm": {
-              "value": 0.0
+              "value": 0.0,
+              "unit": "EUR/(t CO2 km)",
+              "comment": "distance tariff"
             },
             "availability": {
               "value": 1.0
@@ -2334,31 +2810,554 @@
         "upgrades": []
       }
     ],
+    "connections": [
+      {
+        "emitter_id": {
+          "value": "te-plomin"
+        },
+        "sink_id": {
+          "value": "ivanic"
+        },
+        "start_year": {
+          "value": 2028
+        },
+        "mode": {
+          "value": "pipeline"
+        },
+        "distance_km": {
+          "value": 221.0
+        },
+        "capacity_t_per_year": {
+          "value": 1118203.087
+        },
+        "capex_eur": {
+          "value": 172986017.5589
+        },
+        "opex_eur_per_t": {
+          "value": 38.759579433390556
+        },
+        "opex_eur_per_tkm": {
+          "value": 0.0
+        },
+        "availability": {
+          "value": 1.0
+        }
+      },
+      {
+        "emitter_id": {
+          "value": "te-to-zagreb"
+        },
+        "sink_id": {
+          "value": "ivanic"
+        },
+        "start_year": {
+          "value": 2028
+        },
+        "mode": {
+          "value": "pipeline"
+        },
+        "distance_km": {
+          "value": 33.0
+        },
+        "capacity_t_per_year": {
+          "value": 908701.9990000001
+        },
+        "capex_eur": {
+          "value": 20991016.176900003
+        },
+        "opex_eur_per_t": {
+          "value": 15.0
+        },
+        "opex_eur_per_tkm": {
+          "value": 0.0
+        },
+        "availability": {
+          "value": 1.0
+        }
+      },
+      {
+        "emitter_id": {
+          "value": "nexe"
+        },
+        "sink_id": {
+          "value": "boksic"
+        },
+        "start_year": {
+          "value": 2026
+        },
+        "mode": {
+          "value": "pipeline"
+        },
+        "distance_km": {
+          "value": 20.0
+        },
+        "capacity_t_per_year": {
+          "value": 656178.2482
+        },
+        "capex_eur": {
+          "value": 9186495.4748
+        },
+        "opex_eur_per_t": {
+          "value": 15.0
+        },
+        "opex_eur_per_tkm": {
+          "value": 0.0
+        },
+        "availability": {
+          "value": 1.0
+        }
+      },
+      {
+        "emitter_id": {
+          "value": "rafinerija-nafte-rijeka"
+        },
+        "sink_id": {
+          "value": "ivanic"
+        },
+        "start_year": {
+          "value": 2033
+        },
+        "mode": {
+          "value": "pipeline"
+        },
+        "distance_km": {
+          "value": 178.0
+        },
+        "capacity_t_per_year": {
+          "value": 678317.9386
+        },
+        "capex_eur": {
+          "value": 84518415.14955999
+        },
+        "opex_eur_per_t": {
+          "value": 33.99923810642588
+        },
+        "opex_eur_per_tkm": {
+          "value": 0.0
+        },
+        "availability": {
+          "value": 1.0
+        }
+      },
+      {
+        "emitter_id": {
+          "value": "tvornica-cementa-sv-juraj"
+        },
+        "sink_id": {
+          "value": "ivanic"
+        },
+        "start_year": {
+          "value": 2028
+        },
+        "mode": {
+          "value": "pipeline"
+        },
+        "distance_km": {
+          "value": 380.0
+        },
+        "capacity_t_per_year": {
+          "value": 583364.8
+        },
+        "capex_eur": {
+          "value": 155175036.79999998
+        },
+        "opex_eur_per_t": {
+          "value": 50.683767559849485
+        },
+        "opex_eur_per_tkm": {
+          "value": 0.0
+        },
+        "availability": {
+          "value": 1.0
+        }
+      },
+      {
+        "emitter_id": {
+          "value": "te-to-sisak"
+        },
+        "sink_id": {
+          "value": "struzec"
+        },
+        "start_year": {
+          "value": 2033
+        },
+        "mode": {
+          "value": "pipeline"
+        },
+        "distance_km": {
+          "value": 14.4
+        },
+        "capacity_t_per_year": {
+          "value": 576051.933
+        },
+        "capex_eur": {
+          "value": 5806603.484639999
+        },
+        "opex_eur_per_t": {
+          "value": 15.0
+        },
+        "opex_eur_per_tkm": {
+          "value": 0.0
+        },
+        "availability": {
+          "value": 1.0
+        }
+      },
+      {
+        "emitter_id": {
+          "value": "proizvodnja-cemanta-koroman-no"
+        },
+        "sink_id": {
+          "value": "ivanic"
+        },
+        "start_year": {
+          "value": 2028
+        },
+        "mode": {
+          "value": "pipeline"
+        },
+        "distance_km": {
+          "value": 238.0
+        },
+        "capacity_t_per_year": {
+          "value": 313118.716
+        },
+        "capex_eur": {
+          "value": 52165578.0856
+        },
+        "opex_eur_per_t": {
+          "value": 40.389954820772445
+        },
+        "opex_eur_per_tkm": {
+          "value": 0.0
+        },
+        "availability": {
+          "value": 1.0
+        }
+      },
+      {
+        "emitter_id": {
+          "value": "objekti-prerade-plina-molve"
+        },
+        "sink_id": {
+          "value": "ivanic"
+        },
+        "start_year": {
+          "value": 2028
+        },
+        "mode": {
+          "value": "pipeline"
+        },
+        "distance_km": {
+          "value": 88.0
+        },
+        "capacity_t_per_year": {
+          "value": 272408.719
+        },
+        "capex_eur": {
+          "value": 16780377.0904
+        },
+        "opex_eur_per_t": {
+          "value": 18.50140991852055
+        },
+        "opex_eur_per_tkm": {
+          "value": 0.0
+        },
+        "availability": {
+          "value": 1.0
+        }
+      },
+      {
+        "emitter_id": {
+          "value": "el-to-zagreb"
+        },
+        "sink_id": {
+          "value": "ivanic"
+        },
+        "start_year": {
+          "value": 2033
+        },
+        "mode": {
+          "value": "pipeline"
+        },
+        "distance_km": {
+          "value": 37.6
+        },
+        "capacity_t_per_year": {
+          "value": 197798.0
+        },
+        "capex_eur": {
+          "value": 5206043.359999999
+        },
+        "opex_eur_per_t": {
+          "value": 15.0
+        },
+        "opex_eur_per_tkm": {
+          "value": 0.0
+        },
+        "availability": {
+          "value": 1.0
+        }
+      },
+      {
+        "emitter_id": {
+          "value": "proizvodnja-aluminatnog-cementa"
+        },
+        "sink_id": {
+          "value": "ivanic"
+        },
+        "start_year": {
+          "value": 2028
+        },
+        "mode": {
+          "value": "pipeline"
+        },
+        "distance_km": {
+          "value": 258.0
+        },
+        "capacity_t_per_year": {
+          "value": 127438.049
+        },
+        "capex_eur": {
+          "value": 23015311.649399996
+        },
+        "opex_eur_per_t": {
+          "value": 42.165110868275576
+        },
+        "opex_eur_per_tkm": {
+          "value": 0.0
+        },
+        "availability": {
+          "value": 1.0
+        }
+      },
+      {
+        "emitter_id": {
+          "value": "ina-d-d-istr-i-proizv-nip-regija-sredisnja-hrvat"
+        },
+        "sink_id": {
+          "value": "ivanic"
+        },
+        "start_year": {
+          "value": 2028
+        },
+        "mode": {
+          "value": "pipeline"
+        },
+        "distance_km": {
+          "value": 6.0
+        },
+        "capacity_t_per_year": {
+          "value": 117787.9372
+        },
+        "capex_eur": {
+          "value": 494709.33624
+        },
+        "opex_eur_per_t": {
+          "value": 15.0
+        },
+        "opex_eur_per_tkm": {
+          "value": 0.0
+        },
+        "availability": {
+          "value": 1.0
+        }
+      },
+      {
+        "emitter_id": {
+          "value": "petrokemija-proizvodnja-gnojiva"
+        },
+        "sink_id": {
+          "value": "ivanic"
+        },
+        "start_year": {
+          "value": 2026
+        },
+        "mode": {
+          "value": "pipeline"
+        },
+        "distance_km": {
+          "value": 41.0
+        },
+        "capacity_t_per_year": {
+          "value": 257582.1869
+        },
+        "capex_eur": {
+          "value": 7392608.76403
+        },
+        "opex_eur_per_t": {
+          "value": 15.0
+        },
+        "opex_eur_per_tkm": {
+          "value": 0.0
+        },
+        "availability": {
+          "value": 1.0
+        }
+      },
+      {
+        "emitter_id": {
+          "value": "vetropack-straza-d-d"
+        },
+        "sink_id": {
+          "value": "ivanic"
+        },
+        "start_year": {
+          "value": 2033
+        },
+        "mode": {
+          "value": "pipeline"
+        },
+        "distance_km": {
+          "value": 102.0
+        },
+        "capacity_t_per_year": {
+          "value": 117737.6943
+        },
+        "capex_eur": {
+          "value": 8406471.37302
+        },
+        "opex_eur_per_t": {
+          "value": 21.749401892253957
+        },
+        "opex_eur_per_tkm": {
+          "value": 0.0
+        },
+        "availability": {
+          "value": 1.0
+        }
+      },
+      {
+        "emitter_id": {
+          "value": "kogeneracijsko-postrojenje-viridas-biomass"
+        },
+        "sink_id": {
+          "value": "ivanic"
+        },
+        "start_year": {
+          "value": 2033
+        },
+        "mode": {
+          "value": "pipeline"
+        },
+        "distance_km": {
+          "value": 100.2
+        },
+        "capacity_t_per_year": {
+          "value": 101566.498
+        },
+        "capex_eur": {
+          "value": 7123874.16972
+        },
+        "opex_eur_per_t": {
+          "value": 21.357700150316816
+        },
+        "opex_eur_per_tkm": {
+          "value": 0.0
+        },
+        "availability": {
+          "value": 1.0
+        }
+      }
+    ],
     "storage_sinks": [
       {
         "id": {
-          "value": "ivanic"
+          "value": "ivanic",
+          "comment": "slug"
         },
         "node_id": {
-          "value": "ivanic-site"
+          "value": "ivanic-site",
+          "comment": "graph node of the site"
         },
         "name": {
-          "value": "Ivanić"
+          "value": "Ivanić",
+          "comment": "site name"
         },
         "storage_type": {
           "value": "DHF"
         },
         "capacity_t": {
-          "value": 5500000.0
+          "value": 5500000.0,
+          "unit": "t CO2",
+          "comment": "nominal storage capacity"
+        },
+        "reservoir": {
+          "area_m2": {
+            "value": 25000000.0
+          },
+          "effective_thickness_m": {
+            "value": 150.0
+          },
+          "porosity": {
+            "value": 0.2
+          },
+          "top_depth_m": {
+            "value": 1500.0
+          },
+          "temperature_c": {
+            "value": 60.0
+          },
+          "reference_pressure_bar": {
+            "value": 150.0
+          },
+          "pressure_step_bar": {
+            "value": 0.5
+          },
+          "pore_compressibility_per_bar": {
+            "value": 5e-05
+          },
+          "salinity_g_per_l": {
+            "value": 0.0
+          },
+          "permeability_m2": {
+            "value": 1e-13
+          },
+          "irreducible_water_saturation": {
+            "value": 0.25
+          },
+          "storage_efficiency": {
+            "value": 0.02
+          },
+          "plume_core_saturation": {
+            "value": 0.2
+          },
+          "krw_max": {
+            "value": 1.0
+          },
+          "krg_max": {
+            "value": 0.5
+          },
+          "krw_min": {
+            "value": 0.05
+          },
+          "krg_min": {
+            "value": 0.05
+          },
+          "nw": {
+            "value": 3.0
+          },
+          "ng": {
+            "value": 4.5
+          },
+          "fracture_pressure_gradient_bar_per_m": {
+            "value": 0.18
+          }
         },
         "commissioning_year": {
-          "value": 2026
+          "value": 2026,
+          "unit": "year",
+          "comment": "first year the site can accept CO2"
         },
         "capex_eur": {
-          "value": 0.0
+          "value": 0.0,
+          "unit": "EUR",
+          "comment": "site CAPEX"
         },
         "opex_eur_per_t": {
-          "value": 10.0
+          "value": 10.0,
+          "unit": "EUR/t CO2",
+          "comment": "injection OPEX per tonne"
         },
         "monitoring_cost_during_injection_eur_per_year": {
           "value": 0.0
@@ -2390,28 +3389,101 @@
       },
       {
         "id": {
-          "value": "boksic"
+          "value": "boksic",
+          "comment": "slug"
         },
         "node_id": {
-          "value": "boksic-site"
+          "value": "boksic-site",
+          "comment": "graph node of the site"
         },
         "name": {
-          "value": "Boksić"
+          "value": "Boksić",
+          "comment": "site name"
         },
         "storage_type": {
           "value": "DHF"
         },
         "capacity_t": {
-          "value": 13700000.0
+          "value": 13700000.0,
+          "unit": "t CO2",
+          "comment": "nominal storage capacity"
+        },
+        "reservoir": {
+          "area_m2": {
+            "value": 25000000.0
+          },
+          "effective_thickness_m": {
+            "value": 150.0
+          },
+          "porosity": {
+            "value": 0.2
+          },
+          "top_depth_m": {
+            "value": 1500.0
+          },
+          "temperature_c": {
+            "value": 60.0
+          },
+          "reference_pressure_bar": {
+            "value": 150.0
+          },
+          "pressure_step_bar": {
+            "value": 0.5
+          },
+          "pore_compressibility_per_bar": {
+            "value": 5e-05
+          },
+          "salinity_g_per_l": {
+            "value": 0.0
+          },
+          "permeability_m2": {
+            "value": 1e-13
+          },
+          "irreducible_water_saturation": {
+            "value": 0.25
+          },
+          "storage_efficiency": {
+            "value": 0.02
+          },
+          "plume_core_saturation": {
+            "value": 0.2
+          },
+          "krw_max": {
+            "value": 1.0
+          },
+          "krg_max": {
+            "value": 0.5
+          },
+          "krw_min": {
+            "value": 0.05
+          },
+          "krg_min": {
+            "value": 0.05
+          },
+          "nw": {
+            "value": 3.0
+          },
+          "ng": {
+            "value": 4.5
+          },
+          "fracture_pressure_gradient_bar_per_m": {
+            "value": 0.18
+          }
         },
         "commissioning_year": {
-          "value": 2026
+          "value": 2026,
+          "unit": "year",
+          "comment": "first year the site can accept CO2"
         },
         "capex_eur": {
-          "value": 0.0
+          "value": 0.0,
+          "unit": "EUR",
+          "comment": "site CAPEX"
         },
         "opex_eur_per_t": {
-          "value": 10.0
+          "value": 10.0,
+          "unit": "EUR/t CO2",
+          "comment": "injection OPEX per tonne"
         },
         "monitoring_cost_during_injection_eur_per_year": {
           "value": 0.0
@@ -2443,28 +3515,101 @@
       },
       {
         "id": {
-          "value": "struzec"
+          "value": "struzec",
+          "comment": "slug"
         },
         "node_id": {
-          "value": "struzec-site"
+          "value": "struzec-site",
+          "comment": "graph node of the site"
         },
         "name": {
-          "value": "Stružec"
+          "value": "Stružec",
+          "comment": "site name"
         },
         "storage_type": {
           "value": "DHF"
         },
         "capacity_t": {
-          "value": 1700000.0
+          "value": 1700000.0,
+          "unit": "t CO2",
+          "comment": "nominal storage capacity"
+        },
+        "reservoir": {
+          "area_m2": {
+            "value": 25000000.0
+          },
+          "effective_thickness_m": {
+            "value": 150.0
+          },
+          "porosity": {
+            "value": 0.2
+          },
+          "top_depth_m": {
+            "value": 1500.0
+          },
+          "temperature_c": {
+            "value": 60.0
+          },
+          "reference_pressure_bar": {
+            "value": 150.0
+          },
+          "pressure_step_bar": {
+            "value": 0.5
+          },
+          "pore_compressibility_per_bar": {
+            "value": 5e-05
+          },
+          "salinity_g_per_l": {
+            "value": 0.0
+          },
+          "permeability_m2": {
+            "value": 1e-13
+          },
+          "irreducible_water_saturation": {
+            "value": 0.25
+          },
+          "storage_efficiency": {
+            "value": 0.02
+          },
+          "plume_core_saturation": {
+            "value": 0.2
+          },
+          "krw_max": {
+            "value": 1.0
+          },
+          "krg_max": {
+            "value": 0.5
+          },
+          "krw_min": {
+            "value": 0.05
+          },
+          "krg_min": {
+            "value": 0.05
+          },
+          "nw": {
+            "value": 3.0
+          },
+          "ng": {
+            "value": 4.5
+          },
+          "fracture_pressure_gradient_bar_per_m": {
+            "value": 0.18
+          }
         },
         "commissioning_year": {
-          "value": 2026
+          "value": 2026,
+          "unit": "year",
+          "comment": "first year the site can accept CO2"
         },
         "capex_eur": {
-          "value": 0.0
+          "value": 0.0,
+          "unit": "EUR",
+          "comment": "site CAPEX"
         },
         "opex_eur_per_t": {
-          "value": 10.0
+          "value": 10.0,
+          "unit": "EUR/t CO2",
+          "comment": "injection OPEX per tonne"
         },
         "monitoring_cost_during_injection_eur_per_year": {
           "value": 0.0
@@ -2496,6 +3641,35 @@
       }
     ],
     "geothermal_systems": [],
+    "storage_defaults": {
+      "area_m2": {
+        "value": 25000000.0
+      },
+      "effective_thickness_m": {
+        "value": 150.0
+      },
+      "porosity": {
+        "value": 0.2
+      },
+      "permeability_m2": {
+        "value": 1e-13
+      },
+      "top_depth_m": {
+        "value": 1500.0
+      },
+      "temperature_c": {
+        "value": 60.0
+      },
+      "reference_pressure_bar": {
+        "value": 150.0
+      },
+      "pressure_step_bar": {
+        "value": 0.5
+      },
+      "fracture_pressure_gradient_bar_per_m": {
+        "value": 0.18
+      }
+    },
     "policy": {
       "ets": {
         "steps": [
@@ -2884,19 +4058,29 @@
     },
     "economics": {
       "start_year": {
-        "value": 2025
+        "value": 2025,
+        "unit": "year",
+        "comment": "first year of the cash flow"
       },
       "end_year": {
-        "value": 2050
+        "value": 2050,
+        "unit": "year",
+        "comment": "last year of the cash flow"
       },
       "capex_start_year": {
-        "value": 2026
+        "value": 2026,
+        "unit": "year",
+        "comment": "year of the first investment"
       },
       "discount_rate": {
-        "value": 0.06
+        "value": 0.06,
+        "unit": "-",
+        "comment": "real discount rate"
       },
       "inflation_rate": {
-        "value": 0.06
+        "value": 0.06,
+        "unit": "-",
+        "comment": "cost escalation rate"
       },
       "electricity_sell_price_eur_per_mwh": {
         "value": 0.0

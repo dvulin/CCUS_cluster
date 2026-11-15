@@ -18,6 +18,43 @@ class StorageType(str, Enum):
     DHF = "DHF"
 
 
+class ReservoirDefaults(CoreModel):
+    """Fallback reservoir properties for newly declared DSA/DHF sites.
+
+    The workbook lists far fewer sites than a real cluster needs, and most of
+    them only carry a name, a depth and a capacity.  These defaults let a user add
+    a site with three numbers (depth, capacity, type) and still run the full
+    pressure/BHP model:
+
+    * porosity 0.20
+    * permeability 100 mD = 1e-13 m²
+    * depth 1500 m
+    """
+
+    area_m2: float = Field(default=25e6, gt=0.0)
+    effective_thickness_m: float = Field(default=150.0, gt=0.0)
+    porosity: float = Field(default=0.20, gt=0.0, le=1.0)
+    permeability_m2: float = Field(default=1.0e-13, gt=0.0, description="100 mD")
+    top_depth_m: float = Field(default=1500.0, gt=0.0)
+    temperature_c: float = Field(default=60.0)
+    reference_pressure_bar: float = Field(default=150.0, gt=0.0)
+    pressure_step_bar: float = Field(default=0.5, gt=0.0)
+    fracture_pressure_gradient_bar_per_m: float = Field(default=0.18, gt=0.0)
+
+    def as_reservoir(self) -> "ReservoirProperties":
+        return ReservoirProperties(
+            area_m2=self.area_m2,
+            effective_thickness_m=self.effective_thickness_m,
+            porosity=self.porosity,
+            permeability_m2=self.permeability_m2,
+            top_depth_m=self.top_depth_m,
+            temperature_c=self.temperature_c,
+            reference_pressure_bar=self.reference_pressure_bar,
+            pressure_step_bar=self.pressure_step_bar,
+            fracture_pressure_gradient_bar_per_m=self.fracture_pressure_gradient_bar_per_m,
+        )
+
+
 class ReservoirProperties(CoreModel):
     """Aquifer properties, named exactly as the engineering inputs they feed."""
 
@@ -101,14 +138,6 @@ class StorageSink(CoreModel):
             and self.decommission_year < self.commissioning_year
         ):
             raise ValueError("decommission_year must not precede commissioning_year")
-        if self.storage_type is StorageType.DHF and self.reservoir is None and self.max_injection_rate_t_per_year is None:
-            # capacity-only DHF sites are allowed (e.g. workbook import), but they
-            # must say so explicitly instead of silently pretending to have physics
-            if not self.notes:
-                raise ValueError(
-                    "a depleted-field sink without reservoir properties needs a note "
-                    "declaring it as capacity-only"
-                )
         return self
 
     def active_in(self, year: int) -> bool:

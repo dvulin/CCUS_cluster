@@ -10,9 +10,10 @@ from .base import MODEL_VERSION, CoreModel, Slug, year_axis
 from .economics import EconomicsConfig
 from .edge import TransportEdge
 from .emitter import Emitter
+from .connection import EmitterSinkConnection
 from .node import Node
 from .policy import PolicyConfig
-from .sink import GeothermalSystem, StorageSink
+from .sink import GeothermalSystem, ReservoirDefaults, StorageSink
 
 DEFAULT_ONBOARDING_YEARS: dict[float, int] = {
     1.0: 2026,
@@ -29,6 +30,35 @@ def _nearest_onboarding_year(probability: float, mapping: dict[float, int]) -> i
         return int(mapping[probability])
     nearest = min(mapping, key=lambda key: abs(float(key) - float(probability)))
     return int(mapping[nearest])
+
+
+def _edges_from_connections(
+    scenario: "ScenarioConfig", connections: list[EmitterSinkConnection]
+) -> list[TransportEdge]:
+    """Turn emitter→sink connections into directed transport edges."""
+
+    emitter_nodes = {emitter.id: emitter.node_id for emitter in scenario.emitters}
+    sink_nodes = {sink.id: sink.node_id for sink in scenario.storage_sinks}
+
+    edges: list[TransportEdge] = []
+    for connection in connections:
+        if connection.emitter_id not in emitter_nodes:
+            raise ValueError(
+                f"connection '{connection.edge_id()}' references unknown emitter "
+                f"'{connection.emitter_id}'"
+            )
+        if connection.sink_id not in sink_nodes:
+            raise ValueError(
+                f"connection '{connection.edge_id()}' references unknown storage sink "
+                f"'{connection.sink_id}'"
+            )
+        edges.append(
+            connection.to_edge(
+                from_node=emitter_nodes[connection.emitter_id],
+                to_node=sink_nodes[connection.sink_id],
+            )
+        )
+    return edges
 
 
 class ScenarioConfig(CoreModel):
@@ -48,8 +78,16 @@ class ScenarioConfig(CoreModel):
     nodes: list[Node] = Field(default_factory=list)
     emitters: list[Emitter] = Field(default_factory=list)
     edges: list[TransportEdge] = Field(default_factory=list)
+    connections: list[EmitterSinkConnection] = Field(
+        default_factory=list,
+        description="Emitter-to-sink accesses; each one becomes a transport edge (many-to-many).",
+    )
     storage_sinks: list[StorageSink] = Field(default_factory=list)
     geothermal_systems: list[GeothermalSystem] = Field(default_factory=list)
+    storage_defaults: ReservoirDefaults = Field(
+        default_factory=ReservoirDefaults,
+        description="Fallback reservoir properties (porosity 0.20, 100 mD, 1500 m).",
+    )
     onboarding_years: dict[float, int] | None = Field(
         default=None,
         description="Implementation probability -> first contributing year (thesis: 1.0=2026, 0.5=2028, 0.1=2033).",
@@ -87,6 +125,28 @@ class ScenarioConfig(CoreModel):
         self._require_unique([edge.id for edge in self.edges], "edge")
         self._require_unique([sink.id for sink in self.storage_sinks], "storage sink")
         self._require_unique([system.id for system in self.geothermal_systems], "geothermal system")
+
+        # every declared sink gets a reservoir model, so pressure/BHP exist for
+        # sites the user added with only a name, a depth and a capacity
+        for sink in self.storage_sinks:
+            if sink.reservoir is None:
+                sink.reservoir = self.storage_defaults.as_reservoir()
+
+        # expand the many-to-many connections into directed transport edges.
+        # (the assignment is idempotent: the validator can re-run on assignment)
+        if self.connections:
+            connection_ids = [connection.edge_id() for connection in self.connections]
+            duplicates = sorted({item for item in connection_ids if connection_ids.count(item) > 1})
+            if duplicates:
+                raise ValueError(f"duplicate connection(s): {', '.join(duplicates)}")
+            existing = {edge.id for edge in self.edges}
+            missing = [
+                connection
+                for connection in self.connections
+                if connection.edge_id() not in existing
+            ]
+            if missing:
+                self.edges = [*self.edges, *_edges_from_connections(self, missing)]
 
         for emitter in self.emitters:
             if emitter.node_id not in known_nodes:

@@ -28,6 +28,7 @@ from pathlib import Path
 from typing import Any
 
 from ccus_core.models import (
+    EmitterSinkConnection,
     EconomicsConfig,
     EmissionCurve,
     Emitter,
@@ -40,7 +41,6 @@ from ccus_core.models import (
     ScenarioConfig,
     StorageSink,
     StorageType,
-    TransportEdge,
     TransportMode,
 )
 
@@ -283,7 +283,7 @@ def build_scenario(workbook: str | Path) -> ScenarioConfig:
 
     sinks: dict[str, StorageSink] = {}
     nodes: list[Node] = []
-    edges: list[TransportEdge] = []
+    connections: list[EmitterSinkConnection] = []
     emitters: list[Emitter] = []
 
     for record in scenario_rows:
@@ -348,15 +348,16 @@ def build_scenario(workbook: str | Path) -> ScenarioConfig:
             TransportMode.PIPELINE,
         )
         distance = float(record["distance_km"] or 0.0)
-        edges.append(
-            TransportEdge(
-                id=f"{emitter_id}-to-{sink_key}",
-                name=f"{record['name']} → {sink.name}",
-                from_node=node_id,
-                to_node=sink.node_id,
-                states=[
-                    _edge_state(mode, distance, e0)
-                ],
+        connections.append(
+            EmitterSinkConnection(
+                emitter_id=emitter_id,
+                sink_id=sink_key,
+                start_year=int(record["activation_year"] or 2026),
+                mode=mode,
+                distance_km=distance,
+                capacity_t_per_year=max(e0, 1.0),
+                opex_eur_per_t=15.0 if distance <= 45.0 else 22.0 * math.log(max(distance, 1.0)) - 80.0,
+                capex_eur=0.7 * e0 * max(distance, 0.1),
             )
         )
 
@@ -367,7 +368,7 @@ def build_scenario(workbook: str | Path) -> ScenarioConfig:
         end_year=2050,
         nodes=nodes,
         emitters=emitters,
-        edges=edges,
+        connections=connections,
         storage_sinks=list(sinks.values()),
         policy=PolicyConfig(),
         economics=EconomicsConfig(
@@ -383,26 +384,3 @@ def build_scenario(workbook: str | Path) -> ScenarioConfig:
             "edges are single-leg placeholders until the multi-modal network is edited."
         ),
     )
-
-
-def _edge_state(mode: TransportMode, distance_km: float, e0: float):
-    from ccus_core.models import EdgeState
-
-    common = {
-        "mode": mode,
-        "valid_from_year": 2025,
-        "capacity_t_per_year": max(e0, 1.0),
-        "distance_km": max(distance_km, 0.1),
-        "opex_eur_per_t": 15.0 if distance_km <= 45.0 else 22.0 * math.log(distance_km) - 80.0,
-        "capex_eur": 0.7 * e0 * max(distance_km, 0.1),
-    }
-    if mode is TransportMode.PIPELINE:
-        common["pipeline"] = PipelineDesign(inner_diameter_m=0.30, inlet_pressure_bar=150.0, inlet_temperature_c=20.0)
-    elif mode in (TransportMode.TRUCK, TransportMode.RAIL):
-        common["road"] = RoadDesign(
-            vehicle_capacity_t=25.0 if mode is TransportMode.TRUCK else 60.0,
-            trips_per_vehicle_per_day=2.0,
-            working_days_per_year=250.0,
-            fleet_size=max(1, math.ceil(e0 / (25.0 * 2.0 * 250.0))),
-        )
-    return EdgeState(**common)
