@@ -42,6 +42,21 @@ def test_overrides_change_activation_and_flat_emissions():
     assert scenario.emitter_by_id("nexe").activation_year == 2028
 
 
+def test_upgrade_trigger_override_switches_the_condition():
+    scenario = load_scenario(DEFAULT_SCENARIO)
+    updated = apply_overrides(
+        scenario,
+        {
+            "upgrade_year": {"truck_to_pipeline": 2033},
+            "upgrade_threshold": {"truck_to_pipeline": 500_000.0},
+        },
+    )
+    upgrade = updated.edge_by_id("nexe_hub").upgrades[0]
+    assert upgrade.trigger.year == 2033
+    assert upgrade.trigger.threshold_t == pytest.approx(500_000.0)
+    assert upgrade.trigger.kind == "both"
+
+
 def test_map_figure_reflects_the_selected_year():
     scenario = build_solver_scenario()
     result = ScenarioEngine(scenario).run()

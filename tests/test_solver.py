@@ -148,6 +148,12 @@ def test_solver_runs_end_to_end():
     assert result.kpis["npv_eur"] is not None
 
 
+def test_monthly_step_is_rejected_with_a_clear_error():
+    scenario = build_solver_scenario().model_copy(update={"step": "monthly"})
+    with pytest.raises(NotImplementedError, match="step 'monthly'"):
+        ChronologicalSolver(scenario).run()
+
+
 def test_snapshot_supports_timeline_scrubbing():
     scenario = build_solver_scenario()
     result = ScenarioEngine(scenario).run()

@@ -76,19 +76,6 @@ class PricePath(CoreModel):
         index = min(max(int(year) - int(self.start_year), 0), len(self.values_eur_per_t) - 1)
         return float(self.values_eur_per_t[index])
 
-    def to_frame(self, start_year: int, end_year: int):
-        """Return the same ``Godina``/``Cijena CO2`` frame used by the app."""
-
-        import pandas as pd
-
-        years = list(range(int(start_year), int(end_year) + 1))
-        return pd.DataFrame(
-            {
-                "Godina": years,
-                "Cijena CO2 (EUR/tCO2)": [self.price_at(year) for year in years],
-            }
-        )
-
 
 class EconomicsConfig(CoreModel):
     """Discounting, cost escalation and CO2 price assumptions."""

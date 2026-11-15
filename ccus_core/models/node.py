@@ -1,4 +1,4 @@
-﻿"""Graph vertices: junctions, ports, storage sites and geothermal doublets."""
+"""Graph vertices: junctions, ports, storage sites and geothermal doublets."""
 
 from __future__ import annotations
 

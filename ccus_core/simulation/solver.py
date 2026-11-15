@@ -146,6 +146,11 @@ class ChronologicalSolver:
 
     # ------------------------------------------------------------------ main
     def run(self) -> SimulationResult:
+        if self.scenario.step != "yearly":
+            raise NotImplementedError(
+                f"step '{self.scenario.step}' is not implemented: the chronological "
+                "solver is yearly (use step='yearly')"
+            )
         result = SimulationResult(scenario=self.scenario)
         years = self.scenario.years()
 

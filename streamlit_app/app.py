@@ -75,6 +75,19 @@ def apply_overrides(scenario: ScenarioConfig, overrides: dict) -> ScenarioConfig
                 profile["points"] = {int(year): value for year in profile["points"]}
     if "discount_rate" in overrides and payload.get("economics"):
         payload["economics"]["discount_rate"] = float(overrides["discount_rate"])
+    upgrade_year = overrides.get("upgrade_year", {})
+    upgrade_threshold = overrides.get("upgrade_threshold", {})
+    for edge in payload["edges"]:
+        for upgrade in edge.get("upgrades", []):
+            if upgrade["id"] in upgrade_year:
+                upgrade["trigger"]["year"] = int(upgrade_year[upgrade["id"]])
+                if upgrade["trigger"]["kind"] == "cumulative_mass":
+                    upgrade["trigger"]["kind"] = "both"
+            if upgrade["id"] in upgrade_threshold:
+                threshold = float(upgrade_threshold[upgrade["id"]])
+                upgrade["trigger"]["threshold_t"] = threshold
+                if threshold > 0.0 and upgrade["trigger"]["kind"] == "year":
+                    upgrade["trigger"]["kind"] = "both"
     if "end_year" in overrides:
         payload["end_year"] = int(overrides["end_year"])
         if payload.get("economics"):
@@ -200,6 +213,30 @@ def main() -> None:
             discount = st.number_input(
                 "Diskontna stopa", 0.0, 0.5, float(scenario.economics.discount_rate if scenario.economics else 0.05), 0.005
             )
+            upgrade_years: dict[str, int] = {}
+            upgrade_thresholds: dict[str, float] = {}
+            for edge in scenario.edges:
+                for upgrade in edge.upgrades:
+                    st.markdown(f"**{edge.name}** → {upgrade.new_state.mode.value}")
+                    upgrade_years[upgrade.id] = int(
+                        st.number_input(
+                            f"Godina nadogradnje – {upgrade.id}",
+                            min_value=scenario.start_year,
+                            max_value=scenario.end_year,
+                            value=int(upgrade.trigger.year or scenario.start_year),
+                            step=1,
+                            key=f"upgrade_year_{upgrade.id}",
+                        )
+                    )
+                    upgrade_thresholds[upgrade.id] = float(
+                        st.number_input(
+                            f"Prag kumulativne količine (t) – {upgrade.id}",
+                            min_value=0.0,
+                            value=float(upgrade.trigger.threshold_t or 0.0),
+                            step=50_000.0,
+                            key=f"upgrade_threshold_{upgrade.id}",
+                        )
+                    )
             if st.button("Primijeni izmjene"):
                 scenario = apply_overrides(
                     scenario,
@@ -207,6 +244,8 @@ def main() -> None:
                         "activation_year": activation,
                         "emission_t_per_year": emissions,
                         "discount_rate": discount,
+                        "upgrade_year": upgrade_years,
+                        "upgrade_threshold": upgrade_thresholds,
                     },
                 )
                 st.session_state["scenario_payload"] = scenario.model_dump()
