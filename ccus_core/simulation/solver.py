@@ -27,6 +27,7 @@ from ccus_core.network.routing import RoutingEngine, RoutingResult
 
 from .adapters import power_inputs_for_sink
 from .geothermal import GeothermalCoupling
+from .pressures import pressure_table
 from .reservoir import VariableRateReservoir
 
 try:
@@ -51,6 +52,7 @@ class SimulationResult:
     geothermal: dict[str, pd.DataFrame] = field(default_factory=dict)
     ledger: pd.DataFrame | None = None
     cash_flow: pd.DataFrame | None = None
+    pressures: pd.DataFrame | None = None
     kpis: dict[str, object] = field(default_factory=dict)
     notes: list[str] = field(default_factory=list)
 
@@ -81,6 +83,7 @@ class SimulationResult:
             "reservoir_sinks": sorted(self.reservoir),
             "geothermal_systems": sorted(self.geothermal),
             "ledger_rows": 0 if self.ledger is None else int(len(self.ledger)),
+            "pressure_rows": 0 if self.pressures is None else int(len(self.pressures)),
         }
 
 
@@ -189,6 +192,7 @@ class ChronologicalSolver:
             result.geothermal[system.id] = coupling.simulate(pressure_series)
 
         result.ledger = self._build_ledger(result)
+        result.pressures = pressure_table(self.scenario, result)
         config, notes = build_cash_flow_config(
             self.scenario,
             ledger=result.ledger,

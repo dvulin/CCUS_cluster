@@ -281,6 +281,22 @@ Accepted for the next iteration:
 
 Until this exists, edges carry no pressure state and the map is schematic only.
 
+### 9.10 Hub (booster) nodes and the pressure cascade
+
+* `ccus_core/network/pressure.py` solves the chain backwards from the storage hub
+  (``p_precompression``, default 10 bar): ``p[i] = p[i+1] + dp_i(flow_i)`` with the
+  same Darcy–Weisbach/Haaland model as `engineering.Pipeline`.
+* Flows are aggregated per **path** (shared legs carry the sum of the emitters on
+  them), so adding an emitter raises the required upstream pressure — the
+  recalculation the cluster study needs.
+* `ccus_core/simulation/pressures.py` returns the annual table
+  (`year × leg × p_in/p_out/dp`) and the compression duty follows the convention
+  that the emitter which joined last carries the shared trunk.
+
+Remaining: hub nodes as a first-class kind with a *booster station* (it can only
+lower the required upstream pressure, never raise it), and buffer storage for
+batch modes (ship, truck, rail), where continuous delivery is impossible.
+
 ## 10. What is deliberately not done yet
 
 * monthly resolution (the solver is yearly; `ScenarioConfig.step` accepts `monthly`

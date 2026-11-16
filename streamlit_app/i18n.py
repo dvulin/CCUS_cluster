@@ -51,6 +51,12 @@ HR: dict[str, Any] = {
     ),
     "sec_compression": "Kompresija CO₂ prema prvom hubu",
     "sec_flows": "Procesi po dionicama (t/god)",
+    "sec_pressures": "Tlak koji traže hubovi (kaskadni proračun)",
+    "pressures_help": (
+        "Tlak na zadnjem hubu je zadani (10 bar); prema uzvodno se dodaje pad tlaka svake "
+        "dionice. Kada se pridruži novi emiter, zajednička dionica se preračunava za ukupni "
+        "protok, a kompresiju preuzima emiter koji se zadnji priključio."
+    ),
     "sec_sink_select": "Skladište",
     "sec_sink_cum": "Kumulativno uskladišteno CO₂",
     "pie_year": "Godina prikaza",
@@ -213,6 +219,12 @@ EN: dict[str, Any] = {
     ),
     "sec_compression": "CO2 compression towards the first hub",
     "sec_flows": "Flows by leg (t/yr)",
+    "sec_pressures": "Pressure required at each hub (cascade)",
+    "pressures_help": (
+        "The last hub is fixed at the default 10 bar; every leg upstream adds its friction "
+        "loss. When a new emitter joins, the shared leg is recomputed for the total flow and "
+        "the last emitter to join carries the compression."
+    ),
     "sec_sink_select": "Storage site",
     "sec_sink_cum": "Cumulative stored CO2",
     "pie_year": "Year to display",

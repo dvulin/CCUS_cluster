@@ -1023,6 +1023,20 @@ def main() -> None:
         st.markdown(f"#### {t['sec_edges']}")
         st.dataframe(snapshot_frame(snapshot.edges), width="stretch")
 
+
+        pressures = getattr(result, "pressures", None)
+        if pressures is not None and not pressures.empty:
+            st.markdown(f"#### {t['sec_pressures']}")
+            st.dataframe(
+                pressures[pressures["year"] == year],
+                width="stretch",
+            )
+            pivot = pressures.pivot_table(
+                index="year", columns="edge_id", values="p_in_bar", aggfunc="max"
+            )
+            st.line_chart(pivot)
+            st.caption(t["pressures_help"])
+
         st.markdown(f"#### {t['sec_flows']}")
         flows = (
             result.routing_frame()
