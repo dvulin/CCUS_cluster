@@ -1,0 +1,57 @@
+# Tools used – CCUS cluster project (absolute paths)
+
+Verified on this machine (Windows 11, 2026-11-16).  Everything below was actually
+used while studying, extending and verifying the project in this workspace.
+
+## Shells
+
+| Tool | Absolute path | Used for |
+|---|---|---|
+| Windows PowerShell 5.1 | `C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe` | every shell command in this session (the DSH tool runs `pwsh -Command` through this host) |
+| Git Bash (git.exe) | `C:\Program Files\Git\cmd\git.exe` | clone, branch, diff, log, commit |
+
+## Python
+
+| Tool | Absolute path | Used for |
+|---|---|---|
+| Python 3.11.5 (Anaconda base) | `C:\Users\dvulin\anaconda3\python.exe` | running tests, the engine, the Streamlit app, the whitepaper builder |
+| pip | `C:\Users\dvulin\anaconda3\Scripts\pip.exe` | installing `pytest`, `streamlit`, `latex2mathml` into the base env |
+| pytest 9.2.0 | `C:\Users\dvulin\anaconda3\Scripts\pytest.exe` | test suite (`python -m pytest`) |
+| Streamlit 1.67.0 | `C:\Users\dvulin\anaconda3\Scripts\streamlit.exe` | `python -m streamlit run streamlit_app/app.py` |
+| matplotlib | `C:\Users\dvulin\anaconda3\Lib\site-packages\matplotlib` | whitepaper figures and the UI map |
+| pandas / numpy / scipy | `C:\Users\dvulin\anaconda3\Lib\site-packages\{pandas,numpy,scipy}` | data handling, solvers |
+| CoolProp | `C:\Users\dvulin\anaconda3\Lib\site-packages\CoolProp` | fluid properties (engineering package) |
+| pydantic 2.x | `C:\Users\dvulin\anaconda3\Lib\site-packages\pydantic` | data models (`ccus_core/models`) |
+| python-docx 1.2.0 | `C:\Users\dvulin\anaconda3\Lib\site-packages\docx` | building the whitepaper |
+| latex2mathml 3.81 | `C:\Users\dvulin\anaconda3\Lib\site-packages\latex2mathml` | LaTeX → MathML → OMML equations |
+| lxml 6.1 | `C:\Users\dvulin\anaconda3\Lib\site-packages\lxml` | XML/XSLT for the OMML transform |
+
+## Office / PDF
+
+| Tool | Absolute path | Used for |
+|---|---|---|
+| OfficeCLI 1.0.160 | `C:\Users\dvulin\AppData\Local\OfficeCLI\officecli.exe` | reading the thesis `.docx`, dumping the `.xlsx` sheets, rendering the whitepaper for verification |
+| Microsoft Office XSLT | `C:\Program Files\Microsoft Office\root\Office16\MML2OMML.XSL` | MathML → OMML conversion |
+| Microsoft Word (COM) | via `New-Object -ComObject Word.Application` | page counting of the whitepaper (`ComputeStatistics`) |
+| PDFCraft | `C:\Program Files\PDFCraft\pdfcraft-cli.exe` | **not used** in this project (no PDF extraction was needed) |
+
+## Project scripts used
+
+| Script | Absolute path |
+|---|---|
+| Whitepaper builder | `C:\Users\dvulin\Documents\DSH\sestan_diplomski\ccus_cluster\docs\whitepaper\build_whitepaper.py` |
+| Streamlit app | `C:\Users\dvulin\Documents\DSH\sestan_diplomski\ccus_cluster\streamlit_app\app.py` |
+| i18n dictionary | `C:\Users\dvulin\Documents\DSH\sestan_diplomski\ccus_cluster\streamlit_app\i18n.py` |
+| Workbook importer | `C:\Users\dvulin\Documents\DSH\sestan_diplomski\ccus_cluster\ccus_core\io\excel_import.py` |
+| Engine facade | `C:\Users\dvulin\Documents\DSH\sestan_diplomski\ccus_cluster\ccus_core\engine.py` |
+| Chronological solver | `C:\Users\dvulin\Documents\DSH\sestan_diplomski\ccus_cluster\ccus_core\simulation\solver.py` |
+| Stakeholder economics | `C:\Users\dvulin\Documents\DSH\sestan_diplomski\ccus_cluster\ccus_core\finance\stakeholders.py` |
+| Scenario repository | `C:\Users\dvulin\Documents\DSH\sestan_diplomski\ccus_cluster\ccus_core\io\scenario_repository.py` |
+
+## Workspace documents
+
+| Document | Absolute path |
+|---|---|
+| Code study | `C:\Users\dvulin\Documents\DSH\sestan_diplomski\docs\STUDY_ccus_cluster.md` |
+| Architecture | `C:\Users\dvulin\Documents\DSH\sestan_diplomski\ccus_cluster\docs\ARCHITECTURE_ccus_core.md` |
+| Thesis text extract | `C:\Users\dvulin\Documents\DSH\sestan_diplomski\ccus_cluster\docs\_thesis_text.txt` (temporary) |

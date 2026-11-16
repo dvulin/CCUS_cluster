@@ -25,12 +25,16 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
+import pandas as pd  # noqa: E402
 
 from ccus_core import ScenarioEngine, ScenarioConfig, year_snapshot  # noqa: E402
 
+SECONDS_PER_YEAR = 365.25 * 24.0 * 3600.0
+HOURS_PER_YEAR = 8766.0
+
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_SCENARIO = REPOSITORY_ROOT / "inputs" / "examples" / "ccus_cluster_v1.json"
-DEFAULT_CLUSTER = REPOSITORY_ROOT / "inputs" / "examples" / "croatia_cluster_2025_2050.json"
+DEFAULT_CLUSTER = REPOSITORY_ROOT / "inputs" / "examples" / "cluster_three_emitters.json"
 
 MODE_COLOURS = {
     "pipeline": "#1f77b4",
@@ -594,15 +598,10 @@ def build_map_figure(snapshot, scenario: ScenarioConfig):
                     shrinkB=6,
                 ),
             )
-        else:
-            axis.plot(
-                [start[0], end[0]],
-                [start[1], end[1]],
-                color=colour,
-                linewidth=0.8,
-                alpha=0.25,
-                linestyle="--",
-            )
+        # inactive edges are not drawn at all: a thin line would suggest a
+            # connection that does not exist in that year
+        elif False:
+            pass
         if flow > 0.0:
             axis.text(
                 (start[0] + end[0]) / 2.0,
@@ -702,12 +701,28 @@ def main() -> None:
             uploaded = st.file_uploader(t["upload_label"], type=["json"])
             payload = uploaded.getvalue() if uploaded is not None else DEFAULT_CLUSTER
 
+        if st.session_state.get("active_source") != source:
+            st.session_state["active_source"] = source
+            st.session_state.pop("frames", None)
+            st.session_state.pop("result", None)
+            st.session_state.pop("scenario", None)
+
         try:
             base_scenario = load_scenario(payload)
             st.success(t["scenario_loaded"].format(name=base_scenario.name))
         except Exception as exc:  # noqa: BLE001 - surfaced to the user
             st.error(t["scenario_invalid"].format(error=exc))
             return
+
+        if st.button(t["btn_run"], type="primary"):
+            try:
+                st.session_state["result"] = ScenarioEngine(base_scenario).run()
+                st.session_state["scenario"] = base_scenario
+                st.session_state["frames"] = scenario_to_frames(base_scenario)
+                st.session_state["base"] = base_scenario.model_dump()
+                st.session_state["last_run_fingerprint"] = _fingerprint(base_scenario)
+            except Exception as exc:  # noqa: BLE001 - surfaced to the user
+                st.error(t["save_failed"].format(error=exc))
 
         if st.button(t["load_scenario"]):
             st.session_state["frames"] = scenario_to_frames(base_scenario)
@@ -782,9 +797,26 @@ def main() -> None:
     base = st.session_state.get("base")
     base_scenario = ScenarioConfig.model_validate(base) if base else base_scenario
 
-    inputs_tab, overview, network, reservoir, economics, tables = st.tabs(
+    result = st.session_state.get("result")
+    if result is None:
+        st.info(t["status_idle"])
+    elif st.session_state.get("last_run_fingerprint") == _fingerprint(base_scenario):
+        st.success(t["status_ok"])
+    else:
+        st.warning(t["status_dirty"])
+
+    (
+        inputs_tab,
+        emitters_tab,
+        overview,
+        network,
+        reservoir,
+        economics,
+        tables,
+    ) = st.tabs(
         [
             t["tab_inputs"],
+            t["tab_emitters"],
             t["tab_overview"],
             t["tab_network"],
             t["tab_reservoir"],
@@ -918,6 +950,62 @@ def main() -> None:
     st.caption(t["slider_help"])
     snapshot = year_snapshot(result, year)
 
+    with emitters_tab:
+        st.markdown(f"### {t['sec_compression']}")
+        st.caption(t["emitters_help"])
+        rows = []
+        for emitter in active_scenario.emitters:
+            series = {
+                int(row.year): float(row.co2_chain_t)
+                for row in result.ledger.itertuples(index=False)
+            }
+            captured = [emitter.captured_emissions(year) for year in years]
+            peak_year = years[int(max(range(len(captured)), key=lambda index: captured[index]))]
+            peak = max(captured) if captured else 0.0
+            first_edge = next(
+                (edge for edge in active_scenario.edges if edge.from_node == emitter.node_id),
+                None,
+            )
+            state = first_edge.resolve_state(peak_year) if first_edge else None
+            inlet_pressure = float(state.pipeline.inlet_pressure_bar) if state and state.pipeline else float("nan")
+            distance = float(state.distance_km) if state else 0.0
+            sink = None
+            if first_edge is not None:
+                node_id = first_edge.to_node
+                sink = next((s for s in active_scenario.storage_sinks if s.node_id == node_id), None)
+            rate_kg_s = peak * 1000.0 / SECONDS_PER_YEAR
+            power_kw = 0.0
+            if sink is not None and rate_kg_s > 0.0:
+                power_kw = _compressor_power_kw(sink, rate_kg_s, inlet_pressure)
+            rows.append(
+                {
+                    "emitter": emitter.name,
+                    "activation_year": emitter.activation_year,
+                    "peak_t_per_year": round(peak, 0),
+                    "first_hub": first_edge.to_node if first_edge else "–",
+                    "distance_km": round(distance, 1),
+                    "design_inlet_pressure_bar": round(inlet_pressure, 1),
+                    "compression_power_kw": round(power_kw, 1),
+                    "compression_mwh_per_year": round(power_kw * HOURS_PER_YEAR / 1000.0, 1),
+                }
+            )
+        st.dataframe(pd.DataFrame(rows), width="stretch")
+
+        st.markdown(f"#### {t['sec_tech']}")
+        chart_data = {}
+        for item in snapshot.emitters:
+            chart_data[item["id"]] = item["captured_t"]
+        yearly = pd.DataFrame(
+            {
+                "year": years,
+                **{
+                    emitter.id: [emitter.captured_emissions(year) for year in years]
+                    for emitter in active_scenario.emitters
+                },
+            }
+        ).set_index("year")
+        st.bar_chart(yearly / 1e6)
+
     with overview:
         columns = st.columns(4)
         columns[0].metric(t["metric_captured"], f"{snapshot.totals['captured_t']:,.0f}")
@@ -935,11 +1023,42 @@ def main() -> None:
         st.markdown(f"#### {t['sec_edges']}")
         st.dataframe(snapshot_frame(snapshot.edges), width="stretch")
 
+        st.markdown(f"#### {t['sec_flows']}")
+        flows = (
+            result.routing_frame()
+            .pivot_table(index="year", columns="path", values="quantity_t", aggfunc="sum")
+            .fillna(0.0)
+        )
+        st.bar_chart(flows / 1e6)
+        st.dataframe(flows, width="stretch")
+
+        pressure_frames = [frame for frame in result.reservoir.values()]
+        if pressure_frames:
+            pressures = pressure_frames[0][["year", "pressure_bar", "bhp_bar"]]
+            for frame in pressure_frames[1:]:
+                pressures = pressures.merge(
+                    frame[["year", "pressure_bar", "bhp_bar"]].rename(
+                        columns={"pressure_bar": "pressure_bar", "bhp_bar": "bhp_bar"}
+                    ),
+                    on="year",
+                    how="outer",
+                )
+            st.line_chart(pressures.set_index("year"))
+
+
     with reservoir:
+
+        sink_options = list(result.reservoir.keys())
+        if sink_options:
+            chosen = st.selectbox(t["sec_sink_select"], sink_options, key="sink_choice")
+            frame = result.reservoir[chosen]
+            with st.expander(t["sec_sink_cum"], expanded=False):
+                st.line_chart(frame.set_index("year")[["co2_cumulative_t"]])
+                st.dataframe(frame, width="stretch")
         for sink_id, frame in result.reservoir.items():
-            st.markdown(f"#### {t['sec_sink_detail']}: {sink_id}")
+            st.markdown(f"**{sink_id}**")
             st.line_chart(frame.set_index("year")[["pressure_bar", "bhp_bar"]])
-            st.dataframe(frame, width="stretch")
+
 
     with economics:
         if result.cash_flow is not None:
@@ -963,8 +1082,6 @@ def main() -> None:
         with st.expander(t["stakeholders_detail"], expanded=False):
             st.dataframe(table, width="stretch")
 
-        import pandas as pd
-
         # ------------------------------------------------ cumulative cost
         from ccus_core.finance import (
             cost_breakdown_for_year,
@@ -981,9 +1098,14 @@ def main() -> None:
 
         # ------------------------------------------------ cost pie (last year)
         st.markdown(f"#### {t['pie_last']}")
-        last_year = int(cumulative["year"].iloc[-1])
-        breakdown = cost_breakdown_for_year(result.cash_flow, last_year)
-        if breakdown:
+        pie_year = st.selectbox(
+            t["pie_year"],
+            list(reversed([int(year) for year in result.cash_flow["year"]])),
+            index=0,
+            key="pie_year",
+        )
+        breakdown = cost_breakdown_for_year(result.cash_flow, int(pie_year))
+        if len(breakdown) >= 2:
             labels = list(breakdown)
             values = [breakdown[key] for key in labels]
             figure, axis = plt.subplots(figsize=(5.6, 3.4))
@@ -996,10 +1118,12 @@ def main() -> None:
                 textprops={"fontsize": 7.5},
                 colors=plt.get_cmap("tab20").colors[: len(labels)],
             )
-            axis.set_title(f"{t['pie_last']} ({last_year}.)")
+            axis.set_title(f"{t['pie_last']} ({int(pie_year)}.)")
             figure.tight_layout()
             st.pyplot(figure, width="stretch")
             plt.close(figure)
+        else:
+            st.info(t["pie_none"])
 
         # ------------------------------------------------ per-entity economics
         st.markdown(f"#### {t['entity_select']}")
@@ -1032,7 +1156,9 @@ def main() -> None:
                     }
                 ).set_index("year")
                 st.dataframe(entity_frame, width="stretch")
-                st.bar_chart(entity_frame[["net"]].rename(columns={"net": t["entity_net"]}))
+                st.line_chart(entity_frame[["net"]])
+                cumulative_net = entity_frame["net"].cumsum().rename("cumulative")
+                st.line_chart(cumulative_net)
             else:
                 st.info(t["entity_empty"])
 
@@ -1048,6 +1174,30 @@ def main() -> None:
         )
 
 
+def _compressor_power_kw(sink, rate_kg_s: float, p_out_bar: float) -> float:
+    """CO2 compressor power (kW) required to reach ``p_out_bar`` for one sink."""
+
+    if rate_kg_s <= 0.0 or p_out_bar != p_out_bar:
+        return 0.0
+    try:
+        from engineering import Power
+
+        from ccus_core.simulation.adapters import power_inputs_for_sink
+
+        power = Power(power_inputs_for_sink(sink, rate_kg_s), None)
+        return float(
+            power.calculate_compression_power(
+                fluid="CO2",
+                p_in_bar=float(sink.compressor_inlet_pressure_bar),
+                p_out_bar=float(p_out_bar),
+                t_in_C=float(sink.compressor_inlet_temperature_c),
+                m_dot=float(rate_kg_s),
+            )
+        )
+    except Exception:  # noqa: BLE001 - never break the UI on a power estimate
+        return 0.0
+
+
 def _column_help(st, title: str, labels: dict, columns) -> None:
     """Expandable list of column descriptions, so the headers can stay short."""
 
@@ -1056,6 +1206,15 @@ def _column_help(st, title: str, labels: dict, columns) -> None:
     )
     with st.expander(title, expanded=False):
         st.markdown(f"| Stupac | Opis |\n|---|---|\n{rows}")
+
+
+def _fingerprint(scenario: ScenarioConfig) -> str:
+    """Short, stable hash of a scenario document (used for the dirty indicator)."""
+
+    import hashlib
+
+    payload = scenario.model_dump_json()
+    return hashlib.sha1(payload.encode("utf-8")).hexdigest()[:12]
 
 
 def _column_config(st, labels: dict, columns, *, number: bool, text: set[str], select: dict | None = None, checkbox: set[str] | None = None):

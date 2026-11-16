@@ -1,0 +1,197 @@
+{
+  "schema": "ccus-cluster/2.0",
+  "_format": "compact: one block per line; units and explanations in _comments",
+  "_comments": {
+    "scenario.id": "stable identifier used by the solver and the UI",
+    "scenario.name": "human readable scenario name",
+    "scenario.start_year": "year - first year of the simulation horizon",
+    "scenario.end_year": "year - last year of the simulation horizon",
+    "scenario.step": "solver step: yearly (monthly is not implemented yet)",
+    "emitters[].id": "slug: lower-case, no spaces",
+    "emitters[].name": "emitter name as printed in the reports",
+    "emitters[].node_id": "network node where the captured CO2 enters the graph",
+    "emitters[].activation_year": "year - first year with a contribution; derived from the probability when omitted",
+    "emitters[].implementation_probability": "CCS implementation probability: 1.0, 0.9, 0.5, 0.1 ...",
+    "emitters[].decommission_year": "year - last year of operation",
+    "emitters[].gross_emissions.kind": "constant | piecewise_linear | polynomial | power_law",
+    "emitters[].gross_emissions.e0_t_per_year": "t CO2/year - E(0): emission at the reference year (power_law)",
+    "emitters[].gross_emissions.reference_year": "year - E(0) reference year and x = 0 point",
+    "emitters[].gross_emissions.a": "linear decline rate (thesis: -0.02 ... -0.05)",
+    "emitters[].gross_emissions.b": "t CO2/year - b = a * E(0) when omitted",
+    "emitters[].gross_emissions.c": "power-law exponent (thesis: 1.5)",
+    "emitters[].gross_emissions.constant_t_per_year": "t CO2/year - flat emission rate",
+    "emitters[].gross_emissions.points": "t CO2/year - year -> emission control points",
+    "emitters[].capture.capacity_t_per_year": "t CO2/year - capture nameplate capacity",
+    "emitters[].capture.capex_eur": "EUR - capture CAPEX",
+    "emitters[].capture.opex_eur_per_t": "EUR/t CO2 - capture OPEX per tonne",
+    "emitters[].capture.commissioning_year": "year - capture plant commissioning year",
+    "connections[].emitter_id": "emitter that wants CO2 transport",
+    "connections[].sink_id": "storage site it can reach",
+    "connections[].start_year": "year - first year this access may be used (independent per pair)",
+    "connections[].end_year": "year - last year this access may be used",
+    "connections[].mode": "pipeline | truck | rail | marine",
+    "connections[].distance_km": "km - route length",
+    "connections[].capacity_t_per_year": "t CO2/year - design capacity of this access",
+    "connections[].capex_eur": "EUR - CAPEX charged in start_year",
+    "connections[].opex_eur_per_t": "EUR/t CO2 - flat tariff",
+    "connections[].opex_eur_per_tkm": "EUR/(t CO2 km) - distance tariff",
+    "storage_defaults.porosity": "default porosity for new DSA/DHF sites (0.20)",
+    "storage_defaults.permeability_m2": "m2 - default permeability (100 mD = 1e-13 m2)",
+    "storage_defaults.top_depth_m": "m - default reservoir depth (1500 m)",
+    "edges[].id": "slug",
+    "edges[].from_node": "start node id",
+    "edges[].to_node": "end node id",
+    "edges[].states[].mode": "pipeline | truck | rail | marine",
+    "edges[].states[].valid_from_year": "year - first year of this transport state",
+    "edges[].states[].valid_until_year": "year - last year of this transport state",
+    "edges[].states[].capacity_t_per_year": "t CO2/year - design capacity",
+    "edges[].states[].distance_km": "km - route length",
+    "edges[].states[].capex_eur": "EUR - state CAPEX (charged in valid_from_year)",
+    "edges[].states[].opex_eur_per_t": "EUR/t CO2 - flat tariff",
+    "edges[].states[].opex_eur_per_tkm": "EUR/(t CO2 km) - distance tariff",
+    "storage_sinks[].id": "slug",
+    "storage_sinks[].name": "site name",
+    "storage_sinks[].node_id": "graph node of the site",
+    "storage_sinks[].capacity_t": "t CO2 - nominal storage capacity",
+    "storage_sinks[].commissioning_year": "year - first year the site can accept CO2",
+    "storage_sinks[].capex_eur": "EUR - site CAPEX",
+    "storage_sinks[].opex_eur_per_t": "EUR/t CO2 - injection OPEX per tonne",
+    "storage_sinks[].depth_m": "m - reservoir depth",
+    "economics.start_year": "year - first year of the cash flow",
+    "economics.end_year": "year - last year of the cash flow",
+    "economics.capex_start_year": "year - year of the first investment",
+    "economics.discount_rate": "real discount rate",
+    "economics.inflation_rate": "cost escalation rate"
+  },
+  "scenario": {
+    "id": "cluster_three",
+    "name": "Tri emitera – Holcim, Plomin, NEXE (hubovi i dvije skladišne lokacije)",
+    "start_year": 2027,
+    "end_year": 2045,
+    "nodes": [
+      {"id": "holcim", "name": "Holcim", "kind": "emitter", "location": {"latitude": 43.13, "longitude": 15.6}},
+      {"id": "plomin", "name": "TE Plomin", "kind": "emitter", "location": {"latitude": 45.14, "longitude": 14.18}},
+      {"id": "nexe", "name": "NEXE", "kind": "emitter", "location": {"latitude": 45.54, "longitude": 18.69}},
+      {"id": "hub_plomin", "name": "Hub Plomin (booster)", "kind": "junction", "location": {"latitude": 45.14, "longitude": 14.2}},
+      {"id": "hub_ivanic", "name": "Hub Ivanić", "kind": "junction", "location": {"latitude": 45.68, "longitude": 16.39}},
+      {"id": "hub_drava", "name": "Hub Drava (NEXE)", "kind": "junction", "location": {"latitude": 45.55, "longitude": 18.6}},
+      {"id": "sink_ivanic", "name": "Ivanić (DHF)", "kind": "storage"},
+      {"id": "sink_poljana", "name": "Poljana (DSA)", "kind": "storage"},
+      {"id": "sink_drava", "name": "Drava (DSA)", "kind": "storage"}
+    ],
+    "emitters": [
+      {
+        "id": "holcim",
+        "name": "Holcim",
+        "node_id": "holcim",
+        "activation_year": 2028,
+        "gross_emissions": {"kind": "power_law", "reference_year": 2025, "e0_t_per_year": 583365.0, "a": -0.01},
+        "capture": {"name": "Holcim capture", "technology": "OXY", "capacity_t_per_year": 583365.0, "capex_eur": 58000000.0, "opex_eur_per_t": 25.0, "commissioning_year": 2028}
+      },
+      {
+        "id": "plomin",
+        "name": "TE Plomin",
+        "node_id": "plomin",
+        "activation_year": 2030,
+        "gross_emissions": {"kind": "power_law", "reference_year": 2025, "e0_t_per_year": 1118203.0, "a": -0.01},
+        "capture": {"name": "Plomin capture", "technology": "PI", "capacity_t_per_year": 1118203.0, "capex_eur": 111820308.7, "opex_eur_per_t": 30.0, "commissioning_year": 2030}
+      },
+      {
+        "id": "nexe",
+        "name": "NEXE",
+        "node_id": "nexe",
+        "activation_year": 2028,
+        "gross_emissions": {"kind": "power_law", "reference_year": 2025, "e0_t_per_year": 656178.0, "a": -0.03},
+        "capture": {"name": "NEXE capture", "technology": "OXY", "capacity_t_per_year": 656178.0, "capex_eur": 65617824.8, "opex_eur_per_t": 19.0, "commissioning_year": 2028}
+      }
+    ],
+    "edges": [
+      {
+        "id": "holcim_hub",
+        "name": "Holcim → Hub Plomin",
+        "from_node": "holcim",
+        "to_node": "hub_plomin",
+        "states": [{"mode": "pipeline", "valid_from_year": 2028, "capacity_t_per_year": 600000.0, "distance_km": 30.0, "capex_eur": 6000000.0, "opex_eur_per_t": 14.0, "pipeline": {"inner_diameter_m": 0.25, "inlet_pressure_bar": 150.0, "inlet_temperature_c": 20.0}}]
+      },
+      {
+        "id": "plomin_hub",
+        "name": "Plomin → Hub Plomin",
+        "from_node": "plomin",
+        "to_node": "hub_plomin",
+        "states": [{"mode": "pipeline", "valid_from_year": 2030, "capacity_t_per_year": 1200000.0, "distance_km": 10.0, "capex_eur": 3000000.0, "opex_eur_per_t": 14.0, "pipeline": {"inner_diameter_m": 0.3, "inlet_pressure_bar": 150.0, "inlet_temperature_c": 20.0}}]
+      },
+      {
+        "id": "hub_ivanic",
+        "name": "Hub Plomin → Hub Ivanić",
+        "from_node": "hub_plomin",
+        "to_node": "hub_ivanic",
+        "states": [{"mode": "pipeline", "valid_from_year": 2027, "capacity_t_per_year": 2500000.0, "distance_km": 200.0, "capex_eur": 80000000.0, "opex_eur_per_t": 8.0, "pipeline": {"inner_diameter_m": 0.4, "inlet_pressure_bar": 150.0, "inlet_temperature_c": 20.0}}]
+      },
+      {
+        "id": "hub_poljana",
+        "name": "Hub Plomin → Poljana",
+        "from_node": "hub_plomin",
+        "to_node": "sink_poljana",
+        "states": [{"mode": "pipeline", "valid_from_year": 2027, "capacity_t_per_year": 2500000.0, "distance_km": 260.0, "capex_eur": 90000000.0, "opex_eur_per_t": 16.0, "pipeline": {"inner_diameter_m": 0.4, "inlet_pressure_bar": 150.0, "inlet_temperature_c": 20.0}}]
+      },
+      {
+        "id": "ivanic_site",
+        "name": "Hub Ivanić → skladište Ivanić",
+        "from_node": "hub_ivanic",
+        "to_node": "sink_ivanic",
+        "states": [{"mode": "pipeline", "valid_from_year": 2027, "capacity_t_per_year": 2500000.0, "distance_km": 5.0, "capex_eur": 2000000.0, "opex_eur_per_t": 5.0, "pipeline": {"inner_diameter_m": 0.4, "inlet_pressure_bar": 150.0, "inlet_temperature_c": 20.0}}]
+      },
+      {
+        "id": "nexe_drava",
+        "name": "NEXE → Hub Drava",
+        "from_node": "nexe",
+        "to_node": "hub_drava",
+        "states": [{"mode": "pipeline", "valid_from_year": 2028, "capacity_t_per_year": 700000.0, "distance_km": 40.0, "capex_eur": 9000000.0, "opex_eur_per_t": 13.0, "pipeline": {"inner_diameter_m": 0.25, "inlet_pressure_bar": 150.0, "inlet_temperature_c": 20.0}}]
+      },
+      {
+        "id": "drava_site",
+        "name": "Hub Drava → skladište Drava",
+        "from_node": "hub_drava",
+        "to_node": "sink_drava",
+        "states": [{"mode": "pipeline", "valid_from_year": 2028, "capacity_t_per_year": 700000.0, "distance_km": 5.0, "capex_eur": 2000000.0, "opex_eur_per_t": 5.0, "pipeline": {"inner_diameter_m": 0.25, "inlet_pressure_bar": 150.0, "inlet_temperature_c": 20.0}}]
+      }
+    ],
+    "storage_sinks": [
+      {
+        "id": "ivanic",
+        "node_id": "sink_ivanic",
+        "name": "Ivanić",
+        "storage_type": "DHF",
+        "capacity_t": 5500000.0,
+        "reservoir": {"area_m2": 225000000.0, "effective_thickness_m": 150.0, "porosity": 0.2, "top_depth_m": 1500.0, "temperature_c": 90.0, "reference_pressure_bar": 150.0, "pressure_step_bar": 0.5, "permeability_m2": 1e-13},
+        "commissioning_year": 2028,
+        "capex_eur": 120000000.0,
+        "opex_eur_per_t": 10.0
+      },
+      {
+        "id": "poljana",
+        "node_id": "sink_poljana",
+        "name": "Poljana",
+        "capacity_t": 9308000.0,
+        "geothermal_coupled": true,
+        "reservoir": {"area_m2": 225000000.0, "effective_thickness_m": 150.0, "porosity": 0.2, "top_depth_m": 1500.0, "temperature_c": 90.0, "reference_pressure_bar": 150.0, "pressure_step_bar": 0.5, "permeability_m2": 1e-13},
+        "commissioning_year": 2027,
+        "capex_eur": 150000000.0,
+        "opex_eur_per_t": 10.0
+      },
+      {
+        "id": "drava",
+        "node_id": "sink_drava",
+        "name": "Drava",
+        "capacity_t": 50000000.0,
+        "reservoir": {"area_m2": 225000000.0, "effective_thickness_m": 150.0, "porosity": 0.2, "top_depth_m": 1500.0, "temperature_c": 90.0, "reference_pressure_bar": 150.0, "pressure_step_bar": 0.5, "permeability_m2": 1e-13},
+        "commissioning_year": 2028,
+        "capex_eur": 90000000.0,
+        "opex_eur_per_t": 10.0
+      }
+    ],
+    "policy": {},
+    "economics": {"start_year": 2027, "end_year": 2045, "capex_start_year": 2028, "discount_rate": 0.06, "inflation_rate": 0.06},
+    "notes": "Demo mreze: Holcim (30 km) i Plomin (na prvom booster hubu) dijele 200 km dionicu do skladišta Ivanić; kad se Ivanić popuni, tok se preusmjerava na DSA Poljana. NEXE ide zasebnom trasom od 40 km do DSA Drava."
+  }
+}

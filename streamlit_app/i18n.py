@@ -22,6 +22,10 @@ HR: dict[str, Any] = {
     "scenario_loaded": "Scenarij: {name}",
     "scenario_invalid": "Neispravan scenarij: {error}",
     "load_scenario": "Učitaj scenarij",
+    "btn_run": "Pokreni",
+    "status_ok": "Scenarij je aktualan",
+    "status_dirty": "Scenarij je izmijenjen – pokreni ponovno",
+    "status_idle": "Scenarij nije pokrenut",
     "save_section": "Spremanje scenarija",
     "save_name": "Naziv scenarija",
     "btn_save": "Spremi",
@@ -40,6 +44,18 @@ HR: dict[str, Any] = {
     "tab_reservoir": "Skladište",
     "tab_economics": "Ekonomika",
     "tab_tables": "Tablice",
+    "tab_emitters": "Emiteri",
+    "emitters_help": (
+        "Pritisak koji emiter mora osigurati na izlazu kompresora određen je prvim hubom na "
+        "njegovoj trasi; procjena je informativna dok se ne uvede kaskadni proračun tlaka po hubovima."
+    ),
+    "sec_compression": "Kompresija CO₂ prema prvom hubu",
+    "sec_flows": "Procesi po dionicama (t/god)",
+    "sec_sink_select": "Skladište",
+    "sec_sink_cum": "Kumulativno uskladišteno CO₂",
+    "pie_year": "Godina prikaza",
+    "pie_none": "U odabranoj godini nema troškova za prikaz.",
+    "sec_tech": "Tehnička analiza",
     "inputs_hint": (
         "Uredi tablice, zatim klikni 'Primijeni i pokreni'. Nove emitere, pristupe i skladišta "
         "dodaješ retkom na dnu tablice (prazno polje = NaN)."
@@ -168,6 +184,10 @@ EN: dict[str, Any] = {
     "scenario_loaded": "Scenario: {name}",
     "scenario_invalid": "Invalid scenario: {error}",
     "load_scenario": "Load scenario",
+    "btn_run": "Run",
+    "status_ok": "Scenario is up to date",
+    "status_dirty": "Scenario changed – run again",
+    "status_idle": "Scenario has not been run",
     "save_section": "Save scenario",
     "save_name": "Scenario name",
     "btn_save": "Save",
@@ -186,6 +206,18 @@ EN: dict[str, Any] = {
     "tab_reservoir": "Storage",
     "tab_economics": "Economics",
     "tab_tables": "Tables",
+    "tab_emitters": "Emitters",
+    "emitters_help": (
+        "The discharge pressure an emitter must deliver is set by the first hub on its route; "
+        "instructive only until the hub-to-hub pressure cascade is implemented."
+    ),
+    "sec_compression": "CO2 compression towards the first hub",
+    "sec_flows": "Flows by leg (t/yr)",
+    "sec_sink_select": "Storage site",
+    "sec_sink_cum": "Cumulative stored CO2",
+    "pie_year": "Year to display",
+    "pie_none": "No costs to display in the selected year.",
+    "sec_tech": "Technical analysis",
     "inputs_hint": (
         "Edit the tables, then click 'Apply and run'. Add emitters, connections and storage sites "
         "as a new row at the bottom (blank cell = NaN)."
