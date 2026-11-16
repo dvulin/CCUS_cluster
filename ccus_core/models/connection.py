@@ -32,6 +32,10 @@ class EmitterSinkConnection(CoreModel):
 
     emitter_id: Slug
     sink_id: Slug
+    route_edge_id: Slug | None = Field(
+        default=None,
+        description="First leg of the route this emitter uses (an edge from the Routes table).",
+    )
     start_year: int = Field(description="First year this access can be used.")
     end_year: int | None = None
     mode: TransportMode = TransportMode.PIPELINE

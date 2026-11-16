@@ -139,11 +139,20 @@ class ScenarioConfig(CoreModel):
             duplicates = sorted({item for item in connection_ids if connection_ids.count(item) > 1})
             if duplicates:
                 raise ValueError(f"duplicate connection(s): {', '.join(duplicates)}")
-            existing = {edge.id for edge in self.edges}
+
+            known_edges = {edge.id for edge in self.edges}
+            for connection in self.connections:
+                if connection.route_edge_id is not None and connection.route_edge_id not in known_edges:
+                    raise ValueError(
+                        f"connection '{connection.edge_id()}' references unknown route "
+                        f"'{connection.route_edge_id}'"
+                    )
+
+            existing = set(known_edges)
             missing = [
                 connection
                 for connection in self.connections
-                if connection.edge_id() not in existing
+                if connection.route_edge_id is None and connection.edge_id() not in existing
             ]
             if missing:
                 self.edges = [*self.edges, *_edges_from_connections(self, missing)]

@@ -169,17 +169,25 @@ EMITTER_COLUMNS = [
     "capture_opex_eur_per_t",
 ]
 
-CONNECTION_COLUMNS = [
-    "emitter_id",
-    "sink_id",
-    "start_year",
-    "end_year",
+ROUTE_COLUMNS = [
+    "id",
+    "name",
+    "from_node",
+    "to_node",
     "mode",
     "distance_km",
     "capacity_t_per_year",
     "capex_eur",
     "opex_eur_per_t",
     "opex_eur_per_tkm",
+    "valid_from_year",
+]
+
+CONNECTION_COLUMNS = [
+    "emitter_id",
+    "route_edge_id",
+    "sink_id",
+    "start_year",
 ]
 
 SINK_COLUMNS = [
@@ -241,21 +249,33 @@ def scenario_to_frames(scenario: ScenarioConfig) -> dict[str, "object"]:
             }
         )
 
+    routes = []
+    for edge in scenario.edges:
+        state = edge.resolve_state(edge.states[0].valid_from_year) or edge.states[0]
+        routes.append(
+            {
+                "id": edge.id,
+                "name": edge.name,
+                "from_node": edge.from_node,
+                "to_node": edge.to_node,
+                "mode": state.mode.value,
+                "distance_km": state.distance_km,
+                "capacity_t_per_year": state.capacity_t_per_year,
+                "capex_eur": state.capex_eur,
+                "opex_eur_per_t": state.opex_eur_per_t,
+                "opex_eur_per_tkm": state.opex_eur_per_tkm,
+                "valid_from_year": state.valid_from_year,
+            }
+        )
+
     connections = []
     for connection in scenario.connections:
-        state = connection.state()
         connections.append(
             {
                 "emitter_id": connection.emitter_id,
+                "route_edge_id": connection.route_edge_id,
                 "sink_id": connection.sink_id,
                 "start_year": connection.start_year,
-                "end_year": connection.end_year,
-                "mode": state.mode.value,
-                "distance_km": connection.distance_km,
-                "capacity_t_per_year": connection.capacity_t_per_year,
-                "capex_eur": connection.capex_eur,
-                "opex_eur_per_t": connection.opex_eur_per_t,
-                "opex_eur_per_tkm": connection.opex_eur_per_tkm,
             }
         )
 
@@ -301,6 +321,7 @@ def scenario_to_frames(scenario: ScenarioConfig) -> dict[str, "object"]:
         )
 
     return {
+        "routes": pd.DataFrame(routes, columns=ROUTE_COLUMNS),
         "emitters": pd.DataFrame(emitters, columns=EMITTER_COLUMNS),
         "connections": pd.DataFrame(connections, columns=CONNECTION_COLUMNS),
         "sinks": pd.DataFrame(sinks, columns=SINK_COLUMNS),
@@ -316,16 +337,21 @@ def frames_to_scenario(base: ScenarioConfig, frames: dict) -> ScenarioConfig:
     from ccus_core.models import (
         CaptureUnit,
         EconomicsConfig,
+        EdgeState,
         Emitter,
         EmitterSinkConnection,
         EmissionCurve,
         GeothermalSystem,
         GeoLocation,
+        MarineDesign,
         Node,
         NodeKind,
+        PipelineDesign,
         ReservoirProperties,
+        RoadDesign,
         StorageSink,
         StorageType,
+        TransportEdge,
     )
 
     start_year = int(base.start_year)
@@ -337,7 +363,10 @@ def frames_to_scenario(base: ScenarioConfig, frames: dict) -> ScenarioConfig:
         emitter_id = _text(row.get("id"))
         if not emitter_id:
             continue
-        node_id = f"{emitter_id}-gate"
+        node_id = next(
+                (item.node_id for item in base.emitters if item.id == emitter_id),
+                emitter_id,
+            )
         nodes.append(Node(id=node_id, name=_text(row.get("name"), emitter_id), kind=NodeKind.EMITTER, location=GeoLocation(onshore=True)))
 
         kind = _text(row.get("curve"), "constant")
@@ -387,7 +416,10 @@ def frames_to_scenario(base: ScenarioConfig, frames: dict) -> ScenarioConfig:
         if not sink_id:
             continue
         sink_ids.append(sink_id)
-        node_id = f"{sink_id}-site"
+        node_id = next(
+            (item.node_id for item in base.storage_sinks if item.id == sink_id),
+            f"{sink_id}-site",
+        )
         nodes.append(Node(id=node_id, name=_text(row.get("name"), sink_id), kind=NodeKind.STORAGE, location=GeoLocation(onshore=True)))
         reservoir = ReservoirProperties(
             area_m2=25e6,
@@ -423,16 +455,87 @@ def frames_to_scenario(base: ScenarioConfig, frames: dict) -> ScenarioConfig:
             )
         )
 
+    edges: list[TransportEdge] = []
+    if "routes" in frames:
+        for row in frames["routes"].to_dict("records"):
+            edge_id = _text(row.get("id"))
+            if not edge_id:
+                continue
+            mode = _text(row.get("mode"), "pipeline")
+            capacity = _number(row.get("capacity_t_per_year"), 0.0)
+            edges.append(
+                TransportEdge(
+                    id=edge_id,
+                    name=_text(row.get("name"), edge_id),
+                    from_node=_text(row.get("from_node")),
+                    to_node=_text(row.get("to_node")),
+                    states=[
+                        EdgeState(
+                            mode=mode,
+                            valid_from_year=_integer(row.get("valid_from_year"), start_year),
+                            capacity_t_per_year=capacity or None,
+                            distance_km=_number(row.get("distance_km"), 0.0),
+                            capex_eur=_number(row.get("capex_eur"), 0.0),
+                            opex_eur_per_t=_number(row.get("opex_eur_per_t"), 0.0),
+                            opex_eur_per_tkm=_number(row.get("opex_eur_per_tkm"), 0.0),
+                            pipeline=PipelineDesign(
+                                inner_diameter_m=0.30,
+                                inlet_pressure_bar=150.0,
+                                inlet_temperature_c=20.0,
+                            )
+                            if mode == "pipeline"
+                            else None,
+                            road=RoadDesign(
+                                vehicle_capacity_t=25.0,
+                                trips_per_vehicle_per_day=2.0,
+                                working_days_per_year=250.0,
+                                fleet_size=10,
+                            )
+                            if mode in {"truck", "rail"}
+                            else None,
+                            marine=MarineDesign(
+                                vessel_capacity_t=8000.0,
+                                voyages_per_vessel_per_year=6.0,
+                                vessels=2,
+                                port_node_id=_text(row.get("to_node")) or "port",
+                                weather_availability=0.85,
+                            )
+                            if mode == "marine"
+                            else None,
+                        )
+                    ],
+                )
+            )
+
+    if "routes" in frames:
+        known = {node.id for node in nodes}
+        for row in frames["routes"].to_dict("records"):
+            for column in ("from_node", "to_node"):
+                node_id = _text(row.get(column))
+                if not node_id or node_id in known:
+                    continue
+                known.add(node_id)
+                nodes.append(
+                    Node(
+                        id=node_id,
+                        name=node_id,
+                        kind=NodeKind.JUNCTION,
+                        location=GeoLocation(),
+                    )
+                )
+
     connections = []
     for row in frames["connections"].to_dict("records"):
         emitter_id = _text(row.get("emitter_id"))
         sink_id = _text(row.get("sink_id"))
         if not emitter_id or not sink_id:
             continue
+        route_edge_id = _text(row.get("route_edge_id")) or None
         connections.append(
             EmitterSinkConnection(
                 emitter_id=emitter_id,
                 sink_id=sink_id,
+                route_edge_id=route_edge_id,
                 start_year=_integer(row.get("start_year"), start_year),
                 end_year=None if pd.isna(row.get("end_year")) else _integer(row.get("end_year"), end_year),
                 mode=_text(row.get("mode"), "pipeline"),
@@ -511,6 +614,7 @@ def frames_to_scenario(base: ScenarioConfig, frames: dict) -> ScenarioConfig:
         "end_year": end_year,
         "nodes": [node.model_dump() for node in nodes],
         "emitters": [emitter.model_dump() for emitter in emitters],
+        "edges": [edge.model_dump() for edge in edges],
         "connections": [connection.model_dump() for connection in connections],
         "storage_sinks": [sink.model_dump() for sink in sinks],
         "geothermal_systems": [system.model_dump() for system in geothermal],
@@ -706,6 +810,7 @@ def main() -> None:
             st.session_state.pop("frames", None)
             st.session_state.pop("result", None)
             st.session_state.pop("scenario", None)
+            st.session_state.pop("error", None)
 
         try:
             base_scenario = load_scenario(payload)
@@ -721,7 +826,9 @@ def main() -> None:
                 st.session_state["frames"] = scenario_to_frames(base_scenario)
                 st.session_state["base"] = base_scenario.model_dump()
                 st.session_state["last_run_fingerprint"] = _fingerprint(base_scenario)
+                st.session_state.pop("error", None)
             except Exception as exc:  # noqa: BLE001 - surfaced to the user
+                st.session_state["error"] = str(exc)
                 st.error(t["save_failed"].format(error=exc))
 
         if st.button(t["load_scenario"]):
@@ -798,12 +905,16 @@ def main() -> None:
     base_scenario = ScenarioConfig.model_validate(base) if base else base_scenario
 
     result = st.session_state.get("result")
-    if result is None:
-        st.info(t["status_idle"])
+    error = st.session_state.get("error")
+    if error:
+        st.markdown(f"<span style='color:#c0392b;font-weight:600'>●</span> {t['status_error']}")
+        st.caption(str(error))
+    elif result is None:
+        st.markdown(f"<span style='color:#7f8c8d;font-weight:600'>●</span> {t['status_idle']}")
     elif st.session_state.get("last_run_fingerprint") == _fingerprint(base_scenario):
-        st.success(t["status_ok"])
+        st.markdown(f"<span style='color:#27ae60;font-weight:600'>●</span> {t['status_ok']}")
     else:
-        st.warning(t["status_dirty"])
+        st.markdown(f"<span style='color:#e67e22;font-weight:600'>●</span> {t['status_dirty']}")
 
     (
         inputs_tab,
@@ -828,6 +939,23 @@ def main() -> None:
     with inputs_tab:
         st.caption(t["inputs_hint"])
 
+        st.markdown(f"#### {t['sec_routes']}")
+        frames["routes"] = st.data_editor(
+            frames["routes"],
+            num_rows="dynamic",
+            width="stretch",
+            key="editor_routes",
+            column_config=_column_config(
+                st,
+                t["col_routes"],
+                frames["routes"].columns,
+                number=True,
+                text={"id", "name", "from_node", "to_node"},
+                select={"mode": ["pipeline", "truck", "rail", "marine"]},
+            ),
+        )
+        _column_help(st, t["col_help"], t["col_routes"], frames["routes"].columns)
+
         st.markdown(f"#### {t['sec_emitters']}")
         frames["emitters"] = st.data_editor(
             frames["emitters"],
@@ -850,8 +978,7 @@ def main() -> None:
                 t["col_connections"],
                 frames["connections"].columns,
                 number=True,
-                text={"emitter_id", "sink_id"},
-                select={"mode": ["pipeline", "truck", "rail", "marine"]},
+                text={"emitter_id", "route_edge_id", "sink_id"},
             ),
         )
 
@@ -937,6 +1064,7 @@ def main() -> None:
                 st.success(t["applied_ok"])
             except Exception as exc:  # noqa: BLE001 - surfaced to the user
                 st.session_state.pop("result", None)
+                st.session_state["error"] = str(exc)
                 st.error(t["scenario_invalid_short"].format(error=exc))
 
     result = st.session_state.get("result")
