@@ -236,7 +236,7 @@ def entity_index(scenario: ScenarioConfig) -> list[dict[str, str]]:
             {
                 "stakeholder": "storage",
                 "id": sink.id,
-                "label": f"{sink.name} (operater skladišta)",
+                "label": f"{sink.name} (storage operator)",
             }
         )
     for system in scenario.geothermal_systems:

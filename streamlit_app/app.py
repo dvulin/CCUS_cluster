@@ -44,10 +44,10 @@ MODE_COLOURS = {
 }
 
 MODE_LABELS = {
-    "pipeline": "Cjevovod",
-    "truck": "Kamion",
+    "pipeline": "Pipeline",
+    "truck": "Truck",
     "rail": "Ĺ˝eljeznica",
-    "marine": "Brod",
+    "marine": "Marine",
 }
 
 
@@ -742,15 +742,15 @@ def build_map_figure(snapshot, scenario: ScenarioConfig):
         if any(edge["mode"] == mode for edge in snapshot.edges)
     ]
     handles += [
-        plt.Line2D([0], [0], marker="o", color="none", markerfacecolor="#2c3e50", markersize=7, label="Emiter"),
-        plt.Line2D([0], [0], marker="s", color="none", markerfacecolor="#c0392b", markersize=7, label="Skladište"),
-        plt.Line2D([0], [0], marker="^", color="none", markerfacecolor="#2980b9", markersize=7, label="Luka"),
+        plt.Line2D([0], [0], marker="o", color="none", markerfacecolor="#2c3e50", markersize=7, label="Emitter"),
+        plt.Line2D([0], [0], marker="s", color="none", markerfacecolor="#c0392b", markersize=7, label="Storage"),
+        plt.Line2D([0], [0], marker="^", color="none", markerfacecolor="#2980b9", markersize=7, label="Port"),
     ]
     if handles:
         axis.legend(handles=handles, fontsize=6.5, loc="lower left", frameon=False, ncol=2)
-    axis.set_xlabel("Sloj u mreži (0 = emiteri)")
-    axis.set_ylabel("Pozicija unutar sloja")
-    axis.set_title(f"Transportna mreža, {snapshot.year}.")
+    axis.set_xlabel("Network layer (0 = emitters)")
+    axis.set_ylabel("Position within the layer")
+    axis.set_title(f"Transport network, {snapshot.year}.")
     axis.grid(alpha=0.18, linewidth=0.4)
     figure.tight_layout()
     return figure
@@ -776,7 +776,7 @@ def main() -> None:
     st.set_page_config(page_title="CCUS cluster", layout="wide")
 
     if "language" not in st.session_state:
-        st.session_state["language"] = "hr"
+        st.session_state["language"] = "en"
     t = strings(st.session_state["language"])
     st.title(t["app_title"])
 
@@ -784,9 +784,9 @@ def main() -> None:
         st.header("CCUS cluster")
         language = st.selectbox(
             t.get("language", "Jezik"),
-            ["hr", "en"],
-            format_func=lambda code: {"hr": "Hrvatski", "en": "English"}[code],
-            index=["hr", "en"].index(st.session_state["language"]),
+            ["en", "hr"],
+            format_func=lambda code: {"en": "English", "hr": "Hrvatski"}[code],
+            index=["en", "hr"].index(st.session_state["language"]),
             key="language",
         )
         t = strings(st.session_state["language"])

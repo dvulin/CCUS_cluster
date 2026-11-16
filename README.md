@@ -657,99 +657,75 @@ način povećanja protoka tijekom radnih sati i zajednički raspored opreme.
 
 ---
 
-## `ccus_core` – UI-agnosticni engine (grana `feat/ccus-core`)
+## `ccus_core` – UI-agnostic engine (branch `GT-CCUS-graph-streamlit`)
 
-`ccus_core` je novi, samostalni Python paket koji razdvaja fiziku, rutiranje i
-financije od prezentacijskog sloja. Ne ovisi o `streamlit`, `matplotlib`,
-`tkinter` ni `xlwings`; može ga koristiti Streamlit, desktop aplikacija, Excel
-dodatak ili Jupyter.
+`ccus_core` is a standalone Python package that separates physics, routing and finance
+from the presentation layer. It does not depend on `streamlit`, `matplotlib`, `tkinter`
+or `xlwings`; it can be used by Streamlit, a desktop app, an Excel add-in or Jupyter.
 
 ```
 ccus_core/
-├── models/       # Pydantic modeli: ScenarioConfig, Emitter, TransportEdge, StorageSink, GeothermalSystem
-├── network/      # time-dependent graf, multimodalno rutiranje, kapaciteti
-├── simulation/   # kronološki solver, promjenljivi dovod CO2, geotermalna kopulacija
-├── finance/      # CAPEX/OPEX, NPV/IRR (koristi postojeći CashFlowRunner)
-└── engine.py     # ScenarioEngine: config u JSON-u → SimulationResult
-streamlit_app/    # samo UI: vremenska os, karta mreže, obrasci
-tests/            # pytest (uključujući golden regresiju legacy ScenarioRunnera)
+├── models/       # Pydantic models: ScenarioConfig, Emitter, TransportEdge, StorageSink, ...
+├── network/      # time-dependent graph, routing, hub pressure cascade
+├── simulation/   # chronological solver, variable-rate reservoir, geothermal coupling
+├── finance/      # CAPEX/OPEX, NPV/IRR (reuses the existing CashFlowRunner)
+└── engine.py     # ScenarioEngine: JSON config in → SimulationResult out
+streamlit_app/    # UI only: timeline, network map, editors
+tests/            # pytest suite, including the legacy golden regression
 ```
 
-### Pokretanje
+### Running
 
 ```powershell
-# novi engine + UI
-python -m streamlit run streamlit_app/app.py
-
-# testovi jezgre
-python -m pytest tests -q
-
-# testovi + golden regresija legacy rada (~45 s)
-python -m pytest tests -q --runslow
+python -m streamlit run streamlit_app/app.py      # UI → http://localhost:8501
+python -m pytest tests -q                         # core suite
+python -m pytest tests -q --runslow               # + legacy golden regression
 ```
 
-### Primjer scenarija
+### Demo scenario
 
-`inputs/examples/ccus_cluster_v1.json` opisuje tri emitera s odmaknutim
-početkom rada (NEXE 2028., Plomin 2031., Sisak 2035.), kamionsku dionicu koja se
-2031. nadograđuje u cjevovod, željezničku i pomorsku dionicu te dvije lokacije
-skladištenja (Poljana s ležištem, Jugo bez ležišnog modela).
+`inputs/examples/cluster_three_emitters.json` (default) has three emitters with
+staggered onboarding (Holcim 2028, Plomin 2030, NEXE 2028) and a hub chain: Holcim
+and Plomin share a 200 km trunk to Ivanić, and the flow switches to DSA Poljana once
+Ivanić is full, while NEXE uses a separate route to DSA Drava.
 
-Referentni rezultat na tom scenariju: 9.634.400 t usmjereno i pohranjeno,
-0.27 mlrd EUR transportnog troška, NPV −1.32 mlrd EUR. U 2028.–2030. kamionska
-dionica propušta 280.000 t/god, a nakon 2043. usko grlo je pomorska dionica
-(81.600 t/god zbog kapaciteta brodova i vremenskih uvjeta).
+`inputs/examples/croatia_cluster_2025_2050.json` is the 14-emitter workbook import.
 
-Detalji: `docs/ARCHITECTURE_ccus_core.md`.
+Details: `docs/ARCHITECTURE_ccus_core.md` and `docs/SKILL_ccus_app.md`.
 
-### Streamlit aplikacija
+### Streamlit application
 
 ```powershell
 C:\Users\dvulin\anaconda3\python.exe -m streamlit run streamlit_app/app.py
 # → http://localhost:8501
 ```
 
-Jezik (hrvatski / engleski) bira se u sidebaru; svi su tekstovi u
-`streamlit_app/i18n.py` (UTF-8, bez ovisnosti o konzoli). Preuzimanje CSV-a
-koristi UTF-8 s BOM-om (`utf-8-sig`) da Excel ispravno prikaže hrvatske znakove.
+The UI defaults to English; Croatian is available from the sidebar. All strings live in
+`streamlit_app/i18n.py` (UTF-8, no console dependency). CSV export uses UTF-8 with BOM
+(`utf-8-sig`) so Excel shows diacritics correctly.
 
-Kartica **Ulazi** sadrži uređive tablice za sve dionike: emitere (id, naziv, početna
-godina, vjerojatnost implementacije, krivulja emisija, capture kapacitet/CAPEX/OPEX),
-pristupe emiter → skladište (način, udaljenost, kapacitet, CAPEX, OPEX, početna
-godina), skladišta (kapacitet, dubina, poroznost, propusnost, CAPEX/OPEX, monitoring)
-i geotermalne sustave. Nove emitere, pristupe i skladišta dodaje se retkom na dnu
-tablice; klik na „Primijeni i pokreni" validira i pokreće cijelu vremensku os.
-Kartice *Sažetak*, *Mreža*, *Skladište*, *Ekonomika* i *Tablice* prikazuju rezultate,
-a slider „Vremenska os" mijenja prikaz po godini.
+The **Inputs** tab holds editable tables for every stakeholder: routes (legs between
+nodes and hubs), emitters (activation, curve, capture), storage sites (capacity, depth,
+porosity, permeability, monitoring) and the emitter → route → storage links. Results are
+shown in the *Summary*, *Emitters*, *Network*, *Storage*, *Economics* and *Tables* tabs,
+with a timeline slider that selects the displayed year.
 
 ### Whitepaper
 
-`docs/whitepaper/build_whitepaper.py` regenerates the 3-page technical
-whitepaper (`GT-CCUS_whitepaper.docx`) and its figures from the real model
-results:
+`docs/whitepaper/build_whitepaper.py` regenerates the 3-page technical whitepaper
+(`GT-CCUS_whitepaper.docx`) and its figures from the real model results:
 
 ```powershell
 C:\Users\dvulin\anaconda3\python.exe docs\whitepaper\build_whitepaper.py
 ```
 
-### Više emitera po skladištu i obrnuto
+### Named scenarios
 
-`ScenarioConfig.connections` definira svaki pristup emiter → skladište zasebno
-(može više skladišta po emiteru, više emitera po skladištu, i **nezavisna
-početna godina po paru**); validator ih pretvara u transportne dionice.
-`storage_defaults` daje ležišni model za svako novo DSA/DHF skladište:
-poroznost 0,20, propusnost 100 mD (1e-13 m²), dubina 1500 m.
+Scenarios can be saved under a chosen name (default `scenario_001`, `scenario_002`, …) in
+`inputs/scenarios`; the repository is `ccus_core/io/scenario_repository.py`.
 
-### Uvoz radne knjige i kanonski JSON
+### Storage defaults
 
-```powershell
-# Excel -> JSON (jednosmjerno; radna knjiga se ne mijenja)
-C:\Users\dvulin\anaconda3\python.exe -c "from ccus_core.io.excel_import import build_scenario; from ccus_core.io import dump_file; dump_file(build_scenario('docs/examples/CCS TABLICE 2015-2022 example.xlsx'), 'inputs/examples/croatia_cluster_2025_2050.json')"
-```
-
-`inputs/examples/croatia_cluster_2025_2050.json` je kanonski, kompaktni oblik
-ulaza (**189 redaka** za 14 emitera i 3 skladišta): jedan blok po redu, a
-jedinice i objašnjenja nalaze se u legendi `_comments` na vrhu. Zadane vrijednosti
-se ne zapisuju (samo se mijenja ono što odstupa od defaulta), a `edges` se
-obnavljaju iz `connections`. Stari „verbose" zapis (`value`/`unit`/`comment` po
-listu) i dalje je dostupan: `dump(scenario, style="verbose")`.
+Every sink without explicit reservoir properties receives the default model
+(porosity 0.20, permeability 100 mD = 1e-13 m², depth 1500 m); the effective capacity is
+the smaller of the nominal capacity and that model's limit.
