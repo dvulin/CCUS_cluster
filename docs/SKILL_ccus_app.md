@@ -2,19 +2,25 @@
 
 **Purpose.** Build and maintain the UI-agnostic CCUS engine (`ccus_core`) and its
 Streamlit front end (`streamlit_app`).  Source: <https://github.com/dvulin/CCUS_cluster>
-(branch `gt-ccs-streamlit` upstream; work happens on local `GT-CCUS-graph-streamlit`).
+(upstream branch `gt-ccs-streamlit`; work happens on local `GT-CCUS-graph-streamlit`).
 
 ## 1. Layout
 
 ```
 ccus_cluster/
-├── ccus_core/            # engine: models/ network/ simulation/ finance/ io/ engine.py
+├── ccus_core/            # engine
+│   ├── models/           # Pydantic data model (no I/O, no UI)
+│   ├── network/          # graph, routing, hub pressure cascade
+│   ├── simulation/       # solver, reservoir, geothermal, pressures, adapters
+│   ├── finance/          # cash-flow adapter, per-stakeholder statements
+│   ├── io/               # compact JSON, named scenarios, workbook import
+│   └── engine.py         # ScenarioEngine facade
 ├── engineering/          # legacy physics (MaterialBalance, VFP, Geothermal, Power, Pipeline)
-├── economics/            # audited cash-flow runner (CashFlowRunner)
-├── inputs/examples/      # scenarios (compact JSON) – the stored inputs
-├── streamlit_app/        # app.py + i18n.py (UI only, imports ccus_core)
-├── tests/                # pytest suite (no UI required)
-└── docs/                 # ARCHITECTURE_ccus_core.md, whitepaper/
+├── economics/            # audited cash-flow runner
+├── inputs/examples/      # stored scenarios (JSON)
+├── streamlit_app/        # app.py + i18n.py (UI only)
+├── tests/                # pytest suite (no UI needed)
+└── docs/                 # architecture, skill, whitepaper, tools_used.txt
 ```
 
 Layering rule: `engineering`/`economics` are imported **by** `ccus_core`, never the
@@ -24,7 +30,7 @@ reverse; `ccus_core` never imports Streamlit/matplotlib/tkinter/xlwings.
 
 ```powershell
 $py = 'C:\Users\dvulin\anaconda3\python.exe'
-& $py -m pytest tests -q              # fast suite
+& $py -m pytest tests -q              # fast suite (89 tests)
 & $py -m pytest tests -q --runslow    # + legacy golden regression
 & $py -m streamlit run streamlit_app/app.py     # → http://localhost:8501
 & $py docs\whitepaper\build_whitepaper.py       # regenerate the whitepaper
@@ -34,7 +40,7 @@ $py = 'C:\Users\dvulin\anaconda3\python.exe'
 
 | Concept | Where | Notes |
 |---|---|---|
-| Scenario document | `models/scenario.py` | root; `start_year`, `end_year`, `nodes`, `emitters`, `edges`, `connections`, `storage_sinks`, `geothermal_systems`, `economics`, `policy` |
+| Scenario document | `models/scenario.py` | `start_year`, `end_year`, `nodes`, `emitters`, `edges`, `connections`, `storage_sinks`, `geothermal_systems`, `economics`, `policy` |
 | Emission curve | `models/emitter.py` | `constant`, `piecewise_linear`, `power_law` (`E0 + b·(t−t₀)^c`, `b=a·E0`), `polynomial` |
 | Onboarding | `models/emitter.py` | `activation_year` or `implementation_probability` (1.0→2026, 0.5→2028, 0.1→2033) |
 | Transport state | `models/edge.py` | `EdgeState` per year window; `resolve_state(year, cumulative_mass_t, fired_upgrades)` |
@@ -52,9 +58,12 @@ $py = 'C:\Users\dvulin\anaconda3\python.exe'
    leftovers reported as `unallocated`;
 3. `simulation/reservoir.py::VariableRateReservoir` inverts `m_CO2(p)` (no physics change)
    and recomputes BHP at the *local* rate;
+3b. `network/pressure.py` + `simulation/pressures.py` → hub pressure cascade
+    `p[i] = p[i+1] + dp_i(flow_i)` from the 10 bar storage target upwards;
 4. `simulation/geothermal.py` evaluates the doublet at **that year's pressure**;
 5. `finance/cashflow.py` builds the `CashFlowRunner` config (CAPEX schedules, modal OPEX);
-6. `finance/stakeholders.py` splits the same flows per party (emitter, transport, storage, geothermal).
+6. `finance/stakeholders.py` splits the same flows per party (emitter, transport,
+   storage, geothermal) and exposes per-entity timeseries.
 
 ## 5. Conventions
 
@@ -70,18 +79,24 @@ $py = 'C:\Users\dvulin\anaconda3\python.exe'
 E0/a/c, capture capacity/CAPEX/OPEX) or an object in the JSON `emitters` list.
 
 **Add a sink** – *Skladišta* table (capacity, depth, φ, k, CAPEX, OPEX, monitoring),
-plus `connections` rows that point at it.
+plus `connections` rows (or `edges` through hubs) that point at it.
 
-**Add a transport mode** – extend `TransportMode` + `EdgeState` design (pipeline/road/marine)
-and the cost rules in `finance/cashflow.py`.
+**Add a hub** – a junction node with a booster station; legs *emitter → hub*,
+*hub → hub*, *hub → storage* are plain edges with `distance_km` and a pipeline design.
+The cascade in `network/pressure.py` then returns the required pressure at every node.
 
-**Add a hub/booster** *(planned)* – new node kind `hub` with a booster station and a
-backward pressure cascade (see §7).
+**Add a transport mode** – extend `TransportMode` + `EdgeState` design
+(pipeline/road/marine) and the cost rules in `finance/cashflow.py`.
+
+**Compression duty** – the emitter that joined last carries the shared trunk; the
+pressure table shows why (`simulation/pressures.py`).
 
 ## 7. Known gaps (do not promise these)
 
-* booster/**hub** nodes and per-node pressure cascade (emitter must deliver the pressure
-  required by the next hub so that the storage arrives above the 10 bar minimum);
+* hub as a **first-class node kind with a real booster station** (CAPEX/OPEX, and the
+  ability to *raise* pressure, not only to consume it);
+* **buffer storage** for batch modes (ship, truck, rail) where continuous delivery
+  is impossible;
 * monthly resolution (`step` is validated but only `yearly` is solved);
 * real coordinates / true connectivity for the map (schematic today);
 * DHF reservoir data for Ivanić / Stružec / Boksic (capacity-only sinks);
@@ -90,9 +105,11 @@ backward pressure cascade (see §7).
 ## 8. Verification checklist
 
 ```powershell
-& $py -m pytest tests -q --runslow     # 85 tests, ~15 s
+& $py -m pytest tests -q --runslow     # 89 tests, ~15 s
 & $py -m streamlit run streamlit_app/app.py   # then: Apply → timeline → tabs
 ```
 
 Golden baseline (legacy `ScenarioRunner`): 9.10 Mt stored, 276.0935 bar final pressure,
 NPV −481.6 M€ — if these move, the physics changed.
+
+Tools and absolute paths: `docs/tools_used.txt`.
