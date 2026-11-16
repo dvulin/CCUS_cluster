@@ -55,7 +55,7 @@ class RouteGeometry:
         return (min(self.elevations_m), max(self.elevations_m))
 
     def wgs84(self) -> list[tuple[float, float]]:
-        """Polyline in WGS84 (best effort, depends on the CRS assumption)."""
+        """Polyline in WGS84, converted from HTRS96/TM (EPSG:3765)."""
 
         return [crs.to_wgs84(x, y) for x, y in self.projected]
 

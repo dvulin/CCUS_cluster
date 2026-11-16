@@ -2,9 +2,8 @@
 
 The route geometries shipped with the STRATEGY CCUS package are projected in
 metres on the Croatian national grid (HTRS96/TM, EPSG:3765: central meridian
-15°E, false easting 2 500 000 m, scale 0.9999, GRS80).  That assignment is an
-**assumption to be confirmed** against a known emitter; every conversion here is
-reversible and lives in one place, so a wrong assumption is a one-line fix.
+15°E, false easting 2 500 000 m, scale 0.9999, GRS80, axis order X=northing,
+Y=easting).  The CRS is **confirmed** for this data set.
 
 Formulas: Snyder (USGS PP-1395) Transverse Mercator, series to A⁵/D⁶, with a
 consistent e²-based meridional arc in both directions.  Accuracy is millimetres
@@ -22,7 +21,7 @@ _LON0 = 15.0
 _X0 = 2_500_000.0
 _Y0 = 0.0
 _K0 = 0.9999
-CRS_NAME = "EPSG:3765 (HTRS96/TM, assumed)"
+CRS_NAME = "EPSG:3765 (HTRS96/TM)"
 
 _E2 = 2.0 * _F - _F * _F
 _E4 = _E2 * _E2
@@ -130,7 +129,7 @@ def to_wgs84(northing: float, easting: float) -> tuple[float, float]:
 
 
 def is_projected_crs_3765() -> bool:
-    """The CRS assumption used for the shipped geometries."""
+    """The CRS of the shipped geometries (confirmed: HTRS96/TM)."""
 
     return True
 

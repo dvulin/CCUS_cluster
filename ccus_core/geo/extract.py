@@ -9,7 +9,7 @@ The output folder contains:
 * ``routes.geojson``      – every pipeline route (WGS84 geometry + projected
   coordinates, elevation range, land-use shares, cumulative cost),
 * ``hubs.geojson``        – hub points with their transport options,
-* ``manifest.json``       – provenance, CRS assumption, counts,
+* ``manifest.json``       – provenance, CRS, counts,
 * ``README.md``           – how to reuse the data.
 
 Tier 2 (geopandas/pyproj) can read the same folder without the original package.
@@ -56,10 +56,10 @@ def extract(package: str | Path, out_dir: str | Path) -> ExtractResult:
     manifest = {
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "source_package": str(package),
-        "crs_assumption": crs.CRS_NAME,
+        "crs": crs.CRS_NAME,
         "crs_note": (
-            "Projected coordinates are stored as-is; WGS84 conversion assumes "
-            "HTRS96/TM (EPSG:3765) and must be confirmed against a known emitter."
+            "Projected coordinates are HTRS96/TM (EPSG:3765, X=northing, "
+            "Y=easting); WGS84 is derived with ccus_core.geo.crs."
         ),
         "routes": len(routes),
         "hubs": len(hubs),
@@ -127,7 +127,7 @@ Generated from `{manifest['source_package']}`.
 |---|---|
 | routes | {manifest['routes']} |
 | hubs | {manifest['hubs']} |
-| CRS assumption | {manifest['crs_assumption']} |
+| CRS | {manifest['crs']} |
 | WGS84 | converted with `ccus_core.geo.crs` (Krüger series) |
 
 {manifest['crs_note']}

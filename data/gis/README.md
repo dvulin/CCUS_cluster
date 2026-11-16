@@ -6,10 +6,10 @@ Generated from `..\_mvp_zip\MVProbni_01_B_x`.
 |---|---|
 | routes | 12 |
 | hubs | 33 |
-| CRS assumption | EPSG:3765 (HTRS96/TM, assumed) |
+| CRS | EPSG:3765 (HTRS96/TM) |
 | WGS84 | converted with `ccus_core.geo.crs` (Krüger series) |
 
-Projected coordinates are stored as-is; WGS84 conversion assumes HTRS96/TM (EPSG:3765) and must be confirmed against a known emitter.
+Projected coordinates are HTRS96/TM (EPSG:3765, X=northing, Y=easting); WGS84 is derived with `ccus_core.geo.crs`.
 
 ## Files
 
