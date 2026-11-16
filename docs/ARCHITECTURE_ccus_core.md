@@ -266,6 +266,21 @@ Every storage sink can declare ``geothermal_coupled`` **and**
 system, a default doublet is created from that year onwards.  The coupling is
 evaluated once per year against that year's storage pressure (see §5).
 
+### 9.10 Hub (booster) nodes – planned
+
+Accepted for the next iteration:
+
+* a new node kind **hub** that carries a booster/compressor station (pressure
+  boost, CAPEX, OPEX, availability);
+* explicit distances **emitter → hub**, **hub → hub** and **hub → storage**;
+* a **backward pressure cascade**: every emitter must deliver CO2 at the pressure
+  required at the next hub.  For the first hub in a chain that requirement is the
+  pressure needed to arrive at the storage site with a positive pressure above the
+  default minimum (10 bar).  Each hub between emitter and storage adds its own
+  boost, so the required delivery pressure decreases along the chain.
+
+Until this exists, edges carry no pressure state and the map is schematic only.
+
 ## 10. What is deliberately not done yet
 
 * monthly resolution (the solver is yearly; `ScenarioConfig.step` accepts `monthly`

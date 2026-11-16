@@ -27,6 +27,24 @@ import pandas as pd
 
 from ccus_core.models import ScenarioConfig
 
+try:  # the audited cash-flow module owns the canonical cost columns
+    from economics.cash_flow_runner import COST_LINE_ITEM_COLUMNS
+except Exception:  # pragma: no cover - model-only environment
+    COST_LINE_ITEM_COLUMNS = (
+        "capture_capex",
+        "capture_opex",
+        "transport_capex",
+        "transport_opex",
+        "compressor_capex",
+        "compressor_opex",
+        "storage_capex",
+        "storage_opex",
+        "geothermal_capex",
+        "geothermal_opex",
+        "monitoring",
+        "electricity_purchase",
+    )
+
 STAKEHOLDER_LABELS = {
     "emitter": "Emitter",
     "transport": "Transport operator",
@@ -193,6 +211,125 @@ def stakeholder_summary(table: pd.DataFrame) -> pd.DataFrame:
 
 
 # --------------------------------------------------------------------- helpers
+def entity_index(scenario: ScenarioConfig) -> list[dict[str, str]]:
+    """List every stakeholder entity that can be inspected on its own."""
+
+    entities: list[dict[str, str]] = []
+    for emitter in scenario.emitters:
+        entities.append(
+            {
+                "stakeholder": "emitter",
+                "id": emitter.id,
+                "label": f"{emitter.name} (emitter)",
+            }
+        )
+    for edge in scenario.edges:
+        entities.append(
+            {
+                "stakeholder": "transport",
+                "id": edge.id,
+                "label": f"{edge.name} (operater prijevoza)",
+            }
+        )
+    for sink in scenario.storage_sinks:
+        entities.append(
+            {
+                "stakeholder": "storage",
+                "id": sink.id,
+                "label": f"{sink.name} (operater skladišta)",
+            }
+        )
+    for system in scenario.geothermal_systems:
+        entities.append(
+            {
+                "stakeholder": "geothermal",
+                "id": system.id,
+                "label": f"{system.name} (operater geotermalne)",
+            }
+        )
+    return entities
+
+
+def entity_statement(
+    table: pd.DataFrame,
+    stakeholder: str,
+    stakeholder_id: str,
+    *,
+    discount_rate: float | None = None,
+) -> dict[str, object]:
+    """Year-by-year statement for one entity.
+
+    Returns a dict with ``years``, ``items`` (``line item -> [values]``),
+    ``net_by_year`` and the totals (CAPEX, OPEX, tariffs, revenue, net and – when
+    a discount rate is given – the entity's NPV).
+    """
+
+    if table.empty:
+        return {"years": [], "items": {}, "net_by_year": [], "totals": {}}
+
+    subset = table[
+        (table["stakeholder"] == stakeholder) & (table["stakeholder_id"] == stakeholder_id)
+    ]
+    years = sorted(int(year) for year in subset["year"].unique())
+    items: dict[str, list[float]] = {}
+    for year in years:
+        rows = subset[subset["year"] == year]
+        for line_item in LINE_ITEMS:
+            values = rows.loc[rows["line_item"] == line_item, "amount_eur"]
+            items.setdefault(line_item, []).append(float(values.sum()) if not values.empty else 0.0)
+
+    net_by_year = [
+        float(sum(items[line][index] for line in LINE_ITEMS if line in items))
+        for index in range(len(years))
+    ]
+    totals = {
+        line: float(sum(values)) for line, values in items.items() if line in LINE_ITEMS
+    }
+    totals["net"] = float(sum(net_by_year))
+
+    npv: float | None = None
+    if discount_rate is not None and years:
+        npv = float(
+            sum(
+                amount / ((1.0 + float(discount_rate)) ** (year - years[0]))
+                for year, amount in zip(years, net_by_year)
+            )
+        )
+    return {
+        "years": years,
+        "items": items,
+        "net_by_year": net_by_year,
+        "totals": totals,
+        "npv": npv,
+    }
+
+
+def cumulative_costs(cash_flow: pd.DataFrame) -> pd.DataFrame:
+    """Cumulative cost per category (positive numbers, for charting)."""
+
+    columns = [column for column in COST_LINE_ITEM_COLUMNS if column in cash_flow.columns]
+    if not columns:
+        return pd.DataFrame({"year": cash_flow.get("year", [])})
+    costs = cash_flow[["year"] + columns].copy()
+    costs[columns] = costs[columns].abs().cumsum()
+    costs["total"] = costs[columns].sum(axis=1)
+    return costs
+
+
+def cost_breakdown_for_year(cash_flow: pd.DataFrame, year: int) -> dict[str, float]:
+    """Absolute cost per category in one year (for a pie chart)."""
+
+    row = cash_flow.loc[cash_flow["year"] == int(year)]
+    if row.empty:
+        return {}
+    values = row.iloc[0]
+    return {
+        column: abs(float(values[column]))
+        for column in COST_LINE_ITEM_COLUMNS
+        if column in cash_flow.columns and abs(float(values[column])) > 0.0
+    }
+
+
 def _schedule_from_capture(scenario: ScenarioConfig, years: list[int]) -> dict[str, dict[int, float]]:
     schedule: dict[str, dict[int, float]] = {}
     for emitter in scenario.emitters:
@@ -228,4 +365,8 @@ __all__ = [
     "LINE_ITEMS",
     "build_stakeholder_table",
     "stakeholder_summary",
+    "entity_index",
+    "entity_statement",
+    "cumulative_costs",
+    "cost_breakdown_for_year",
 ]

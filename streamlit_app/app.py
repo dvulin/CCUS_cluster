@@ -963,6 +963,80 @@ def main() -> None:
         with st.expander(t["stakeholders_detail"], expanded=False):
             st.dataframe(table, width="stretch")
 
+        import pandas as pd
+
+        # ------------------------------------------------ cumulative cost
+        from ccus_core.finance import (
+            cost_breakdown_for_year,
+            cumulative_costs,
+            entity_index,
+            entity_statement,
+        )
+
+        st.markdown(f"#### {t['cum_cost']}")
+        cumulative = cumulative_costs(result.cash_flow)
+        cost_columns = [column for column in cumulative.columns if column not in {"year", "total"}]
+        st.line_chart(cumulative.set_index("year")[cost_columns])
+        st.caption(t["cum_cost_note"])
+
+        # ------------------------------------------------ cost pie (last year)
+        st.markdown(f"#### {t['pie_last']}")
+        last_year = int(cumulative["year"].iloc[-1])
+        breakdown = cost_breakdown_for_year(result.cash_flow, last_year)
+        if breakdown:
+            labels = list(breakdown)
+            values = [breakdown[key] for key in labels]
+            figure, axis = plt.subplots(figsize=(5.6, 3.4))
+            axis.pie(
+                values,
+                labels=labels,
+                autopct="%1.1f%%",
+                startangle=90,
+                counterclock=False,
+                textprops={"fontsize": 7.5},
+                colors=plt.get_cmap("tab20").colors[: len(labels)],
+            )
+            axis.set_title(f"{t['pie_last']} ({last_year}.)")
+            figure.tight_layout()
+            st.pyplot(figure, width="stretch")
+            plt.close(figure)
+
+        # ------------------------------------------------ per-entity economics
+        st.markdown(f"#### {t['entity_select']}")
+        entities = entity_index(active_scenario)
+        if entities:
+            labels = [entity["label"] for entity in entities]
+            choice = st.selectbox(t["entity_select"], labels, key="entity_choice")
+            entity = next(item for item in entities if item["label"] == choice)
+            statement = entity_statement(
+                table,
+                entity["stakeholder"],
+                entity["id"],
+                discount_rate=float(active_scenario.economics.discount_rate) if active_scenario.economics else None,
+            )
+            if statement["years"]:
+                totals = statement["totals"]
+                columns = st.columns(4)
+                columns[0].metric(t["entity_capex"], f"{totals.get('capex', 0.0):,.0f} EUR")
+                columns[1].metric(t["entity_opex"], f"{totals.get('opex', 0.0):,.0f} EUR")
+                columns[2].metric(t["entity_transfers"], f"{totals.get('tariff_paid', 0.0) + totals.get('tariff_collected', 0.0):,.0f} EUR")
+                columns[3].metric(t["entity_net"], f"{totals.get('net', 0.0):,.0f} EUR")
+                if statement["npv"] is not None:
+                    st.metric(t["entity_npv"], f"{statement['npv']:,.0f} EUR")
+
+                entity_frame = pd.DataFrame(
+                    {
+                        "year": statement["years"],
+                        **{line: statement["items"][line] for line in statement["items"]},
+                        "net": statement["net_by_year"],
+                    }
+                ).set_index("year")
+                st.dataframe(entity_frame, width="stretch")
+                st.bar_chart(entity_frame[["net"]].rename(columns={"net": t["entity_net"]}))
+            else:
+                st.info(t["entity_empty"])
+
+
     with tables:
         st.markdown(f"#### {t['sec_routes']}")
         st.dataframe(result.routing_frame(), width="stretch")

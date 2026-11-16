@@ -42,6 +42,36 @@ def test_transfers_cancel_on_consolidation():
     assert consolidated < 0.0
 
 
+def test_entity_statements_and_charts_helpers():
+    from ccus_core import ScenarioEngine
+    from ccus_core.finance import (
+        cost_breakdown_for_year,
+        cumulative_costs,
+        entity_index,
+        entity_statement,
+    )
+
+    scenario = build_solver_scenario()
+    result = ScenarioEngine(scenario).run()
+    table = build_stakeholder_table(scenario, result)
+
+    entities = entity_index(scenario)
+    labels = {(item["stakeholder"], item["id"]) for item in entities}
+    assert ("emitter", "source") in labels
+    assert any(key[0] == "storage" for key in labels)
+
+    statement = entity_statement(table, "emitter", "source", discount_rate=0.05)
+    assert statement["years"]
+    assert statement["totals"]["tariff_paid"] < 0.0
+    assert statement["npv"] is not None
+
+    cumulative = cumulative_costs(result.cash_flow)
+    assert cumulative["total"].iloc[-1] >= cumulative["total"].iloc[0]
+
+    breakdown = cost_breakdown_for_year(result.cash_flow, int(result.cash_flow["year"].iloc[-1]))
+    assert isinstance(breakdown, dict)
+
+
 def test_emitter_pays_transport_and_injection_tariffs():
     from ccus_core import ScenarioEngine
 
