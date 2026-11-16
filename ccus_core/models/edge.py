@@ -268,6 +268,10 @@ class TransportEdge(CoreModel):
     from_node: Slug
     to_node: Slug
     bidirectional: bool = False
+    geometry_id: str | None = Field(
+        default=None,
+        description="Route geometry identifier in the extracted GIS data (ccus_core/geo).",
+    )
     states: list[EdgeState] = Field(min_length=1)
     upgrades: list[InfrastructureUpgrade] = Field(default_factory=list)
     notes: str | None = None

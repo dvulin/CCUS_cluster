@@ -7,6 +7,7 @@ from enum import Enum
 from pydantic import Field, model_validator
 
 from .base import CoreModel, Slug, positive, unit_fraction
+from .edge import TransportMode
 
 
 class NodeKind(str, Enum):
@@ -14,10 +15,38 @@ class NodeKind(str, Enum):
 
     EMITTER = "emitter"
     JUNCTION = "junction"
+    HUB = "hub"
     PORT = "port"
     STORAGE = "storage"
     GEOTHERMAL = "geothermal"
     OFFSHORE_TERMINAL = "offshore_terminal"
+
+
+class Hub(CoreModel):
+    """A collection/booster hub: what can leave it, and at which conditions.
+
+    The hub is the vertex that makes the pressure cascade and the modal choice
+    explicit: it records the modes available at the site, the pressure and
+    temperature the CO2 is expected to have, the processing that must happen
+    there, and the storage sites it can feed.
+    """
+
+    name: str = Field(min_length=1)
+    transport_options: list[TransportMode] = Field(
+        default_factory=lambda: [TransportMode.PIPELINE]
+    )
+    expected_pressure_bar: float | None = Field(default=None, gt=0.0)
+    expected_temperature_c: float | None = None
+    processing: list[str] = Field(
+        default_factory=list,
+        description="e.g. purification, drying, compression, pumping",
+    )
+    storage_options: list[str] = Field(
+        default_factory=list,
+        description="storage site ids reachable from this hub",
+    )
+    port_node_id: Slug | None = None
+    notes: str | None = None
 
 
 class GeoLocation(CoreModel):
@@ -63,6 +92,7 @@ class Node(CoreModel):
     kind: NodeKind
     location: GeoLocation = GeoLocation()
     port: PortHub | None = None
+    hub: Hub | None = None
     commissioning_year: int | None = None
     decommission_year: int | None = None
     notes: str | None = None

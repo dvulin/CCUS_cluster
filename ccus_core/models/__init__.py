@@ -16,7 +16,7 @@ from .edge import (
     UpgradeTrigger,
 )
 from .emitter import CaptureTechnology, CaptureUnit, EmissionCurve, Emitter
-from .node import GeoLocation, Node, NodeKind, PortHub
+from .node import GeoLocation, Hub, Node, NodeKind, PortHub
 from .policy import (
     DEFAULT_PRICE_SCENARIOS,
     CaptureCostParameters,

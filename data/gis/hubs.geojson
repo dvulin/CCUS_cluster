@@ -1,0 +1,567 @@
+{
+ "type": "FeatureCollection",
+ "name": "ccus_hubs",
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "hub_id": "FR1.CH.001",
+    "country": "FR1",
+    "lat": 48.58594,
+    "lon": 2.24504,
+    "storage_options": "Keuper Sud"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     2.24504,
+     48.58594
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "hub_id": "FR1.CH.002",
+    "country": "FR1",
+    "lat": 48.32964,
+    "lon": 2.68537,
+    "storage_options": "Keuper Sud"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     2.68537,
+     48.32964
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "hub_id": "FR1.CH.003",
+    "country": "FR1",
+    "lat": 48.10348,
+    "lon": 1.99328,
+    "storage_options": "Keuper Sud"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     1.99328,
+     48.10348
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "hub_id": "FR1.CH.004",
+    "country": "FR1",
+    "lat": 49.11948,
+    "lon": 2.28335,
+    "storage_options": "Donnemarie"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     2.28335,
+     49.11948
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "hub_id": "FR1.CH.005",
+    "country": "FR1",
+    "lat": 49.01181,
+    "lon": 2.60984,
+    "storage_options": "Donnemarie"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     2.60984,
+     49.01181
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "hub_id": "FR2.CH.001",
+    "country": "FR2",
+    "lat": 45.20987137,
+    "lon": 4.992960644,
+    "storage_options": "Haut d'Albaron_x000D_\nMas-de-Madame"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     4.992960644,
+     45.20987137
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "hub_id": "FR2.CH.002",
+    "country": "FR2",
+    "lat": 44.55462115,
+    "lon": 4.911299497,
+    "storage_options": "Haut d'Albaron_x000D_\nMas-de-Madame"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     4.911299497,
+     44.55462115
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "hub_id": "FR2.CH.003",
+    "country": "FR2",
+    "lat": 43.43183,
+    "lon": 4.90075,
+    "storage_options": "Haut d'Albaron_x000D_\nMas-de-Madame"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     4.90075,
+     43.43183
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "hub_id": "FR2.CH.004",
+    "country": "FR2",
+    "lat": 45.71256,
+    "lon": 4.83073,
+    "storage_options": "Haut d'Albaron_x000D_\nMas-de-Madame"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     4.83073,
+     45.71256
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "hub_id": "FR2.CH.005",
+    "country": "FR2",
+    "lat": 44.53341,
+    "lon": 4.72843,
+    "storage_options": "Haut d'Albaron_x000D_\nMas-de-Madame"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     4.72843,
+     44.53341
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "hub_id": "HR.CH.001",
+    "country": "HR",
+    "lat": 45.801824,
+    "lon": 16.125668,
+    "storage_options": "HR.SU.002, HR.SU.003, HR.SU.004, HR.SU.007, HR.SU.008, HR.SU.009, HR.SU.010, HR.SU.011, HR.SU.012"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     16.125668,
+     45.801824
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "hub_id": "HR.CH.002",
+    "country": "HR",
+    "lat": 45.515031,
+    "lon": 16.54492,
+    "storage_options": "HR.SU.002, HR.SU.003, HR.SU.004, HR.SU.007, HR.SU.008, HR.SU.009, HR.SU.010, HR.SU.011, HR.SU.012"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     16.54492,
+     45.515031
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "hub_id": "PL.CH.001",
+    "country": "PL",
+    "lat": 50.326,
+    "lon": 18.639889,
+    "storage_options": "Ocean"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     18.639889,
+     50.326
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "hub_id": "PL.CH.002",
+    "country": "PL",
+    "lat": 53.903056,
+    "lon": 14.251389,
+    "storage_options": "Ocean"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     14.251389,
+     53.903056
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "hub_id": "PL.CH.003",
+    "country": "PL",
+    "lat": 50.1054777,
+    "lon": 19.0137586,
+    "storage_options": "CCU,  Synthos"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     19.0137586,
+     50.1054777
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "hub_id": "PL.CH.004",
+    "country": "PL",
+    "lat": 50.0473266,
+    "lon": 18.7036484,
+    "storage_options": "Skocz\u00f3w PL.SU.003"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     18.7036484,
+     50.0473266
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "hub_id": "PL.CH.005",
+    "country": "PL",
+    "lat": 50.3427609,
+    "lon": 19.2603045,
+    "storage_options": "Cz\u0119stochowa"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     19.2603045,
+     50.3427609
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "hub_id": "PT.CH.001",
+    "country": "PT",
+    "lat": 39.68881,
+    "lon": -8.93436,
+    "storage_options": ""
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -8.93436,
+     39.68881
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "hub_id": "PT.CH.002",
+    "country": "PT",
+    "lat": 39.69116,
+    "lon": -8.94408,
+    "storage_options": ""
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -8.94408,
+     39.69116
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "hub_id": "PT.CH.003",
+    "country": "PT",
+    "lat": 38.51356,
+    "lon": -8.85604,
+    "storage_options": ""
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -8.85604,
+     38.51356
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "hub_id": "PT.CH.004",
+    "country": "PT",
+    "lat": 39.01367,
+    "lon": -8.96247,
+    "storage_options": ""
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -8.96247,
+     39.01367
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "hub_id": "PT.CH.005",
+    "country": "PT",
+    "lat": 40.07065,
+    "lon": -8.87382,
+    "storage_options": ""
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -8.87382,
+     40.07065
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "hub_id": "PT.CH.006",
+    "country": "PT",
+    "lat": 40.13969,
+    "lon": -8.85033,
+    "storage_options": ""
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -8.85033,
+     40.13969
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "hub_id": "PT.CH.007",
+    "country": "PT",
+    "lat": 39.7297,
+    "lon": -8.90049,
+    "storage_options": ""
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -8.90049,
+     39.7297
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "hub_id": "RO.CH.001",
+    "country": "RO",
+    "lat": 45.6845904923,
+    "lon": 27.1653451396,
+    "storage_options": "RO.SU.006; RO.SU.007; RO.SU.008; RO.SU.009"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     27.1653451396,
+     45.6845904923
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "hub_id": "RO.CH.002",
+    "country": "RO",
+    "lat": 45.273538685,
+    "lon": 27.9819631369,
+    "storage_options": "RO.SU.001; RO.SU.002; RO.SU.003; RO.SU.004; RO.SU.005; RO.SU.010; RO.SU.011; RO.SU.012; RO.SU.013; RO.SU.014; RO.SU.015"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     27.9819631369,
+     45.273538685
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "hub_id": "RO.CH.003",
+    "country": "RO",
+    "lat": 45.1898570444,
+    "lon": 28.7764018668,
+    "storage_options": "RO.SU.016; RO.SU.017; RO.SU.018; RO.SU.019; RO.SU.020; RO.SU.021; RO.SU.022;RO.SU.023"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     28.7764018668,
+     45.1898570444
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "hub_id": "SP.CH.001",
+    "country": "SP",
+    "lat": 41.221001,
+    "lon": -0.292927,
+    "storage_options": "SP.SU.027, SP.SU.007, SP.SU.012. SP, SU.015"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -0.292927,
+     41.221001
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "hub_id": "SP.CH.002",
+    "country": "SP",
+    "lat": 41.145998,
+    "lon": 1.229838,
+    "storage_options": "SP.SU.028"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     1.229838,
+     41.145998
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "hub_id": "SP.CH.003",
+    "country": "SP",
+    "lat": 41.460503,
+    "lon": 1.902994,
+    "storage_options": "SP.SU.028"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     1.902994,
+     41.460503
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "hub_id": "SP.CH.004",
+    "country": "SP",
+    "lat": 40.547878,
+    "lon": 0.424679,
+    "storage_options": "SP.SU.007, SP.SU.012, SP.SU.015, (SP.SU.001, SP.SU.002)"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     0.424679,
+     40.547878
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "hub_id": "SP.CH.005",
+    "country": "SP",
+    "lat": 40.992449,
+    "lon": -0.384019,
+    "storage_options": "SP.SU.027, SP.SU.007, SP.SU.012. SP, SU.015"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -0.384019,
+     40.992449
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "hub_id": "SP.CH.006",
+    "country": "SP",
+    "lat": 41.615313,
+    "lon": 0.657372,
+    "storage_options": "SP.SU.026, SP.SU.027, SP.SU.28, (SP.SU.016, SP.SU.020, SP.SU.023, SP.SU.24)"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     0.657372,
+     41.615313
+    ]
+   }
+  }
+ ]
+}

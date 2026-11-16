@@ -1146,7 +1146,16 @@ def main() -> None:
         st.dataframe(result.ledger, width="stretch")
 
     with network:
-        st.pyplot(build_map_figure(snapshot, active_scenario), width="stretch")
+        try:
+            from streamlit_app.map_layers import build_network_map
+
+            deck = build_network_map(snapshot, active_scenario)
+        except Exception:  # noqa: BLE001 - the interactive map is optional
+            deck = None
+        if deck is not None:
+            st.pydeck_chart(deck, width="stretch")
+        else:
+            st.pyplot(build_map_figure(snapshot, active_scenario), width="stretch")
         st.caption(t["net_help"])
         st.markdown(f"#### {t['sec_edges']}")
         st.dataframe(snapshot_frame(snapshot.edges), width="stretch")

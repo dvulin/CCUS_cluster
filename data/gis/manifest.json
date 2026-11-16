@@ -1,0 +1,22 @@
+{
+  "generated_at": "2026-11-16T02:47:12+00:00",
+  "source_package": "..\\_mvp_zip\\MVProbni_01_B_x",
+  "crs_assumption": "EPSG:3765 (HTRS96/TM, assumed)",
+  "crs_note": "Projected coordinates are stored as-is; WGS84 conversion assumes HTRS96/TM (EPSG:3765) and must be confirmed against a known emitter.",
+  "routes": 12,
+  "hubs": 33,
+  "route_ids": [
+    "P01",
+    "P02",
+    "P03",
+    "P04",
+    "P05",
+    "P05",
+    "P06",
+    "P07",
+    "P07",
+    "P08",
+    "P08",
+    "P09"
+  ]
+}
