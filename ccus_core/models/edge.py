@@ -274,6 +274,16 @@ class TransportEdge(CoreModel):
     )
     states: list[EdgeState] = Field(min_length=1)
     upgrades: list[InfrastructureUpgrade] = Field(default_factory=list)
+    total_distance_km: float | None = Field(
+        default=None,
+        ge=0.0,
+        description=(
+            "Total transport distance from this leg's origin to the storage site it "
+            "leads to, this leg included (length + the legs downstream of it). "
+            "Maintained by the Scenario designer from the link table; the solver and "
+            "the routing engine ignore it, so it can never change a result."
+        ),
+    )
     notes: str | None = None
 
     @model_validator(mode="after")
