@@ -23,8 +23,9 @@ The repository holds two entry points:
 
 ## Install
 
+Open a terminal in the repository root, then:
+
 ```powershell
-cd C:\Users\dvulin\Documents\DSH\sestan_diplomski\ccus_cluster
 py -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
