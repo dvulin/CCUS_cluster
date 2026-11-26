@@ -155,7 +155,9 @@ class ScenarioConfig(CoreModel):
                 if connection.route_edge_id is None and connection.edge_id() not in existing
             ]
             if missing:
-                self.edges = [*self.edges, *_edges_from_connections(self, missing)]
+                # in-place: assignment would re-run this validator (validate_assignment)
+                self.edges.extend(_edges_from_connections(self, missing))
+            self._refresh_derived_edges()
 
         for emitter in self.emitters:
             if emitter.node_id not in known_nodes:
@@ -197,6 +199,44 @@ class ScenarioConfig(CoreModel):
         duplicates = sorted({value for value in values if values.count(value) > 1})
         if duplicates:
             raise ValueError(f"duplicate {label} id(s): {', '.join(duplicates)}")
+
+    def _refresh_derived_edges(self) -> None:
+        """Rebuild the edges a connection fully defines, so they cannot go stale.
+
+        A connection owns the access it describes (emitter, sink, year, mode,
+        capacity and costs).  When such an edge is stored with a single state and no
+        upgrade, the connection is the authoritative source and the edge is rebuilt
+        from it - otherwise an edited connection would keep routing over the old
+        capacity.  Edges that carry more than a connection can express (a state
+        timeline, upgrades) and connections without a capacity are left untouched.
+        """
+
+        emitter_nodes = {emitter.id: emitter.node_id for emitter in self.emitters}
+        sink_nodes = {sink.id: sink.node_id for sink in self.storage_sinks}
+        by_id = {edge.id: edge for edge in self.edges}
+
+        replacements: dict[str, TransportEdge] = {}
+        for connection in self.connections:
+            if connection.route_edge_id is not None:
+                continue  # a route from the Routes table is authoritative itself
+            if connection.capacity_t_per_year is None:
+                continue  # the connection does not describe the asset completely
+            existing = by_id.get(connection.edge_id())
+            if existing is None or existing.upgrades or len(existing.states) != 1:
+                continue
+            if connection.emitter_id not in emitter_nodes or connection.sink_id not in sink_nodes:
+                continue
+            fresh = connection.to_edge(
+                from_node=emitter_nodes[connection.emitter_id],
+                to_node=sink_nodes[connection.sink_id],
+            )
+            if fresh != existing:
+                replacements[connection.edge_id()] = fresh
+        if replacements:
+            # in-place: assignment would re-run this validator (validate_assignment)
+            self.edges[:] = [
+                replacements.get(edge.id, edge) for edge in self.edges
+            ]
 
     # ------------------------------------------------------------------ helpers
     def years(self) -> list[int]:

@@ -210,3 +210,13 @@ cython_debug/
 
 # generated map preview
 docs/gis_preview.html
+
+# working database of the reference catalogues (rebuilt from json/*.json)
+data/ccus.sqlite3
+# timestamped copies written before a restore (data/backups/ccus_*.sqlite)
+data/backups/
+
+# generated UI test reports (dated, machine-specific)
+test-reports/
+# scratch directory listing
+dir.txt

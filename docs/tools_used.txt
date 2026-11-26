@@ -69,10 +69,10 @@ used while studying, extending and verifying the project in this workspace.
 | `ccus_core/simulation/geothermal.py` | geothermal doublet coupling |
 | `ccus_core/simulation/pressures.py` | annual pressure table per path |
 | `ccus_core/simulation/adapters.py` | duck-typed inputs for the legacy engineering classes |
-| `ccus_core/finance/cashflow.py` | cash-flow configuration |
+| `ccus_core/finance/cashflow.py` | CAPEX schedules, annual monitoring rates, CashFlowRunner config |
 | `ccus_core/finance/stakeholders.py` | per-party statements, entity views, cost charts |
-| `ccus_core/io/commented_json.py` | compact JSON input/output |
-| `ccus_core/io/scenario_repository.py` | named scenarios (`scenario_001`, …) |
+| `ccus_core/io/commented_json.py` | compact JSON input/output (quoted keys, edges kept) |
+| `ccus_core/io/scenario_repository.py` | named scenarios (`scenario_001`, …), directory confinement |
 | `ccus_core/io/excel_import.py` | workbook → scenario |
 
 ### Tests
@@ -86,10 +86,12 @@ used while studying, extending and verifying the project in this workspace.
 | `tests/test_routing.py` | bottlenecks, rerouting, offshore limits |
 | `tests/test_pressure_cascade.py` | hub pressure cascade and shared-flow recalculation |
 | `tests/test_solver.py` | end-to-end solver, physics equivalence |
-| `tests/test_stakeholders.py` | per-party economics and transfers |
-| `tests/test_scenario_repository.py` | named scenarios |
-| `tests/test_json_format.py` | compact JSON round-trip and line budget |
-| `tests/test_app_layer.py`, `tests/test_app_smoke.py` | UI data functions and Streamlit smoke test |
+| `tests/test_stakeholders.py` | per-party economics, transfers, Σ = consolidated reconciliation |
+| `tests/test_fix_numbers.py` | monitoring `rate × years`, upgrade CAPEX once, compressor sum, rate caps, flags |
+| `tests/test_geothermal_coupling.py` | engine doublet, one electricity credit, pump efficiency, availability |
+| `tests/test_scenario_repository.py` | named scenarios and directory confinement |
+| `tests/test_json_format.py` | compact JSON round-trip, quoted keys, line budget |
+| `tests/test_app_layer.py`, `tests/test_app_smoke.py` | Apply round-trip and Streamlit smoke test |
 | `tests/test_legacy_oracle.py` | golden regression of `services.ScenarioRunner` (needs `--runslow`) |
 
 ### Scenarios and documents (relative)

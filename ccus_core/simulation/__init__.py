@@ -11,7 +11,11 @@ from .adapters import (
     sink_defaults,
     well_inputs,
 )
-from .geothermal import GeothermalCoupling
+from .geothermal import (
+    GeothermalCoupling,
+    default_doublet_for_sink,
+    ensure_coupled_doublets,
+)
 from .pressures import pressure_table
 from .reservoir import CapacityCurve, VariableRateReservoir
 from .solver import ChronologicalSolver, SimulationResult
@@ -23,6 +27,8 @@ __all__ = [
     "GeothermalCoupling",
     "SimulationResult",
     "VariableRateReservoir",
+    "default_doublet_for_sink",
+    "ensure_coupled_doublets",
     "geothermal_inputs",
     "power_inputs",
     "power_inputs_for_sink",

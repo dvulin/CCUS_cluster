@@ -40,6 +40,14 @@ class RoutingResult(BaseModel):
     edge_flows: dict[str, float] = Field(default_factory=dict)
     sink_injections: dict[str, float] = Field(default_factory=dict)
     unallocated: dict[str, float] = Field(default_factory=dict)
+    rate_limited_sinks: list[str] = Field(
+        default_factory=list,
+        description="Sinks whose declared injection-rate cap stopped the allocation this year.",
+    )
+    capacity_limited_sinks: list[str] = Field(
+        default_factory=list,
+        description="Sinks whose remaining pore volume reached zero this year.",
+    )
     notes: list[str] = Field(default_factory=list)
 
     @property
@@ -92,8 +100,10 @@ class RoutingEngine:
         sink_nodes: set[str],
         *,
         fired_upgrades: Mapping[str, Mapping[str, int]] | None = None,
+        cumulative_mass: Mapping[str, float] | None = None,
     ) -> list[_Path]:
         fired = dict(fired_upgrades or {})
+        mass = dict(cumulative_mass or {})
         paths: list[_Path] = []
 
         def walk(node: str, visited: tuple[str, ...], edge_ids: list[str], bottleneck: float, tariff: float) -> None:
@@ -106,6 +116,7 @@ class RoutingEngine:
                     continue
                 state = edge.resolve_state(
                     year,
+                    cumulative_mass_t=mass.get(edge.id),
                     fired_upgrades=fired.get(edge.id, {}),
                 )
                 if state is None:
@@ -156,9 +167,19 @@ class RoutingEngine:
         supplies: Mapping[str, float],
         sink_remaining_capacity: Mapping[str, float],
         fired_upgrades: Mapping[str, Mapping[str, int]] | None = None,
+        cumulative_mass: Mapping[str, float] | None = None,
+        sink_injection_limits: Mapping[str, float] | None = None,
         edge_prior_flow: Mapping[str, float] | None = None,
     ) -> RoutingResult:
-        """Allocate ``supplies`` (t/yr) for one calendar year."""
+        """Allocate ``supplies`` (t/yr) for one calendar year.
+
+        ``fired_upgrades`` maps ``edge_id -> {upgrade_id: year the trigger fired}``
+        and is what makes a *conditional* (cumulative-mass) upgrade visible to the
+        router: the chronological solver records the firing year and feeds it back.
+        ``cumulative_mass`` is the mass already shipped through each edge, used to
+        evaluate a mass trigger in the year it is crossed.  ``sink_injection_limits``
+        caps the injection rate of a sink independently of its total capacity.
+        """
 
         result = RoutingResult(year=int(year))
         sink_nodes = self.graph.sink_nodes()
@@ -171,12 +192,23 @@ class RoutingEngine:
         for edge in self.graph.edges.values():
             state = edge.resolve_state(
                 year,
+                cumulative_mass_t=(cumulative_mass or {}).get(edge.id),
                 fired_upgrades=dict((fired_upgrades or {}).get(edge.id, {})),
             )
             residual_edge[edge.id] = 0.0 if state is None else state.effective_capacity_t_per_year()
 
-        residual_sink = {sink_id: float(value) for sink_id, value in sink_remaining_capacity.items()}
+        limits = {key: float(value) for key, value in (sink_injection_limits or {}).items()}
+        residual_sink: dict[str, float] = {}
+        total_residual: dict[str, float] = {}
+        for sink_id, value in sink_remaining_capacity.items():
+            cap = float(value)
+            limit = limits.get(sink_id)
+            total_residual[sink_id] = cap
+            if limit is not None:
+                cap = min(cap, limit)
+            residual_sink[sink_id] = cap
         injection_totals: dict[str, float] = dict.fromkeys(self.graph.sinks, 0.0)
+        rate_limited: set[str] = set()
 
         for emitter_id in sorted(supplies):
             remaining = float(supplies[emitter_id])
@@ -196,6 +228,7 @@ class RoutingEngine:
                     residual_edge,
                     sink_nodes,
                     fired_upgrades=fired_upgrades,
+                    cumulative_mass=cumulative_mass,
                 )
                 chosen = None
                 for path in paths:
@@ -205,6 +238,10 @@ class RoutingEngine:
                         continue
                     residual_capacity = residual_sink.get(sink.id, 0.0)
                     if residual_capacity <= 1e-9:
+                        # the sink still has pore volume but its well cannot take
+                        # more this year: record the rate limit for the UI
+                        if sink.id in limits and total_residual.get(sink.id, 0.0) > 1e-9:
+                            rate_limited.add(sink.id)
                         continue
                     chosen = (path, sink, residual_capacity)
                     break
@@ -232,6 +269,7 @@ class RoutingEngine:
                     residual_edge[edge_id] = residual_edge.get(edge_id, 0.0) - quantity
                     result.edge_flows[edge_id] = result.edge_flows.get(edge_id, 0.0) + quantity
                 residual_sink[sink.id] = residual_capacity - quantity
+                total_residual[sink.id] = total_residual.get(sink.id, 0.0) - quantity
                 injection_totals[sink.id] = injection_totals.get(sink.id, 0.0) + quantity
                 remaining -= quantity
 
@@ -239,6 +277,10 @@ class RoutingEngine:
                 result.unallocated[emitter_id] = remaining
 
         result.sink_injections = injection_totals
+        result.rate_limited_sinks = sorted(rate_limited)
+        result.capacity_limited_sinks = sorted(
+            sink_id for sink_id, value in total_residual.items() if value <= 1e-9
+        )
         if result.unallocated:
             result.notes.append(
                 "unrouted CO2: "
@@ -255,27 +297,35 @@ def route_timeline(
     *,
     injection_rate_limits: Mapping[str, float] | None = None,
     fired_upgrades: Mapping[int, Mapping[str, Mapping[str, int]]] | None = None,
+    cumulative_mass: Mapping[str, float] | None = None,
 ) -> list[RoutingResult]:
-    """Convenience helper: route a whole schedule while tracking sink capacity."""
+    """Convenience helper: route a whole schedule while tracking sink capacity.
+
+    ``injection_rate_limits`` caps the annual injection rate of a sink, and
+    ``cumulative_mass`` seeds the mass-trigger bookkeeping (per edge) so a
+    conditional upgrade can fire in the year its threshold is crossed.
+    """
 
     engine = RoutingEngine(graph)
     remaining = {sink_id: float(value) for sink_id, value in sink_capacity.items()}
     limits = dict(injection_rate_limits or {})
     fired_by_year = dict(fired_upgrades or {})
+    mass_by_year = dict(cumulative_mass or {})
     results: list[RoutingResult] = []
     for year in years:
         supplies = dict(supplies_by_year.get(int(year), {}))
         caps = dict(remaining)
-        if limits:
-            for sink_id in list(caps):
-                caps[sink_id] = min(caps[sink_id], float(limits.get(sink_id, caps[sink_id])))
         result = engine.route(
             year=year,
             supplies=supplies,
             sink_remaining_capacity=caps,
+            sink_injection_limits=limits or None,
+            cumulative_mass=mass_by_year,
             fired_upgrades=fired_by_year.get(int(year)),
         )
         for sink_id, injected in result.sink_injections.items():
             remaining[sink_id] = remaining.get(sink_id, 0.0) - injected
+        for edge_id, flow in result.edge_flows.items():
+            mass_by_year[edge_id] = mass_by_year.get(edge_id, 0.0) + float(flow)
         results.append(result)
     return results

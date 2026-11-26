@@ -71,6 +71,32 @@ def test_delete_scenario(tmp_path):
     assert list_scenarios(tmp_path) == []
 
 
+def test_load_and_delete_stay_inside_the_scenario_directory(tmp_path):
+    """A scenario name must not be able to reach any other file."""
+
+    save_scenario(build_solver_scenario(), "inside", directory=tmp_path)
+    outside = tmp_path.parent / "outside_ccus.json"
+    outside.write_text("{}", encoding="utf-8")
+    try:
+        for escape in ("../outside_ccus", "../outside_ccus.json", str(outside)):
+            with pytest.raises(ValueError, match="scenario directory"):
+                load_scenario_file(escape, directory=tmp_path)
+            with pytest.raises(ValueError, match="scenario directory"):
+                delete_scenario(escape, directory=tmp_path)
+        # the file outside is untouched
+        assert outside.exists()
+        # a plain name still resolves inside the directory
+        assert load_scenario_file("inside", directory=tmp_path).id == "solver_case"
+    finally:
+        outside.unlink(missing_ok=True)
+
+
+def test_names_with_spaces_are_saved_and_loaded(tmp_path):
+    save_scenario(build_solver_scenario(), "my case 01", directory=tmp_path)
+    reloaded = load_scenario_file("my case 01.json", directory=tmp_path)
+    assert reloaded.name == "Solver case"
+
+
 def test_cluster_workbook_round_trip(tmp_path):
     if not WORKBOOK.exists():
         pytest.skip("workbook not present")
@@ -79,4 +105,4 @@ def test_cluster_workbook_round_trip(tmp_path):
     reloaded = load_scenario_file("cluster", directory=tmp_path)
     assert len(reloaded.emitters) == 14
     assert len(reloaded.connections) == 14
-    assert len(reloaded.edges) == 14  # rebuilt from the connections
+    assert len(reloaded.edges) == 14  # stored edges, refreshed from the connections

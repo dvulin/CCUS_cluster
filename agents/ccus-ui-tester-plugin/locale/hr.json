@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "CCUS UI tester",
+    "description": "Playwright MCP poslužitelj preglednika i vještina ccus-ui-tester za UI testiranje CCUS Streamlit kalkulatora uz sudjelovanje čovjeka."
+  }
+}

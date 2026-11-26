@@ -132,17 +132,19 @@ class VariableRateReservoir:
             elif not capacity_limited[index] and cumulative_kg[index] > 0.0:
                 # injection finished earlier: keep the last computed BHP for reference
                 bhp = last_bhp
+            limit = float(self.reservoir.maximum_pressure_bar)
             rows.append(
                 {
                     "year": year,
                     "co2_injected_t": float(rates_t[index]),
                     "co2_cumulative_t": float(cumulative_kg[index] / 1000.0),
                     "pressure_bar": float(pressures[index]),
-                    "pressure_limit_bar": float(self.reservoir.maximum_pressure_bar),
+                    "pressure_limit_bar": limit,
                     "injection_rate_kg_s": rate_kg_s,
                     "effective_saturation": float(saturations[index]),
                     "kr_co2": kr_co2,
                     "bhp_bar": bhp,
+                    "bhp_above_limit": bool(bhp == bhp and bhp > limit),
                     "active": bool(active),
                     "capacity_limited": bool(capacity_limited[index]),
                 }
@@ -171,6 +173,7 @@ class VariableRateReservoir:
                 "effective_saturation": float("nan"),
                 "kr_co2": float("nan"),
                 "bhp_bar": float("nan"),
+                "bhp_above_limit": False,
                 "active": bool(rate > 0.0),
                 "capacity_limited": bool(total > capacity),
             }

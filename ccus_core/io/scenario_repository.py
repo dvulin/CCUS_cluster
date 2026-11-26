@@ -107,7 +107,7 @@ def save_scenario(
 
     root = scenario_directory(directory)
     stem = validate_name(name or next_default_name(root))
-    target = (root / f"{stem}.json").resolve()
+    target = scenario_path(f"{stem}.json", directory=root)
     if target.parent != root:
         raise ValueError("Scenario files must stay inside the scenario directory.")
 
@@ -134,32 +134,51 @@ def save_scenario(
     return target
 
 
-def load_scenario_file(name_or_path: str | Path, *, directory: str | Path | None = None) -> ScenarioConfig:
-    """Load a scenario by name (or by explicit path)."""
+def scenario_path(name_or_path: str | Path, *, directory: str | Path | None = None) -> Path:
+    """Resolve a scenario name (or path) to a file **inside** the scenario directory.
 
-    candidate = Path(name_or_path)
-    if candidate.is_file():
-        return load_file(candidate)
-    root = scenario_directory(directory)
-    stem = validate_name(str(name_or_path))
-    path = root / f"{stem}.json"
+    Loading and deleting are confined to the directory on purpose: a scenario name
+    must never be able to reach an arbitrary file through ``..`` or an absolute
+    path.  ``ValueError`` is raised for anything outside it.
+    """
+
+    root = scenario_directory(directory).resolve()
+    raw = str(name_or_path)
+    looks_like_path = (
+        Path(raw).is_absolute()
+        or "/" in raw
+        or "\\" in raw
+        or Path(raw).suffix.lower() == ".json"
+    )
+    if looks_like_path:
+        candidate = Path(raw).expanduser()
+        if not candidate.is_absolute():
+            candidate = root / candidate
+        resolved = candidate.resolve()
+        if resolved.parent != root:
+            raise ValueError(
+                "Scenario files must stay inside the scenario directory "
+                f"({root}); refusing '{name_or_path}'."
+            )
+        return resolved
+
+    stem = validate_name(raw)
+    return root / f"{stem}.json"
+
+
+def load_scenario_file(name_or_path: str | Path, *, directory: str | Path | None = None) -> ScenarioConfig:
+    """Load a scenario by name (or by a path inside the scenario directory)."""
+
+    path = scenario_path(name_or_path, directory=directory)
     if not path.is_file():
-        raise ScenarioNotFoundError(f"Scenario '{stem}' was not found.")
+        raise ScenarioNotFoundError(f"Scenario '{path.stem}' was not found.")
     return load_file(path)
 
 
 def delete_scenario(name_or_path: str | Path, *, directory: str | Path | None = None) -> None:
-    """Delete one scenario file (never a directory)."""
+    """Delete one scenario file (never a directory, never outside the directory)."""
 
-    candidate = Path(name_or_path)
-    if candidate.is_file():
-        path = candidate
-    else:
-        root = scenario_directory(directory)
-        stem = validate_name(str(name_or_path))
-        path = (root / f"{stem}.json").resolve()
-        if path.parent != root:
-            raise ValueError("Scenario files must stay inside the scenario directory.")
+    path = scenario_path(name_or_path, directory=directory)
     if not path.is_file():
         raise ScenarioNotFoundError(f"Scenario '{path.stem}' was not found.")
     path.unlink()
@@ -172,6 +191,7 @@ __all__ = [
     "ScenarioNotFoundError",
     "ScenarioRecord",
     "scenario_directory",
+    "scenario_path",
     "validate_name",
     "next_default_name",
     "list_scenarios",

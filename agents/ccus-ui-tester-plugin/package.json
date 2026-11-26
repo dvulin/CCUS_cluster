@@ -1,0 +1,23 @@
+{
+  "name": "@local/ccus-ui-tester-plugin",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "CCUS UI tester: Playwright MCP browser server (ccus-browser) plus the ccus-ui-tester skill root for human-in-the-loop UI testing of the CCUS Streamlit calculator.",
+  "exports": {
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md",
+    "skills"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}

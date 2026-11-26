@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "CCUS UI tester",
+    "description": "Playwright MCP browser server and the ccus-ui-tester skill for human-in-the-loop UI testing of the CCUS Streamlit calculator."
+  }
+}

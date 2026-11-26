@@ -26,7 +26,7 @@ from ccus_core.network.graph import NetworkGraph
 from ccus_core.network.routing import RoutingEngine, RoutingResult
 
 from .adapters import power_inputs_for_sink
-from .geothermal import GeothermalCoupling
+from .geothermal import GeothermalCoupling, ensure_coupled_doublets
 from .pressures import pressure_table
 from .reservoir import VariableRateReservoir
 
@@ -44,7 +44,13 @@ HOURS_PER_YEAR = 8766.0
 
 @dataclass
 class SimulationResult:
-    """Standardised output of one scenario run (DataFrames + JSON-safe dicts)."""
+    """Standardised output of one scenario run (DataFrames + JSON-safe dicts).
+
+    ``fired_upgrades`` (edge_id -> {upgrade_id: year the trigger fired}) and
+    ``edge_cumulative_mass`` (edge_id -> t shipped) are the solver's bookkeeping of
+    the conditional infrastructure upgrades: the finance layer needs the firing
+    year to book each upgrade CAPEX exactly once.
+    """
 
     scenario: ScenarioConfig
     routing: list[RoutingResult] = field(default_factory=list)
@@ -55,6 +61,8 @@ class SimulationResult:
     pressures: pd.DataFrame | None = None
     kpis: dict[str, object] = field(default_factory=dict)
     notes: list[str] = field(default_factory=list)
+    fired_upgrades: dict[str, dict[str, int]] = field(default_factory=dict)
+    edge_cumulative_mass: dict[str, float] = field(default_factory=dict)
 
     def routing_frame(self) -> pd.DataFrame:
         records = [record for result in self.routing for record in result.to_records()]
@@ -84,6 +92,7 @@ class SimulationResult:
             "geothermal_systems": sorted(self.geothermal),
             "ledger_rows": 0 if self.ledger is None else int(len(self.ledger)),
             "pressure_rows": 0 if self.pressures is None else int(len(self.pressures)),
+            "fired_upgrades": self.fired_upgrades,
         }
 
 
@@ -91,7 +100,9 @@ class ChronologicalSolver:
     """Yearly routing + physics + finance over a :class:`ScenarioConfig`."""
 
     def __init__(self, scenario: ScenarioConfig, *, fluid_props=None, verbose: bool = False):
-        self.scenario = scenario
+        # a coupled sink gets its doublet here, not in the UI: the engine is the
+        # single place that turns `geothermal_coupled` into a system
+        self.scenario = ensure_coupled_doublets(scenario)
         self.verbose = bool(verbose)
         if FluidProperties is not None:
             self.fluid_props = fluid_props if fluid_props is not None else FluidProperties()
@@ -116,22 +127,83 @@ class ChronologicalSolver:
             capacity[sink.id] = limit
         return capacity
 
-    def _route_all(self, capacity: dict[str, float]) -> list[RoutingResult]:
+    def _injection_rate_limits(self) -> dict[str, float]:
+        """Declared per-year injection cap of each sink (well capacity)."""
+
+        return {
+            sink.id: float(sink.max_injection_rate_t_per_year)
+            for sink in self.scenario.storage_sinks
+            if sink.max_injection_rate_t_per_year is not None
+        }
+
+    def _fire_due_upgrades(
+        self,
+        year: int,
+        fired: dict[str, dict[str, int]],
+        cumulative_mass: dict[str, float],
+    ) -> list[str]:
+        """Record every upgrade whose trigger is satisfied in ``year``.
+
+        A year trigger is recorded with its *declared* year (so the lead time is
+        counted from the plan, not from the first simulated year), while a
+        cumulative-mass trigger is recorded with the year in which the running
+        total crosses the threshold.  Recording the firing year is what keeps the
+        upgrade CAPEX to a single booking.
+        """
+
+        fired_now: list[str] = []
+        for edge in self.scenario.edges:
+            recorded = fired.setdefault(edge.id, {})
+            shipped = float(cumulative_mass.get(edge.id, 0.0))
+            for upgrade in edge.upgrades:
+                if upgrade.id in recorded:
+                    continue
+                trigger = upgrade.trigger
+                if trigger.kind in ("year", "both") and trigger.year is not None and year >= int(trigger.year):
+                    recorded[upgrade.id] = int(trigger.year)
+                    fired_now.append(f"{edge.id}/{upgrade.id}")
+                elif trigger.kind in ("cumulative_mass", "both") and trigger.fires_on_mass(shipped):
+                    recorded[upgrade.id] = int(year)
+                    fired_now.append(f"{edge.id}/{upgrade.id}")
+        return fired_now
+
+    def _route_all(self, capacity: dict[str, float]) -> tuple[list[RoutingResult], dict[str, dict[str, int]], dict[str, float]]:
         engine = RoutingEngine(self.graph)
         remaining = dict(capacity)
+        limits = self._injection_rate_limits()
+        fired: dict[str, dict[str, int]] = {}
+        cumulative_mass: dict[str, float] = {edge.id: 0.0 for edge in self.scenario.edges}
         results: list[RoutingResult] = []
         for year in self.scenario.years():
+            # an upgrade that fires in `year` is visible to the router immediately
+            # (the lead time is applied inside InfrastructureUpgrade.effective_year)
+            for label in self._fire_due_upgrades(year, fired, cumulative_mass):
+                self._log(f"{year}: upgrade fired -> {label}")
             supplies = {
                 emitter.id: emitter.captured_emissions(year)
                 for emitter in self.scenario.emitters
             }
-            result = engine.route(year=year, supplies=supplies, sink_remaining_capacity=remaining)
+            result = engine.route(
+                year=year,
+                supplies=supplies,
+                sink_remaining_capacity=remaining,
+                fired_upgrades=fired,
+                cumulative_mass=cumulative_mass,
+                sink_injection_limits=limits or None,
+            )
             for sink_id, injected in result.sink_injections.items():
                 remaining[sink_id] = remaining.get(sink_id, 0.0) - injected
+            for edge_id, flow in result.edge_flows.items():
+                cumulative_mass[edge_id] = cumulative_mass.get(edge_id, 0.0) + float(flow)
             if result.total_allocated_t > 0.0:
                 self._log(f"{year}: routed {result.total_allocated_t:,.0f} t CO2")
+            if result.rate_limited_sinks:
+                self._log(
+                    f"{year}: injection-rate limited at "
+                    + ", ".join(result.rate_limited_sinks)
+                )
             results.append(result)
-        return results
+        return results, fired, cumulative_mass
 
     def _compressor_power_kw(self, sink, rate_kg_s: float, bhp_bar: float) -> float:
         if Power is None or rate_kg_s <= 0.0 or bhp_bar != bhp_bar:
@@ -158,8 +230,10 @@ class ChronologicalSolver:
         years = self.scenario.years()
 
         capacity = self._effective_sink_capacity()
-        routing = self._route_all(capacity)
+        routing, fired, cumulative_mass = self._route_all(capacity)
         result.routing = routing
+        result.fired_upgrades = fired
+        result.edge_cumulative_mass = cumulative_mass
 
         injected: dict[str, dict[int, float]] = {
             sink.id: {year: 0.0 for year in years} for sink in self.scenario.storage_sinks
@@ -188,15 +262,29 @@ class ChronologicalSolver:
             pressure_series = dict(
                 zip(frame["year"].astype(int), frame["pressure_bar"].astype(float))
             )
-            coupling = GeothermalCoupling(system, sink.reservoir, fluid_props=self.fluid_props)
+            coupling = GeothermalCoupling(
+                system,
+                sink.reservoir,
+                fluid_props=self.fluid_props,
+                eta_pump=float(sink.eta_gt_injection_pump),
+            )
             result.geothermal[system.id] = coupling.simulate(pressure_series)
 
         result.ledger = self._build_ledger(result)
         result.pressures = pressure_table(self.scenario, result)
+        sink_injections = {
+            sink_id: {
+                int(row.year): float(row.co2_injected_t)
+                for row in frame.itertuples(index=False)
+            }
+            for sink_id, frame in result.reservoir.items()
+        }
         config, notes = build_cash_flow_config(
             self.scenario,
             ledger=result.ledger,
             transport_cost_by_year={int(item.year): item.total_cost_eur for item in routing},
+            sink_injections=sink_injections,
+            fired_upgrades=result.fired_upgrades,
         )
         result.notes.extend(notes)
 
@@ -223,7 +311,45 @@ class ChronologicalSolver:
                 ),
             }
         )
+        self._record_limits(result)
         return result
+
+    # ------------------------------------------------------------------ diagnostics
+    def _record_limits(self, result: SimulationResult) -> None:
+        """Flag sinks that hit their rate limit, their pore volume or their BHP.
+
+        A cluster study must *show* which constraint shaped the result instead of
+        letting a silent cap look like a physical property of the reservoir.
+        """
+
+        rate_limited = sorted(
+            {sink_id for item in result.routing for sink_id in item.rate_limited_sinks}
+        )
+        capacity_limited = sorted(
+            {sink_id for item in result.routing for sink_id in item.capacity_limited_sinks}
+        )
+        bhp_limited: list[str] = []
+        for sink in self.scenario.storage_sinks:
+            frame = result.reservoir.get(sink.id)
+            if frame is None or "bhp_above_limit" not in frame:
+                continue
+            if bool(frame["bhp_above_limit"].fillna(False).any()):
+                bhp_limited.append(sink.id)
+
+        result.kpis["rate_limited_sinks"] = rate_limited
+        result.kpis["capacity_limited_sinks"] = capacity_limited
+        result.kpis["bhp_limited_sinks"] = bhp_limited
+
+        for sink_id in rate_limited:
+            result.notes.append(
+                f"sink '{sink_id}' hit its declared max_injection_rate_t_per_year"
+            )
+        for sink_id in capacity_limited:
+            result.notes.append(f"sink '{sink_id}' exhausted its storage capacity")
+        for sink_id in bhp_limited:
+            result.notes.append(
+                f"sink '{sink_id}' needs a bottomhole pressure above the fracture limit"
+            )
 
     # ------------------------------------------------------------------ ledger
     def _build_ledger(self, result: SimulationResult) -> pd.DataFrame:
@@ -274,13 +400,12 @@ class ChronologicalSolver:
                 row = frame.loc[frame["year"] == year]
                 if row.empty or not bool(row["active"].iloc[0]):
                     continue
-                compressor_kw = max(
-                    compressor_kw,
-                    self._compressor_power_kw(
-                        sink,
-                        float(row["injection_rate_kg_s"].iloc[0]),
-                        float(row["bhp_bar"].iloc[0]),
-                    ),
+                # the power of every running compressor adds up: each sink has its
+                # own injection skid, they do not share one machine
+                compressor_kw += self._compressor_power_kw(
+                    sink,
+                    float(row["injection_rate_kg_s"].iloc[0]),
+                    float(row["bhp_bar"].iloc[0]),
                 )
             compressor_mwh = compressor_kw * HOURS_PER_YEAR / 1000.0
 
@@ -295,6 +420,8 @@ class ChronologicalSolver:
                     "co2_compressor_mwh": compressor_mwh,
                     "electricity_export_mwh": max(0.0, net_mwh),
                     "electricity_import_mwh": max(0.0, -net_mwh),
+                    "compressor_power_kw": compressor_kw,
+                    # deprecated alias kept for the legacy ledger consumers
                     "compressor_peak_kw": compressor_kw,
                     "injection_active": injected > 0.0,
                     "geothermal_active": orc_mwh > 0.0 or pump_mwh > 0.0,

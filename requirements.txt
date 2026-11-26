@@ -4,6 +4,7 @@ numpy
 openpyxl
 pandas
 pydantic>=2.0
+pydeck
 pytest
 scipy
 streamlit

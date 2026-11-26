@@ -146,6 +146,20 @@ class StorageSink(CoreModel):
             and self.decommission_year < self.commissioning_year
         ):
             raise ValueError("decommission_year must not precede commissioning_year")
+        if (
+            self.monitoring_cost_during_injection_eur_per_year > 0.0
+            or self.monitoring_cost_after_injection_eur_per_year > 0.0
+        ) and self.monitoring_end_year is None:
+            raise ValueError(
+                "monitoring costs require monitoring_end_year: the post-injection "
+                "window must be explicit (a rate is charged once per year)"
+            )
+        if (
+            self.monitoring_end_year is not None
+            and self.commissioning_year is not None
+            and self.monitoring_end_year < self.commissioning_year
+        ):
+            raise ValueError("monitoring_end_year must not precede commissioning_year")
         return self
 
     def active_in(self, year: int) -> bool:

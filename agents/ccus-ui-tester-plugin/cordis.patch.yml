@@ -1,0 +1,49 @@
+# CCUS UI tester – DSH bundle
+#
+# Two rows, both required by the `ccus-ui-tester` skill
+# (skills/ccus-ui-tester/references/tools.md):
+#
+# 1. ccus-browser – Playwright MCP server (Microsoft Edge, isolated profile),
+#    exposing the mcp__ccus-browser__browser_* tools the skill drives.
+#    --output-dir is absolute: a stdio MCP child resolves a relative --output-dir
+#    against its own home directory, not against the DSH working directory, so
+#    screenshots and snapshots must be pinned to
+#    <PROJECT>\test-reports\ui\playwright where the skill's report template
+#    expects them. browser_file_upload still reads only files under the DSH
+#    working directory, so DSH is meant to run with the CCUS project root as
+#    its working directory (the generated inputs live under <PROJECT>).
+# 2. skill-ccus-ui-tester – a second local skill root scanned at rank 300
+#    (custom), so the authored skill folder stays inside the bundle. Rank 300 is
+#    below the project roots, so a project- or user-level skill of the same name
+#    still wins.
+- insert:
+    - id: ccus-browser
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: ccus-browser
+        transport: stdio
+        command: npx
+        args:
+          - '-y'
+          - '@playwright/mcp@0.0.85'
+          - '--browser'
+          - 'msedge'
+          - '--isolated'
+          - '--viewport-size'
+          - '1600x1000'
+          - '--output-dir'
+          - 'C:\Users\dvulin\Documents\DSH\sestan_diplomski\ccus_cluster\test-reports\ui\playwright'
+          - '--console-level'
+          - 'warning'
+          - '--timeout-action'
+          - '15000'
+        failOnStartupError: true
+        toolCallTimeoutMs: 120000
+        reconnect:
+          enabled: true
+    - id: skill-ccus-ui-tester
+      name: '@deepseek-ai/dsh-skill-filesystem'
+      config:
+        providerName: ccus-ui-tester
+        customSkillDirs:
+          - 'C:\Users\dvulin\Documents\DSH\sestan_diplomski\ccus_cluster\agents\ccus-ui-tester-plugin\skills'

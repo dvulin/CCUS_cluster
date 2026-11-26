@@ -80,6 +80,8 @@ def truck_state(
     capacity_t_per_year: float = 120_000.0,
     distance_km: float = 25.0,
     valid_until_year: int | None = None,
+    fleet_size: int | None = 10,
+    capex_eur: float = 1_500_000.0,
 ) -> EdgeState:
     return EdgeState(
         mode=TransportMode.TRUCK,
@@ -87,14 +89,14 @@ def truck_state(
         valid_until_year=valid_until_year,
         capacity_t_per_year=capacity_t_per_year,
         distance_km=distance_km,
-        capex_eur=1_500_000.0,
+        capex_eur=capex_eur,
         opex_eur_per_t=8.0,
         opex_eur_per_tkm=0.35,
         road=RoadDesign(
             vehicle_capacity_t=25.0,
             trips_per_vehicle_per_day=2.0,
             working_days_per_year=250.0,
-            fleet_size=10,
+            fleet_size=fleet_size,
         ),
     )
 

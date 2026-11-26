@@ -23,6 +23,8 @@ from typing import Any
 
 from ccus_core.models import ScenarioConfig
 
+from .co2_prices import PRICE_SCENARIO_NAMES, load_price_scenarios
+
 RECORD_KEYS = {"value", "unit", "comment"}
 
 # leaf path (dotted) -> (unit, comment)
@@ -130,6 +132,67 @@ def _lift_document(payload: dict) -> dict:
             if section in payload:
                 flat[section] = payload[section]
         payload = flat
+    return _apply_price_file(payload)
+
+
+def _price_scenarios() -> dict:
+    """The CO2 price scenarios in force (``json/CO2_prices.json`` or the defaults)."""
+
+    return load_price_scenarios()
+
+
+def _preset_price_path(path: dict, scenarios: dict) -> dict:
+    """A preset price path (``conservative``) with its series taken from the file."""
+
+    resolved = dict(path)
+    scenario = scenarios[str(path["mode"])]
+    resolved.setdefault("start_year", int(scenario.start_year))
+    resolved["values_eur_per_t"] = list(scenario.values_eur_per_t)
+    return resolved
+
+
+def _apply_price_file(payload: dict) -> dict:
+    """Supply CO2 price series that the document leaves to ``json/CO2_prices.json``.
+
+    Two places accept the file:
+
+    * ``policy.prices`` - a scenario that carries a ``policy`` block but no prices;
+    * ``economics.price_path`` - a preset (``optimistic`` / ``conservative`` /
+      ``pessimistic``) without ``values_eur_per_t``, which otherwise had to repeat
+      the whole 26-year series inline.
+
+    The models never read the file themselves - they stay free of I/O - so the
+    prices are resolved once, here, while the document is still a plain dict.  A
+    missing file falls back to the workbook defaults; a malformed one raises
+    :class:`~ccus_core.io.co2_prices.Co2PriceFileError` instead of being ignored.
+    """
+
+    scenarios = _price_scenarios()
+    if not scenarios:
+        return payload
+
+    payload = dict(payload)
+
+    policy = payload.get("policy")
+    if isinstance(policy, dict) and not policy.get("prices"):
+        policy = dict(policy)
+        policy["prices"] = {
+            name: scenario.model_dump() for name, scenario in scenarios.items()
+        }
+        payload["policy"] = policy
+
+    economics = payload.get("economics")
+    if isinstance(economics, dict):
+        path = economics.get("price_path")
+        if (
+            isinstance(path, dict)
+            and path.get("mode") in PRICE_SCENARIO_NAMES
+            and not path.get("values_eur_per_t")
+        ):
+            economics = dict(economics)
+            economics["price_path"] = _preset_price_path(path, scenarios)
+            payload["economics"] = economics
+
     return payload
 
 
@@ -150,6 +213,25 @@ def _wrap(value: Any, path: str = "") -> Any:
     return record
 
 
+def _render_key(key: Any) -> str:
+    """Render a dict key as a JSON string.
+
+    Model keys are not always strings: ``EmissionCurve.points`` is keyed by year and
+    ``ScenarioConfig.onboarding_years`` by probability, so ``json.dumps(key)`` would
+    emit the bare literal ``2030``/``1.0`` and produce a document that is not valid
+    JSON.  Every key is therefore quoted; pydantic coerces ``"2030"`` back to ``int``.
+    """
+
+    if isinstance(key, str):
+        return json.dumps(key, ensure_ascii=False)
+    if isinstance(key, bool) or key is None:
+        return json.dumps(str(key))
+    if isinstance(key, (int, float)):
+        # 2030 -> "2030", 1.0 -> "1.0" (a float key must keep its decimal point)
+        return json.dumps(repr(key) if isinstance(key, float) else str(key))
+    return json.dumps(str(key), ensure_ascii=False)
+
+
 def _render(value: Any, level: int, indent: int, inline_limit: int) -> str:
     """Compact JSON renderer: a block stays on one line while it fits."""
 
@@ -160,7 +242,7 @@ def _render(value: Any, level: int, indent: int, inline_limit: int) -> str:
         compact = (
             "{"
             + ", ".join(
-                f"{json.dumps(key, ensure_ascii=False)}: {_render(item, 0, indent, inline_limit)}"
+                f"{_render_key(key)}: {_render(item, 0, indent, inline_limit)}"
                 for key, item in value.items()
             )
             + "}"
@@ -168,7 +250,7 @@ def _render(value: Any, level: int, indent: int, inline_limit: int) -> str:
         if len(compact) <= inline_limit:
             return compact
         items = [
-            f"{inner}{json.dumps(key, ensure_ascii=False)}: {_render(item, level + 1, indent, inline_limit)}"
+            f"{inner}{_render_key(key)}: {_render(item, level + 1, indent, inline_limit)}"
             for key, item in value.items()
         ]
         return "{\n" + ",\n".join(items) + "\n" + pad + "}"
@@ -206,10 +288,9 @@ def dump(scenario: ScenarioConfig, *, style: str = "compact", indent: int = 2, i
     """
 
     payload = scenario.model_dump(exclude_none=True, exclude_defaults=True)
-    if payload.get("connections"):
-        # edges are derived from the connections: keeping both would double the
-        # size of the document and invite inconsistencies
-        payload.pop("edges", None)
+    # `edges` is never dropped: it carries the state timeline, the upgrades, the
+    # modal designs and the geometry id, none of which a connection can express.
+    # The connections stay in the document as the (many-to-many) access list.
     if style == "verbose":
         payload = scenario.model_dump(exclude_none=True)
         body = {"schema": "ccus-cluster/2.0", "scenario": _wrap(payload, "scenario")}
@@ -217,7 +298,10 @@ def dump(scenario: ScenarioConfig, *, style: str = "compact", indent: int = 2, i
 
     body: dict[str, Any] = {
         "schema": "ccus-cluster/2.0",
-        "_format": "compact: one block per line; units and explanations in _comments",
+        "_format": (
+            "compact: one block per line; units and explanations in _comments; "
+            "edges are authoritative for the state timeline and the upgrades"
+        ),
         "_comments": _legend(),
         "scenario": payload,
     }

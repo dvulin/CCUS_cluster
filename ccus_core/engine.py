@@ -22,6 +22,7 @@ from pathlib import Path
 from ccus_core.models import ScenarioConfig
 from ccus_core.network.graph import NetworkGraph
 
+from .simulation.geothermal import ensure_coupled_doublets
 from .simulation.solver import ChronologicalSolver, SimulationResult
 
 
@@ -113,7 +114,9 @@ class ScenarioEngine:
     """Initialise a scenario, run the simulation, expose standardised results."""
 
     def __init__(self, scenario: ScenarioConfig, *, fluid_props=None, verbose: bool = False):
-        self.scenario = scenario
+        # engine-side defaults: a sink flagged `geothermal_coupled` receives its
+        # doublet here so the UI never has to invent one
+        self.scenario = ensure_coupled_doublets(scenario)
         self.fluid_props = fluid_props
         self.verbose = bool(verbose)
 

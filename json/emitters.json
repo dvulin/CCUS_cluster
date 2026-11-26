@@ -1,0 +1,262 @@
+{
+  "_meta": {
+    "schema": "gt-ccus-emitters/1.0",
+    "source": "ccus.sqlite3",
+    "generated": "2026-11-19",
+    "count": 14
+  },
+  "emitters": [
+    {
+      "id": "te-plomin",
+      "name": "TE PLOMIN",
+      "industry": "thermal power plant",
+      "node_id": null,
+      "curve": {
+        "kind": "power_law",
+        "reference_year": 2025,
+        "e0_t_per_year": 1118203.087,
+        "a": -0.03,
+        "c": 1.5,
+        "b": null
+      },
+      "implementation_probability": 0.5,
+      "activation_year": 2028,
+      "reference_sink_id": "ivanic",
+      "notes": null
+    },
+    {
+      "id": "te-to-zagreb",
+      "name": "TE-TO ZAGREB",
+      "industry": "cogeneration plant",
+      "node_id": null,
+      "curve": {
+        "kind": "power_law",
+        "reference_year": 2025,
+        "e0_t_per_year": 908701.9990000001,
+        "a": -0.025,
+        "c": 1.5,
+        "b": null
+      },
+      "implementation_probability": 0.5,
+      "activation_year": 2028,
+      "reference_sink_id": "ivanic",
+      "notes": null
+    },
+    {
+      "id": "nexe",
+      "name": "NEXE",
+      "industry": "other",
+      "node_id": null,
+      "curve": {
+        "kind": "power_law",
+        "reference_year": 2025,
+        "e0_t_per_year": 656178.2482,
+        "a": -0.03,
+        "c": 1.5,
+        "b": null
+      },
+      "implementation_probability": 1.0,
+      "activation_year": 2026,
+      "reference_sink_id": "boksic",
+      "notes": "industry not derivable from the name; OXY capture hints at cement/lime - please confirm"
+    },
+    {
+      "id": "rafinerija-nafte-rijeka",
+      "name": "Rafinerija nafte Rijeka",
+      "industry": "oil refinery",
+      "node_id": null,
+      "curve": {
+        "kind": "power_law",
+        "reference_year": 2025,
+        "e0_t_per_year": 678317.9386,
+        "a": -0.025,
+        "c": 1.5,
+        "b": null
+      },
+      "implementation_probability": 0.1,
+      "activation_year": 2033,
+      "reference_sink_id": "ivanic",
+      "notes": null
+    },
+    {
+      "id": "tvornica-cementa-sv-juraj",
+      "name": "TVORNICA CEMENTA SV. Juraj",
+      "industry": "cement works",
+      "node_id": null,
+      "curve": {
+        "kind": "power_law",
+        "reference_year": 2025,
+        "e0_t_per_year": 583364.8,
+        "a": -0.02,
+        "c": 1.5,
+        "b": null
+      },
+      "implementation_probability": 0.5,
+      "activation_year": 2028,
+      "reference_sink_id": "ivanic",
+      "notes": null
+    },
+    {
+      "id": "te-to-sisak",
+      "name": "TE-TO SISAK",
+      "industry": "cogeneration plant",
+      "node_id": null,
+      "curve": {
+        "kind": "power_law",
+        "reference_year": 2025,
+        "e0_t_per_year": 576051.933,
+        "a": -0.025,
+        "c": 1.5,
+        "b": null
+      },
+      "implementation_probability": 0.1,
+      "activation_year": 2033,
+      "reference_sink_id": "struzec",
+      "notes": null
+    },
+    {
+      "id": "proizvodnja-cemanta-koroman-no",
+      "name": "PROIZVODNJA CEMANTA KOROMANČNO",
+      "industry": "cement works",
+      "node_id": null,
+      "curve": {
+        "kind": "power_law",
+        "reference_year": 2025,
+        "e0_t_per_year": 313118.716,
+        "a": -0.03,
+        "c": 1.5,
+        "b": null
+      },
+      "implementation_probability": 0.5,
+      "activation_year": 2028,
+      "reference_sink_id": "ivanic",
+      "notes": null
+    },
+    {
+      "id": "objekti-prerade-plina-molve",
+      "name": "Objekti prerade plina Molve",
+      "industry": "gas processing",
+      "node_id": null,
+      "curve": {
+        "kind": "power_law",
+        "reference_year": 2025,
+        "e0_t_per_year": 272408.719,
+        "a": -0.025,
+        "c": 1.5,
+        "b": null
+      },
+      "implementation_probability": 0.5,
+      "activation_year": 2028,
+      "reference_sink_id": "ivanic",
+      "notes": null
+    },
+    {
+      "id": "el-to-zagreb",
+      "name": "EL-TO Zagreb",
+      "industry": "waste-to-energy",
+      "node_id": null,
+      "curve": {
+        "kind": "power_law",
+        "reference_year": 2025,
+        "e0_t_per_year": 197798.0,
+        "a": -0.025,
+        "c": 1.5,
+        "b": null
+      },
+      "implementation_probability": 0.1,
+      "activation_year": 2033,
+      "reference_sink_id": "ivanic",
+      "notes": null
+    },
+    {
+      "id": "proizvodnja-aluminatnog-cementa",
+      "name": "Proizvodnja aluminatnog cementa",
+      "industry": "cement works",
+      "node_id": null,
+      "curve": {
+        "kind": "power_law",
+        "reference_year": 2025,
+        "e0_t_per_year": 127438.049,
+        "a": -0.025,
+        "c": 1.5,
+        "b": null
+      },
+      "implementation_probability": 0.5,
+      "activation_year": 2028,
+      "reference_sink_id": "ivanic",
+      "notes": null
+    },
+    {
+      "id": "ina-d-d-istr-i-proizv-nip-regija-sredisnja-hrvat",
+      "name": "INA d.d. Istr. i proizv. NiP, Regija središnja Hrvatska, Objekti frakcionacije Ivanić Grad",
+      "industry": "oil and gas processing",
+      "node_id": null,
+      "curve": {
+        "kind": "power_law",
+        "reference_year": 2025,
+        "e0_t_per_year": 117787.9372,
+        "a": -0.025,
+        "c": 1.5,
+        "b": null
+      },
+      "implementation_probability": 0.5,
+      "activation_year": 2028,
+      "reference_sink_id": "ivanic",
+      "notes": null
+    },
+    {
+      "id": "petrokemija-proizvodnja-gnojiva",
+      "name": "Petrokemija- proizvodnja gnojiva",
+      "industry": "fertiliser",
+      "node_id": null,
+      "curve": {
+        "kind": "power_law",
+        "reference_year": 2025,
+        "e0_t_per_year": 257582.1869,
+        "a": -0.02,
+        "c": 1.5,
+        "b": null
+      },
+      "implementation_probability": 1.0,
+      "activation_year": 2026,
+      "reference_sink_id": "ivanic",
+      "notes": null
+    },
+    {
+      "id": "vetropack-straza-d-d",
+      "name": "Vetropack Straža d.d.",
+      "industry": "glass works",
+      "node_id": null,
+      "curve": {
+        "kind": "power_law",
+        "reference_year": 2025,
+        "e0_t_per_year": 117737.6943,
+        "a": -0.02,
+        "c": 1.5,
+        "b": null
+      },
+      "implementation_probability": 0.1,
+      "activation_year": 2033,
+      "reference_sink_id": "ivanic",
+      "notes": null
+    },
+    {
+      "id": "kogeneracijsko-postrojenje-viridas-biomass",
+      "name": "Kogeneracijsko postrojenje Viridas Biomass",
+      "industry": "biomass cogeneration",
+      "node_id": null,
+      "curve": {
+        "kind": "power_law",
+        "reference_year": 2025,
+        "e0_t_per_year": 101566.498,
+        "a": -0.025,
+        "c": 1.5,
+        "b": null
+      },
+      "implementation_probability": 0.1,
+      "activation_year": 2033,
+      "reference_sink_id": "ivanic",
+      "notes": null
+    }
+  ]
+}
